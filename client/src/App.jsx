@@ -1,0 +1,151 @@
+import { lazy, Suspense, useEffect } from "react"
+import { BrowserRouter, Routes, Route } from "react-router-dom"
+import { Toaster } from "react-hot-toast"
+import Meta from "./components/meta/Meta"
+import { useDispatch } from "react-redux"
+import { useLoadUserMutation } from "./controller/api/auth/ApiAuth"
+import { setLogin } from "./controller/slice/AuthSlice"
+import { DndProvider } from "react-dnd"
+import { HTML5Backend } from "react-dnd-html5-backend"
+
+const Index = lazy(() => import("./home/Index"))
+// Otentikasi
+const Activation = lazy(() => import("./components/auth/Activation"))
+
+// Admin Pusat
+const CenterDash = lazy(() => import("./page/center/dashboard/CenterDash"))
+const CenterHomebase = lazy(() =>
+	import("./page/center/homebase/CenterHomebase")
+)
+const CenterAdmin = lazy(() => import("./page/center/admin/CenterAdmin"))
+
+// Admin Satuan
+const AdminDash = lazy(() => import("./page/admin/dashboard/AdminDash"))
+const AdminMajor = lazy(() => import("./page/admin/major/AdminMajor"))
+const AdminPeriode = lazy(() => import("./page/admin/periode/AdminPeriode"))
+const AdminGrade = lazy(() => import("./page/admin/grade/AdminGrade"))
+const AdminStudents = lazy(() => import("./page/admin/student/AdminStudents"))
+const AdminTeachers = lazy(() => import("./page/admin/teacher/AdminTeachers"))
+const AdminClass = lazy(() => import("./page/admin/class/AdminClass"))
+const AdminSubject = lazy(() => import("./page/admin/subject/AdminSubject"))
+const AdminCbt = lazy(() => import("./page/admin/cbt/AdminCbt"))
+const AdminExam = lazy(() => import("./page/admin/cbt/AdminExam"))
+
+// Teacher
+const TeacherDash = lazy(() => import("./page/teacher/dashboard/TeacherDash"))
+const TeacherCbt = lazy(() => import("./page/teacher/cbt/TeacherCbt"))
+const TeacherExam = lazy(() => import("./page/teacher/cbt/TeacherExam"))
+
+// Student
+const StudentDash = lazy(() => import("./page/student/Dashborad/StudentDash"))
+
+// CBT
+const CbtAddQues = lazy(() => import("./page/cbt/bank/CbtAddQues"))
+const CbtQuesList = lazy(() => import("./page/cbt/bank/CbtQuesList"))
+
+// LMS
+const TeacherSubject = lazy(() => import("./page/teacher/lms/TeacherSubject"))
+const LmsSubject = lazy(() => import("./page/lms/subject/LmsSubject"))
+
+function App() {
+	const dispatch = useDispatch()
+	const [loadUser] = useLoadUserMutation()
+
+	useEffect(() => {
+		const fetchUser = async () => {
+			try {
+				const response = await loadUser().unwrap()
+				dispatch(setLogin(response))
+			} catch (error) {
+				console.log(error)
+			}
+		}
+
+		fetchUser()
+	}, [dispatch, loadUser])
+
+	return (
+		<DndProvider backend={HTML5Backend}>
+			<BrowserRouter>
+				<Toaster />
+				<Meta
+					title={"ALMADEV"}
+					desc={
+						"LMS mempermudah pembelajaran online dengan fitur interaktif. Solusi ideal untuk pengajar dan pelajar modern."
+					}
+				/>
+				<Suspense fallback={"Loading..."}>
+					<Routes>
+						<Route path='*' element={<Index />} />
+
+						<Route path='/' element={<Index />} />
+
+						{/* Otentikasi */}
+						<Route path='/aktivasi-akun/:code' element={<Activation />} />
+
+						{/* Admin Pusat */}
+						<Route path='/center-dashboard' element={<CenterDash />} />
+
+						<Route path='/center-satuan' element={<CenterHomebase />} />
+
+						<Route path='/center-admin' element={<CenterAdmin />} />
+
+						{/*Admin Satuan */}
+						<Route path='/admin-dashboard' element={<AdminDash />} />
+
+						<Route path='/admin-jurusan' element={<AdminMajor />} />
+
+						<Route path='/admin-periode' element={<AdminPeriode />} />
+
+						<Route path='/admin-tingkat' element={<AdminGrade />} />
+
+						<Route path='/admin-siswa' element={<AdminStudents />} />
+
+						<Route path='/admin-guru' element={<AdminTeachers />} />
+
+						<Route path='/admin-kelas' element={<AdminClass />} />
+
+						<Route path='/admin-mapel' element={<AdminSubject />} />
+
+						<Route path='/admin-cbt-bank' element={<AdminCbt />} />
+
+						<Route path='/admin-cbt-exam' element={<AdminExam />} />
+
+						{/* Teacher */}
+						<Route path='/guru-dashboard' element={<TeacherDash />} />
+
+						<Route path='/guru-bank' element={<TeacherCbt />} />
+
+						<Route path='/guru-ujian' element={<TeacherExam />} />
+
+						{/* Student */}
+						<Route path='/siswa-dashboard' element={<StudentDash />} />
+
+						{/* CBT */}
+						<Route
+							path='/admin-cbt-bank/:subject/:name/:bankid'
+							element={<CbtQuesList />}
+						/>
+
+						<Route
+							path='/admin-cbt-bank/:subject/:name/:bankid/tambah-soal'
+							element={<CbtAddQues />}
+						/>
+
+						<Route
+							path='/admin-cbt-bank/:subject/:name/:bankid/:questionid/edit-soal'
+							element={<CbtAddQues />}
+						/>
+
+						{/* LMS */}
+						<Route path='/guru-mapel' element={<TeacherSubject />} />
+
+						<Route path='/guru-mapel/:name/:id' element={<LmsSubject />} />
+					</Routes>
+				</Suspense>
+			</BrowserRouter>
+		</DndProvider>
+	)
+}
+
+export default App
