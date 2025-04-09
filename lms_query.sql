@@ -1,133 +1,254 @@
-CREATE TABLE t_surah(
-    id INT PRIMARY KEY,
+CREATE TABLE u_admin(
+    id SERIAL PRIMARY KEY,
+    homebase INT REFERENCES a_homebase(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
-    ayat INT NOT NULL,
-    lines INT,
+    email TEXT NOT NULL,
+    phone TEXT NOT NULL,
+    password TEXT NOT NULL,
+    level TEXT DEFAULT 'admin',
+    activation TEXT,
+    isactive BOOLEAN DEFAULT false,
     createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Cara 1: Menggunakan COPY command untuk import langsung dari CSV
--- COPY t_surah(id, name, ayat, lines) 
--- FROM 'c:\Users\jadid\Downloads\surah.csv' 
--- DELIMITER ',' 
--- CSV;
+ALTER TABLE u_admin ADD CONSTRAINT unique_email UNIQUE (email);
+ALTER TABLE u_admin ADD CONSTRAINT unique_phone UNIQUE (phone);
 
--- Cara 2: Menggunakan INSERT statement
-INSERT INTO t_surah (id, name, ayat) VALUES
-(1, 'Al-Fatihah', 7),
-(2, 'Al-Baqarah', 286),
-(3, 'Ali Imran', 200),
-(4, 'An-Nisa', 176),
-(5, 'Al-Maidah', 120),
-(6, 'Al-Anam', 165),
-(7, 'Al-Araf', 206),
-(8, 'Al-Anfal', 75),
-(9, 'At-Taubah', 129),
-(10, 'Yunus', 109),
-(11, 'Hud', 123),
-(12, 'Yusuf', 111),
-(13, 'Ar-Rad', 43),
-(14, 'Ibrahim', 52),
-(15, 'Al-Hijr', 99),
-(16, 'An-Nahl', 128),
-(17, 'Al-Isra', 111),
-(18, 'Al-Kahf', 110),
-(19, 'Maryam', 98),
-(20, 'Thahaa', 135),
-(21, 'Al-Anbiya', 112),
-(22, 'Al-Hajj', 78),
-(23, 'Al-Muminun', 118),
-(24, 'An-Nur', 64),
-(25, 'Al-Furqan', 77),
-(26, 'Ash-Shuara', 227),
-(27, 'An-Naml', 93),
-(28, 'Al-Qasas', 88),
-(29, 'Al-Ankabut', 69),
-(30, 'Ar-Rum', 60),
-(31, 'Luqman', 34),
-(32, 'As-Sajdah', 30),
-(33, 'Al-Ahzab', 73),
-(34, 'Saba', 54),
-(35, 'Fathir', 45),
-(36, 'Ya-Sin', 83),
-(37, 'As-Shaffat', 182),
-(38, 'Shad', 88),
-(39, 'Az-Zumar', 75),
-(40, 'Ghafir', 85),
-(41, 'Fussilat', 54),
-(42, 'Ash-Shura', 53),
-(43, 'Az-Zukhruf', 89),
-(44, 'Ad-Dukhan', 59),
-(45, 'Al-Jatsiyah', 37),
-(46, 'Al-Ahqaf', 35),
-(47, 'Muhammad', 38),
-(48, 'Al-Fath', 29),
-(49, 'Al-Hujurat', 18),
-(50, 'Qaf', 45),
-(51, 'Adh-Dhariyat', 60),
-(52, 'At-Thur', 49),
-(53, 'An-Najm', 62),
-(54, 'Al-Qamar', 55),
-(55, 'Ar-Rahman', 78),
-(56, 'Al-Waqi`ah', 96),
-(57, 'Al-Hadid', 29),
-(58, 'Al-Mujadila', 22),
-(59, 'Al-Hashr', 24),
-(60, 'Al-Mumtahana', 13),
-(61, 'As-Shaff', 14),
-(62, 'Al-Jumuah', 11),
-(63, 'Al-Munafiqun', 11),
-(64, 'At-Taghabun', 18),
-(65, 'At-Thalaq', 12),
-(66, 'At-Tahrim', 12),
-(67, 'Al-Mulk', 30),
-(68, 'Al-Qalam', 52),
-(69, 'Al-Haqqah', 52),
-(70, 'Al-Ma`arij', 44),
-(71, 'Nuh', 28),
-(72, 'Al-Jinn', 28),
-(73, 'Al-Muzzammil', 20),
-(74, 'Al-Muddatsir', 56),
-(75, 'Al-Qiyamah', 40),
-(76, 'Al-Insan', 31),
-(77, 'Al-Mursalat', 50),
-(78, 'An-Naba', 40),
-(79, 'An-Naziat', 46),
-(80, '`Abasa', 42),
-(81, 'At-Takwir', 29),
-(82, 'Al-Infithar', 19),
-(83, 'Al-Mutaffifin', 36),
-(84, 'Al-Insyiqaq', 25),
-(85, 'Al-Buruj', 22),
-(86, 'At-Thaariq', 17),
-(87, 'Al-`Ala', 19),
-(88, 'Al-Ghasyiyah', 26),
-(89, 'Al-Fajr', 30),
-(90, 'Al-Balad', 20),
-(91, 'Asy-Syams', 15),
-(92, 'Al-Lail', 21),
-(93, 'Adh-Dhuha', 11),
-(94, 'Al-Insyirah', 8),
-(95, 'At-Tin', 8),
-(96, 'Al-`Alaq', 19),
-(97, 'Al-Qadr', 5),
-(98, 'Al-Bayinah', 8),
-(99, 'Az-Zalzalah', 8),
-(100, 'Al-Adiyat', 11),
-(101, 'Al-Qaari`ah', 11),
-(102, 'At-Takatshur', 8),
-(103, 'Al-Asr', 3),
-(104, 'Al-Humazah', 9),
-(105, 'Al-Fil', 5),
-(106, 'Quraish', 4),
-(107, 'Al-Maa`uun', 7),
-(108, 'Al-Kautsar', 3),
-(109, 'Al-Kafirun', 6),
-(110, 'An-Nasr', 3),
-(111, 'Al-Lahab', 5),
-(112, 'Al-Ikhlas', 4),
-(113, 'Al-Falaq', 5),
-(114, 'An-Nas', 6);
+CREATE TABLE u_students(
+    id SERIAL PRIMARY KEY,
+    homebase INT REFERENCES a_homebase (id) ON DELETE CASCADE,
+    periode INTEGER REFERENCES a_periode(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    nis TEXT,
+    password TEXT,
+    level TEXT DEFAULT 'student',
+    gender VARCHAR(255),
+    isactive BOOLEAN DEFAULT true,
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
--- Update lines sama dengan ayat jika diperlukan
-UPDATE t_surah SET lines = ayat WHERE lines IS NULL; 
+CREATE TABLE u_teachers(
+    id SERIAL PRIMARY KEY,
+    nip TEXT NOT NULL,
+    name TEXT NOT NULL,
+    email TEXT,
+    img TEXT,
+    homebase INTEGER NOT NULL REFERENCES a_homebase (id) ON DELETE CASCADE,
+    homeroom BOOLEAN DEFAULT false,
+    class INTEGER REFERENCES a_class(id),
+    phone TEXT,
+    password TEXT NOT NULL,
+    gender VARCHAR(10) NOT NULL,
+    level TEXT DEFAULT 'teacher',
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE u_parents(
+    id SERIAL PRIMARY KEY,
+    student INTEGER REFERENCES u_students(id) ON DELETE CASCADE,
+    email TEXT UNIQUE NOT NULL,
+    username TEXT NOT NULL,
+    phone TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE a_homebase(
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE a_periode(
+    id SERIAL PRIMARY KEY,
+    homebase INT REFERENCES a_homebase(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    isactive BOOLEAN DEFAULT FALSE,
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE a_major(
+    id SERIAL PRIMARY KEY,
+    homebase INT REFERENCES a_homebase(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE a_grade(
+    id SERIAL PRIMARY KEY,
+    homebase INT REFERENCES a_homebase(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE a_class(
+    id SERIAL PRIMARY KEY,
+    homebase INT REFERENCES a_homebase(id) ON DELETE CASCADE,
+    grade INT REFERENCES a_grade(id) ON DELETE CASCADE,
+    major INT REFERENCES a_major(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE a_subject(
+    id SERIAL PRIMARY KEY,
+    homebase INT REFERENCES a_homebase(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    cover TEXT,
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE at_subject (
+    id SERIAL PRIMARY KEY,
+    teacher INTEGER NOT NULL REFERENCES u_teachers(id) ON DELETE CASCADE,
+    subject INTEGER NOT NULL REFERENCES a_subject(id) ON DELETE CASCADE,
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE at_class(
+    id SERIAL PRIMARY KEY,
+    teacher_id INTEGER NOT NULL REFERENCES u_teachers(id) ON DELETE CASCADE,
+    class_id INTEGER NOT NULL REFERENCES a_class(id) ON DELETE CASCADE,
+    subject_id INTEGER NOT NULL REFERENCES a_subject(id) ON DELETE CASCADE,
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+
+CREATE TABLE cl_students(
+    id SERIAL PRIMARY KEY,
+    periode INT REFERENCES a_periode(id) ON DELETE CASCADE,
+    classid INT REFERENCES a_class(id) ON DELETE CASCADE,
+    student INT REFERENCES u_students(id) ON DELETE CASCADE,
+    student_name VARCHAR(255) NOT NULL,
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+
+CREATE TABLE c_bank(
+    id SERIAL PRIMARY KEY,
+    homebase INT REFERENCES a_homebase (id) ON DELETE CASCADE,
+    teacher INT REFERENCES u_teachers (id) ON DELETE CASCADE,
+    subject INT REFERENCES a_subject (id) ON DELETE CASCADE,
+    btype TEXT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+
+CREATE TABLE c_question(
+    id SERIAL PRIMARY KEY,
+    bank INT REFERENCES c_bank (id) ON DELETE CASCADE,
+    qtype INT NOT NULL,
+    question TEXT NOT NULL,
+    a text,
+    b text,
+    c text,
+    d text,
+    e text,
+    qkey text,
+    poin INT DEFAULT 0,
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+
+CREATE TABLE c_exam(
+    id SERIAL PRIMARY KEY,
+    homebase INT REFERENCES a_homebase (id) ON DELETE CASCADE,
+    teacher INT REFERENCES u_teachers (id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    duration INT NOT NULL,
+    isactive BOOLEAN DEFAULT true,
+    token TEXT,
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+
+CREATE TABLE c_ebank(
+    id SERIAL PRIMARY KEY,
+    exam INT REFERENCES c_exam (id) ON DELETE CASCADE,
+    bank INT REFERENCES c_bank (id) ON DELETE CASCADE,
+    pg INT,
+    essay INT,
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+
+CREATE TABLE c_class(
+    id SERIAL PRIMARY KEY,
+    exam INT REFERENCES c_exam (id) ON DELETE CASCADE,
+    classid INT REFERENCES a_class (id) ON DELETE CASCADE,
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+
+
+CREATE TABLE l_chapter(
+    id SERIAL PRIMARY KEY,
+    subject INT REFERENCES a_subject (id) ON DELETE CASCADE,
+    teacher INT REFERENCES u_teachers (id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    target TEXT NOT NULL,
+    order_number INT,
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+
+CREATE TABLE l_cclass(
+    id SERIAL PRIMARY KEY,
+    chapter INT REFERENCES l_chapter (id) ON DELETE CASCADE,
+    classid INT REFERENCES a_class (id) ON DELETE CASCADE,
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+
+CREATE TABLE l_content(
+    id SERIAL PRIMARY KEY,
+    chapter INT REFERENCES l_chapter (id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    target TEXT NOT NULL,
+    order_number INT,
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+
+CREATE TABLE l_file(
+    id SERIAL PRIMARY KEY,
+    content INT REFERENCES l_content (id) ON DELETE CASCADE,
+    title TEXT,
+    file TEXT NOT NULL,
+    video TEXT,
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+
+CREATE TABLE t_surah(
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    ayat INT NOT NULL,
+    lines INT,
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+
+
+CREATE TABLE t_juz(
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+
+
+
+-- Penjelasan:
+-- 1. at_subject: Menghubungkan guru dengan mata pelajaran yang diajarkan
+-- 2. at_class: Menghubungkan guru dan mata pelajaran dengan kelas yang diajar
+-- 3. a_subject: Menampung nama mata pelajaran
+-- 4. a_class: Menampung nama kelas
+-- 5. a_grade: Menampung tingkat kelas
+-- 6. a_major: Menampung jurusan kelas
+-- 7. a_homebase: Manampung data sekolah
+-- 8. u_admin: Manampung data admin
+-- 9. u_students: Manampung data siswa
+-- 10. u_teachers: Manampung data guru
+-- 11. u_parents: Manampung data orang tua
+-- 12. cl_students: Menampung siswa di dalam kelas
+-- 13. c_bank: Menampung bank soal
+-- 14. c_question: Menampung soal
+-- 15. c_exam: Menampung data ujian
+-- 16. c_class: Menampung data kelas ujian
+-- 17. c_ebank: Menampung data bank soal ujian
+-- 18. l_chapter: Menampung data bab
+-- 19. l_cclass: Menampung data bab di dalam kelas
+-- 20. l_content: Menampung data materi
+-- 21. l_file: Menampung file materi
+
+
