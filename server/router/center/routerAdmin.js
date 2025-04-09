@@ -75,7 +75,7 @@ router.post("/add-admin", authorize("center"), async (req, res) => {
 
 		const hashedPassword = await bcrypt.hash(password, 10)
 
-		if (level === "admin") {
+		if (level === "admin" || level === "tahfiz") {
 			const activation = uuidv4()
 			const data = await client.query(
 				`INSERT INTO u_admin (name, email, password, level, homebase, phone, activation) 
@@ -83,7 +83,7 @@ router.post("/add-admin", authorize("center"), async (req, res) => {
 				[name, email, hashedPassword, level, home, phone, activation]
 			)
 
-			const url = `${process.env.CLIENT_URL}/aktivasi-akun/${data.rows[0].activation}`
+			const url = `${process.env.URL}/aktivasi-akun/${data.rows[0].activation}`
 			const message = `Link aktivasi: ${url}`
 
 			await SendEmail({ email: email, subject: "Aktivasi Akun", message })

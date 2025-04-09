@@ -47,6 +47,11 @@ const CbtQuesList = lazy(() => import("./page/cbt/bank/CbtQuesList"))
 const TeacherSubject = lazy(() => import("./page/teacher/lms/TeacherSubject"))
 const LmsSubject = lazy(() => import("./page/lms/subject/LmsSubject"))
 
+// Tahfiz
+const TahfizDash = lazy(() => import("./page/tahfiz/dashboard/TahfizDash"))
+const TahfizJuz = lazy(() => import("./page/tahfiz/juz/TahfizJuz"))
+const TahfizSurah = lazy(() => import("./page/tahfiz/surah/TahfizSurah"))
+
 function App() {
 	const dispatch = useDispatch()
 	const [loadUser] = useLoadUserMutation()
@@ -141,6 +146,13 @@ function App() {
 						<Route path='/guru-mapel' element={<TeacherSubject />} />
 
 						<Route path='/guru-mapel/:name/:id' element={<LmsSubject />} />
+
+						{/* Tahfiz */}
+						<Route path='/tahfiz-dashboard' element={<TahfizDash />} />
+
+						<Route path='/tahfiz-juz' element={<TahfizJuz />} />
+
+						<Route path='/tahfiz-surah' element={<TahfizSurah />} />
 					</Routes>
 				</Suspense>
 			</BrowserRouter>

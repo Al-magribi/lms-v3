@@ -6,6 +6,8 @@ import * as Md from "react-icons/md"
 import * as Bs from "react-icons/bs"
 import * as Gr from "react-icons/gr"
 import * as Lu from "react-icons/lu"
+import * as Cg from "react-icons/cg"
+import * as Di from "react-icons/di"
 
 export const CenterMenus = [
 	{ label: "Satuan", link: "/center-satuan", icon: <Fa.FaSchool /> },
@@ -49,4 +51,15 @@ export const TeacherMenus = [
 export const StudentMenus = [
 	{ label: "Ujian", link: "/siswa-daftar-ujian", icon: <Bs.BsLaptopFill /> },
 	{ label: "Mata Pelajaran", link: "/siswa-mapel", icon: <Gi.GiOpenFolder /> },
+]
+
+export const TahfizMenus = [
+	{ label: "Hafalan", link: "/tahfiz-hafalan", icon: <Cg.CgNotes /> },
+	{ label: "Surah", link: "/tahfiz-surah", icon: <Bs.BsListStars /> },
+	{ label: "Juz", link: "/tahfiz-juz", icon: <Bs.BsListColumns /> },
+	{ label: "Target", link: "/tahfiz-target", icon: <Gi.GiMultipleTargets /> },
+	{ label: "Pengujian", link: "/tahfiz-pengujian", icon: <Fa.FaUserTie /> },
+	{ label: "Penilaian", link: "/tahfiz-penilaian", icon: <Gr.GrScorecard /> },
+	{ label: "Metrik", link: "/tahfiz-metrik", icon: <Di.DiAtom /> },
+	{ label: "Laporan", link: "/tahfiz-laporan", icon: <Fa6.FaChartBar /> },
 ]

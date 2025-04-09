@@ -5,6 +5,7 @@ import {
 	CenterMenus,
 	StudentMenus,
 	TeacherMenus,
+	TahfizMenus,
 } from "../menu/Menus"
 import { useNavigate } from "react-router-dom"
 import { useEffect, useState } from "react"
@@ -127,6 +128,12 @@ const Layout = ({ children, title, desc, levels }) => {
 									? AdminMenus
 									: level === "teacher"
 									? TeacherMenus
+									: level === "student"
+									? StudentMenus
+									: level === "parent"
+									? ParentMenus
+									: level === "tahfiz"
+									? TahfizMenus
 									: StudentMenus
 								).map((menu, i) => (
 									<button
