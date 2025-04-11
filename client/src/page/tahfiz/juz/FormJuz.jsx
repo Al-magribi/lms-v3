@@ -1,25 +1,24 @@
 import React, { useEffect, useState } from "react";
-import { useAddGradeMutation } from "../../../controller/api/admin/ApiGrade";
 import { toast } from "react-hot-toast";
-
-const Form = ({ detail, setDetail }) => {
+import { useAddJuzMutation } from "../../../controller/api/tahfiz/ApiQuran";
+const FormJuz = ({ detail, setDetail }) => {
   const [id, setId] = useState("");
   const [name, setName] = useState("");
 
-  const [addGrade, { isSuccess, isLoading, error, reset }] =
-    useAddGradeMutation();
+  const [addJuz, { isLoading, isSuccess, isError, reset }] =
+    useAddJuzMutation();
 
   const addHandler = (e) => {
     e.preventDefault();
 
-    const data = { id, name };
+    const data = { id: id ? id : "", name };
 
     toast.promise(
-      addGrade(data)
+      addJuz(data)
         .unwrap()
         .then((res) => res.message),
       {
-        loading: "Menyimpan data...",
+        loading: "Menambahkan data...",
         success: (message) => message,
         error: (err) => err.data.message,
       }
@@ -27,44 +26,38 @@ const Form = ({ detail, setDetail }) => {
   };
 
   const cancel = () => {
-    setId("");
+    setDetail({});
     setName("");
-    setDetail("");
+    setId("");
   };
 
   useEffect(() => {
     if (detail) {
-      setId(detail.id);
       setName(detail.name);
+      setId(detail.id);
     }
   }, [detail]);
 
   useEffect(() => {
-    if (isSuccess) {
+    if (isSuccess || isError) {
       reset();
-      setId("");
+      setDetail({});
       setName("");
-      setDetail("");
+      setId("");
     }
+  }, [isSuccess, isError]);
 
-    if (error) {
-      reset();
-    }
-  }, [isSuccess, error]);
   return (
     <form
       onSubmit={addHandler}
-      className='bg-white rounded border p-2 d-flex flex-column gap-2 shadow'
+      className='rounded border shadow p-2 d-flex flex-column gap-2 bg-white'
     >
-      <p className='m-0 h6'>Tingkat Satuan Pendidikan</p>
+      <p className='m-0 h6'>Tambah Juz</p>
 
       <input
         type='text'
-        name='grade'
-        id='grade'
         className='form-control'
-        placeholder='Tingkat'
-        required
+        placeholder='Nama Juz'
         value={name || ""}
         onChange={(e) => setName(e.target.value)}
       />
@@ -89,4 +82,4 @@ const Form = ({ detail, setDetail }) => {
   );
 };
 
-export default Form;
+export default FormJuz;

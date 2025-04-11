@@ -1,73 +1,71 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useAddExaminerMutation } from "../../../controller/api/tahfiz/ApiExaminer";
 import { toast } from "react-hot-toast";
-import { useAddPeriodeMutation } from "../../../controller/api/admin/ApiPeriode";
 
 const Form = ({ detail, setDetail }) => {
-  const [id, setId] = useState("");
-  const [name, setName] = useState("");
+  const [formData, setFormData] = useState({
+    id: detail ? detail.id : "",
+    name: "",
+  });
 
-  const [addPeriode, { isSuccess, isLoading, isError, reset }] =
-    useAddPeriodeMutation();
+  const [addExaminer, { isLoading, isSuccess, isError, reset }] =
+    useAddExaminerMutation();
 
   const addHandler = (e) => {
     e.preventDefault();
 
-    const data = { id, name };
-
     toast.promise(
-      addPeriode(data)
+      addExaminer(formData)
         .unwrap()
         .then((res) => res.message),
       {
-        loading: "Menyimpan data...",
+        loading: "Memuat...",
         success: (message) => message,
-        error: (err) => err.data.message,
+        error: (error) => error.data?.message,
       }
     );
   };
 
   const cancel = () => {
     setDetail({});
-    setId("");
-    setName("");
+    setFormData({
+      id: "",
+      name: "",
+    });
   };
 
   useEffect(() => {
-    if (isSuccess) {
-      reset();
-      setDetail({});
-      setId("");
-      setName("");
-    }
-
-    if (isError) {
+    if (isSuccess || isError) {
+      cancel();
       reset();
     }
   }, [isSuccess, isError]);
 
   useEffect(() => {
     if (detail) {
-      setId(detail.id);
-      setName(detail.name);
+      setFormData({
+        id: detail.id,
+        name: detail.name,
+      });
     }
   }, [detail]);
 
   return (
     <form
       onSubmit={addHandler}
-      className='rounded shadow bg-white p-2 border d-flex flex-column gap-2'
+      className='rounded border shadow bg-white p-2 d-flex flex-column gap-2'
     >
-      <p className='m-0 h6'>Periode</p>
+      <p className='m-0 h6'>Penguji</p>
 
       <input
         type='text'
-        name='periode'
-        id='periode'
-        className='form-control'
-        placeholder='Periode'
+        name='name'
+        id='name'
         required
-        value={name || ""}
-        onChange={(e) => setName(e.target.value)}
+        className='form-control'
+        placeholder='Nama Penguji'
+        value={formData.name || ""}
+        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
       />
 
       <div className='d-flex justify-content-end gap-2'>

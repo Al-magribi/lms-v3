@@ -2,11 +2,11 @@ import React, { useState } from "react";
 import Layout from "../../../components/layout/Layout";
 import Form from "./Form";
 import TableData from "./TableData";
-
-const TahfizSurah = () => {
+const TahfizExaminer = () => {
   const [detail, setDetail] = useState({});
+
   return (
-    <Layout title={"Tahfiz - Daftar Surah"} levels={["tahfiz"]}>
+    <Layout title={"Penguji"} levels={["tahfiz"]}>
       <div className='row g-2'>
         <div className='col-lg-3 col-12'>
           <Form detail={detail} setDetail={setDetail} />
@@ -19,4 +19,4 @@ const TahfizSurah = () => {
   );
 };
 
-export default TahfizSurah;
+export default TahfizExaminer;

@@ -1,75 +1,66 @@
-import React, { useEffect, useState } from "react";
-import {
-  useDeleteGradeMutation,
-  useGetGradeQuery,
-} from "../../../controller/api/admin/ApiGrade";
-import { toast } from "react-hot-toast";
+import React, { useState } from "react";
 import Table from "../../../components/table/Table";
+import {
+  useGetSurahQuery,
+  useDeleteSurahMutation,
+} from "../../../controller/api/tahfiz/ApiQuran";
+import { toast } from "react-hot-toast";
 
 const TableData = ({ setDetail }) => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState("");
 
-  const { data: rawData = {}, isLoading: dataLoading } = useGetGradeQuery({
+  const { data: rawData = {}, isLoading } = useGetSurahQuery({
     page,
     limit,
     search,
   });
-  const { grades = [], totalData, totalPages } = rawData;
-  const [deleteGrade, { isSuccess, isLoading, error, reset }] =
-    useDeleteGradeMutation();
+  const { result = [], totalData, totalPages } = rawData;
+  const [deleteSurah, { isLoading: isDeleting }] = useDeleteSurahMutation();
 
-  const deleteHandler = (id) => {
+  const handleDelete = async (id) => {
     toast.promise(
-      deleteGrade(id)
+      deleteSurah(id)
         .unwrap()
         .then((res) => res.message),
       {
-        loading: "Memproses...",
+        loading: "Menghapus...",
         success: (message) => message,
         error: (err) => err.data.message,
       }
     );
   };
 
-  useEffect(() => {
-    if (isSuccess) {
-      reset();
-    }
-
-    if (error) {
-      reset();
-    }
-  }, [isSuccess, error]);
-
   return (
     <Table
+      isLoading={isLoading}
+      totalData={totalData}
+      totalPages={totalPages}
       page={page}
       setPage={setPage}
       setLimit={setLimit}
       setSearch={setSearch}
-      totalData={totalData}
-      totalPages={totalPages}
-      isLoading={dataLoading}
     >
-      <table className='table table-bordered table-striped table-hover'>
+      <table className='mb-0 table table-hover table-striped table-bordered'>
         <thead>
           <tr>
             <th className='text-center'>No</th>
-            <th className='text-center'>Satuan</th>
-            <th className='text-center'>Tingkat</th>
+            <th className='text-center'>Nama Surah</th>
+            <th className='text-center'>Jumlah Ayat</th>
+            <th className='text-center'>Jumlah Baris</th>
             <th className='text-center'>Aksi</th>
           </tr>
         </thead>
         <tbody>
-          {grades?.map((item, i) => (
-            <tr key={i}>
+          {result.map((item, index) => (
+            <tr key={item.id}>
               <td className='text-center align-middle'>
-                {(page - 1) * limit + i + 1}
+                {(page - 1) * limit + index + 1}
               </td>
-              <td className='align-middle'>{item.homebase}</td>
-              <td className='text-center align-middle'>{item.name}</td>
+              <td className='align-middle'>{item.name}</td>
+              <td className='text-center align-middle'>{item.ayat}</td>
+              <td className='text-center align-middle'>{item.lines}</td>
               <td className='text-center align-middle'>
                 <div className='d-flex justify-content-center gap-2'>
                   <button
@@ -80,10 +71,10 @@ const TableData = ({ setDetail }) => {
                   </button>
                   <button
                     className='btn btn-sm btn-danger'
-                    disabled={isLoading}
-                    onClick={() => deleteHandler(item.id)}
+                    disabled={isDeleting}
+                    onClick={() => handleDelete(item.id)}
                   >
-                    <i className='bi bi-folder-minus'></i>
+                    <i className='bi bi-trash'></i>
                   </button>
                 </div>
               </td>
