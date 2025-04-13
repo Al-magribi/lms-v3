@@ -1,12 +1,81 @@
 import React from "react"
 import Layout from "../../../components/layout/Layout"
+import { useGetAchievementQuery } from "../../../controller/api/tahfiz/ApiReport"
+import GaugeChart from "react-gauge-chart"
 
 const TahfizDash = () => {
+	const { data } = useGetAchievementQuery()
+
+	console.log(data)
+
+	const renderGradeGauges = () => {
+		if (!data) return null
+
+		return data.map((item, index) => (
+			<div key={index} className='col-12 mb-4'>
+				<div className='card'>
+					<div className='card-header'>
+						<h5 className='mb-0'>
+							{item.homebase} {item.periode}
+						</h5>
+					</div>
+					<div className='card-body'>
+						<div className='row'>
+							{item.grade.map((grade, gradeIndex) => {
+								const percentage = grade.achievement // Langsung menggunakan achievement karena sudah dalam skala 0-100
+
+								return (
+									<div key={gradeIndex} className='col-lg-4 col-md-6 mb-3'>
+										<div className='card h-100'>
+											<div className='card-body text-center'>
+												<h6 className='card-title'>Kelas {grade.name}</h6>
+												<GaugeChart
+													id={`gauge-chart-${index}-${gradeIndex}`}
+													percent={percentage / 100} // Konversi ke skala 0-1 untuk chart
+													arcWidth={0.3}
+													colors={["#ff0048", "#ff7809", "#66ff2e"]}
+													textColor='#000000'
+													needleColor='#345243'
+													needleBaseColor='#345243'
+													animate={true}
+													formatTextValue={(value) =>
+														`${grade.achievement.toFixed(1)}%`
+													}
+												/>
+												<div className='mt-2'>
+													<p className='mb-1'>
+														Pencapaian: {grade.achievement.toFixed(1)}%
+													</p>
+													<div className='border-top pt-2'>
+														<p className='mb-1'>Target Juz:</p>
+														{grade.target.map((target, idx) => (
+															<p key={idx} className='mb-1 small'>
+																{target.juz} ({target.verses} ayat)
+															</p>
+														))}
+													</div>
+													<div className='border-top pt-2 d-flex gap-2'>
+														<p className='mb-1'>Selesai: {grade.completed}</p>
+														<p className='mb-0'>
+															Belum Selesai: {grade.uncompleted}
+														</p>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+								)
+							})}
+						</div>
+					</div>
+				</div>
+			</div>
+		))
+	}
+
 	return (
 		<Layout title={"Tahfiz - Dashboard"} levels={["tahfiz"]}>
-			<div className='flex flex-col gap-4'>
-				<h1 className='text-2xl font-bold'>Tahfiz - Dashboard</h1>
-			</div>
+			<div className='row g-2'>{renderGradeGauges()}</div>
 		</Layout>
 	)
 }
