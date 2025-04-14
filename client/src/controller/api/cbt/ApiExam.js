@@ -44,6 +44,13 @@ export const ApiExam = createApi({
 			}),
 			invalidatesTags: ["exam"],
 		}),
+		getExamsByClass: builder.query({
+			query: ({ classid, page, limit, search }) => ({
+				url: "/get-exam-by-class",
+				method: "GET",
+				params: { classid, page, limit, search },
+			}),
+		}),
 	}),
 })
 
@@ -53,4 +60,5 @@ export const {
 	useGetExamsQuery,
 	useDeleteExamMutation,
 	useChangeStatusMutation,
+	useGetExamsByClassQuery,
 } = ApiExam

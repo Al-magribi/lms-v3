@@ -56,8 +56,8 @@ const TableBank = ({ setDetail }) => {
 						<th className='text-center'>No</th>
 						<th className='text-center'>Guru</th>
 						<th className='text-center'>Mata Pelajaran</th>
-						<th className='text-center'>Jenis</th>
 						<th className='text-center'>Bank Soal</th>
+						<th className='text-center'>Jenis</th>
 						<th className='text-center'>Soal</th>
 						<th className='text-center'>Aksi</th>
 					</tr>
@@ -71,27 +71,33 @@ const TableBank = ({ setDetail }) => {
 								</td>
 								<td className='align-middle'>{item.teacher_name}</td>
 								<td className='align-middle'>{item.subject_name}</td>
-								<td className='text-center align-middle'>{item.btype}</td>
 								<td className='align-middle'>{item.name}</td>
 								<td className='text-center align-middle'>
-									{item.question_count}
+									<p className='m-0 badge bg-success'>
+										{item.btype.toUpperCase()}
+									</p>
+								</td>
+								<td className='text-center align-middle'>
+									<p className='m-0 badge bg-secondary'>
+										{`${item.question_count} Soal`}
+									</p>
 								</td>
 								<td className='text-center align-middle'>
 									<div className='d-flex justify-content-center gap-1'>
 										<button
-											className='btn btn-primary'
+											className='btn btn-sm btn-primary'
 											onClick={() =>
 												goToLink(item.subject_name, item.name, item.id)
 											}>
 											<i className='bi bi-folder-fill'></i>
 										</button>
 										<button
-											className='btn btn-warning'
+											className='btn btn-sm btn-warning'
 											onClick={() => setDetail(item)}>
 											<i className='bi bi-pencil-square'></i>
 										</button>
 										<button
-											className='btn btn-danger'
+											className='btn btn-sm btn-danger'
 											disabled={isLoading}
 											onClick={() => deleteHandler(item.id)}>
 											<i className='bi bi-folder-minus'></i>

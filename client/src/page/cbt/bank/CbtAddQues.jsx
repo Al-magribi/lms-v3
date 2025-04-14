@@ -27,8 +27,6 @@ const CbtAddQues = () => {
 		skip: !questionid,
 	})
 
-	console.log(detail)
-
 	const [addQuestion, { isSuccess, isLoading, isError, reset }] =
 		useAddQuestionMutation()
 
@@ -164,9 +162,9 @@ const CbtAddQues = () => {
 						onChange={(e) => setPoin(e.target.value)}
 					/>
 				</div>
-				<div className='col-lg-3 col-12 text-end'>
+				<div className='col-lg-3 col-12 d-flex align-items-center justify-content-start'>
 					<button
-						className='btn btn-success shadow'
+						className='btn btn-sm btn-success shadow'
 						disabled={isLoading}
 						onClick={addHandler}>
 						Simpan

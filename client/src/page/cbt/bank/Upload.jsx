@@ -93,7 +93,7 @@ const Upload = ({ bankid }) => {
 				<div className='modal-content'>
 					<div className='modal-header'>
 						<h5 className='modal-title' id='staticBackdropLabel'>
-							Upload Template
+							Upload Soal
 						</h5>
 						<button
 							type='button'
@@ -114,14 +114,14 @@ const Upload = ({ bankid }) => {
 					<div className='modal-footer'>
 						<button
 							type='button'
-							className='btn btn-secondary'
+							className='btn btn-sm btn-secondary'
 							data-bs-dismiss='modal'
 							onClick={cancel}>
 							Batal
 						</button>
 						<button
 							type='button'
-							className='btn btn-primary'
+							className='btn btn-sm btn-primary'
 							disabled={isLoading}
 							onClick={uploadData}>
 							Upload

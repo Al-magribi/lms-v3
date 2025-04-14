@@ -303,4 +303,41 @@ router.put("/change-status", authorize("admin"), async (req, res) => {
 		client.release()
 	}
 })
+
+router.get("/get-exam-by-class", authorize("student"), async (req, res) => {
+	const client = await pool.connect()
+	try {
+		const { classid, page, limit, search } = req.query
+		const offset = (page - 1) * limit
+
+		const count = await client.query(
+			`SELECT COUNT(*) FROM c_exam 
+			WHERE id IN (SELECT exam FROM c_class WHERE classid = $1)
+			AND name ILIKE $2`,
+			[classid, `%${search}%`]
+		)
+
+		const totalData = parseInt(count.rows[0].count)
+		const totalPages = Math.ceil(totalData / limit)
+
+		const data = await client.query(
+			`SELECT c_exam.*, u_teachers.name AS teacher_name
+			FROM c_exam
+			LEFT JOIN u_teachers ON u_teachers.id = c_exam.teacher
+			WHERE c_exam.id IN (SELECT exam FROM c_class WHERE classid = $1)
+			AND (c_exam.name ILIKE $2 OR u_teachers.name ILIKE $2)
+			ORDER BY c_exam.name ASC
+			LIMIT $3 OFFSET $4`,
+			[classid, `%${search}%`, limit, offset]
+		)
+
+		res.status(200).json({ exams: data.rows, totalData, totalPages })
+	} catch (error) {
+		console.log(error)
+		res.status(500).json({ message: error.message })
+	} finally {
+		client.release()
+	}
+})
+
 export default router

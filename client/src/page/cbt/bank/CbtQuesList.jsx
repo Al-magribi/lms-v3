@@ -60,20 +60,36 @@ const CbtQuesList = () => {
 					</div>
 					<div className='col-lg-6 col-12'>
 						<div className='d-flex flex-wrap gap-2 justify-content-end'>
-							<button className='btn btn-secondary' onClick={download}>
+							<button
+								className='btn btn-sm btn-secondary'
+								data-toggle='tooltip'
+								data-placement='bottom'
+								title='Template'
+								onClick={download}>
 								<i className='bi bi-filetype-xlsx'></i>
 							</button>
 							<button
-								className='btn btn-primary'
+								className='btn btn-sm btn-primary'
+								data-toggle='tooltip'
+								data-placement='bottom'
+								title='Upload'
 								data-bs-toggle='modal'
 								data-bs-target='#upload'>
 								<i className='bi bi-file-earmark-arrow-up'></i>
 							</button>
-							<button className='btn btn-success' onClick={goToLink}>
+							<button
+								data-toggle='tooltip'
+								data-placement='bottom'
+								title='Tambah Soal'
+								className='btn btn-sm btn-success'
+								onClick={goToLink}>
 								<i className='bi bi-file-earmark-plus'></i>
 							</button>
 							<button
-								className='btn btn-danger'
+								className='btn btn-sm btn-danger'
+								data-toggle='tooltip'
+								data-placement='bottom'
+								title='Hapus Soal'
 								disabled={isLoading}
 								onClick={clearHandler}>
 								<i className='bi bi-folder-x'></i>
