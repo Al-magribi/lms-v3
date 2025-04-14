@@ -5,8 +5,10 @@ import {
   useGetSubjectQuery,
 } from "../../../controller/api/admin/ApiSubject";
 import { toast } from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 const TableData = ({ setDetail }) => {
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState("");
@@ -31,6 +33,11 @@ const TableData = ({ setDetail }) => {
         error: (err) => err.data.message,
       }
     );
+  };
+
+  const goToLink = (name, id) => {
+    const formattedName = name.replace(/\s+/g, "-");
+    navigate(`/pelajaran/${formattedName}/${id}`);
   };
 
   useEffect(() => {
@@ -101,7 +108,10 @@ const TableData = ({ setDetail }) => {
                 </td>
                 <td className='text-cente align-middle'>
                   <div className='d-flex justify-content-center gap-2'>
-                    <button className='btn btn-sm btn-primary'>
+                    <button
+                      className='btn btn-sm btn-primary'
+                      onClick={() => goToLink(subject.name, subject.id)}
+                    >
                       <i className='bi bi-three-dots-vertical'></i>
                     </button>
                     <button

@@ -14,6 +14,18 @@ const ChapterCard = ({ item, index, moveCard, id, setDetail }) => {
   const [deleteChapter, { isSuccess, isLoading, isError, reset }] =
     useDeleteChapterMutation();
 
+  // Group classes by grade
+  const groupedClasses = React.useMemo(() => {
+    if (!item.class) return {};
+    return item.class.reduce((acc, cls) => {
+      if (!acc[cls.grade]) {
+        acc[cls.grade] = [];
+      }
+      acc[cls.grade].push(cls);
+      return acc;
+    }, {});
+  }, [item.class]);
+
   const [{ handlerId }, drop] = useDrop({
     accept: "chapter",
     collect(monitor) {
@@ -100,7 +112,7 @@ const ChapterCard = ({ item, index, moveCard, id, setDetail }) => {
       style={{ opacity }}
       data-handler-id={handlerId}
     >
-      <div className={`card ${isDragging ? "shadow-lg" : ""}`}>
+      <div className={`card ${isDragging ? "shadow-lg" : "shadow"}`}>
         <div className='card-header d-flex justify-content-between'>
           <ul className='nav nav-tabs card-header-tabs'>
             <li className='nav-item'>
@@ -161,22 +173,45 @@ const ChapterCard = ({ item, index, moveCard, id, setDetail }) => {
             <ContentList contents={item.contents} chapterId={item.chapter_id} />
           )}
         </div>
-        <div className='card-footer text-body-secondary d-flex gap-2 flex-column'>
-          <div className='d-flex gap-2 flex-wrap'>
-            <p className='m-0'>
-              Materi Pembelajaran <span>{item.content}</span>
-            </p>
-            <p className='m-0'>
-              File <span>{item.file}</span>
-            </p>
-            <p className='m-0'>
-              Video <span>{item.video}</span>
-            </p>
-          </div>
+        <div className='card-footer text-body-secondary'>
+          <div className='d-flex flex-column flex-wrap gap-2'>
+            <div className='d-flex gap-2 flex-wrap align-items-center'>
+              <p className='m-0 mb-1'>
+                <i className='bi bi-person-workspace me-1'></i>
+                Guru Pengampu: <strong>{item.teacher_name}</strong>
+              </p>
 
-          <p className='m-0'>
-            Guru Pengampu <strong>{item.teacher_name}</strong>
-          </p>
+              <p className='m-0'>
+                <i className='bi bi-book me-1'></i>
+                Materi <span className='badge bg-primary'>{item.content}</span>
+              </p>
+              <p className='m-0'>
+                <i className='bi bi-file-earmark me-1'></i>
+                File <span className='badge bg-info'>{item.file}</span>
+              </p>
+              <p className='m-0'>
+                <i className='bi bi-camera-video me-1'></i>
+                Video <span className='badge bg-success'>{item.video}</span>
+              </p>
+            </div>
+
+            {Object.entries(groupedClasses).map(([grade, classes]) => (
+              <div key={grade} className='mb-1 d-flex gap-4'>
+                <p className='m-0'>
+                  <i className='bi bi-mortarboard me-1'></i>
+                  Tingkat: <strong>{grade}</strong>
+                </p>
+
+                <p className='m-0'>
+                  <i className='bi bi-people me-1'></i>
+                  Kelas:
+                  <strong className='ms-2'>
+                    {classes.map((cls) => cls.name).join(", ")}
+                  </strong>
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
       <ModalAddContent chapter={item} modalId={`content-${item.chapter_id}`} />

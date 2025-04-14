@@ -49,8 +49,8 @@ export const TeacherMenus = [
 ];
 
 export const StudentMenus = [
+  { label: "Pelajaran", link: "/siswa-pelajaran", icon: <Gi.GiOpenFolder /> },
   { label: "Ujian", link: "/siswa-daftar-ujian", icon: <Bs.BsLaptopFill /> },
-  { label: "Mata Pelajaran", link: "/siswa-mapel", icon: <Gi.GiOpenFolder /> },
 ];
 
 export const TahfizMenus = [

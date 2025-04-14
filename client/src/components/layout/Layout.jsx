@@ -82,103 +82,105 @@ const Layout = ({ children, title, desc, levels }) => {
   }, [user, isSignin, levels]);
 
   return (
-    <div
-      className='container-fluid d-flex flex-column bg-light'
-      style={{ minHeight: "100vh" }}
-    >
-      {/* Navbar */}
-      <div className='container-fluid bg-info fixed-top'>
-        <nav
-          className='navbar navbar-expand-lg'
-          aria-label='Thirteenth navbar example'
-        >
-          <div className='container-fluid'>
-            <a
-              className='navbar-brand col-lg-2 me-0 text-white'
-              href={
-                level === "center"
-                  ? center
-                  : level === "admin"
-                  ? admin
-                  : level === "teacher"
-                  ? teacher
-                  : level === "student"
-                  ? student
-                  : level === "parent"
-                  ? parent
-                  : tahfiz
-              }
-            >
-              {user?.name}
-            </a>
-            <button
-              className='navbar-toggler'
-              type='button'
-              data-bs-toggle='collapse'
-              data-bs-target='#navbarsExample11'
-              aria-controls='navbarsExample11'
-              aria-expanded='false'
-              aria-label='Toggle navigation'
-            >
-              <span className='navbar-toggler-icon'></span>
-            </button>
-            <div
-              className='collapse navbar-collapse d-lg-flex'
-              id='navbarsExample11'
-            >
-              <div className='navbar-nav col-12 justify-content-lg-end d-flex gap-2'>
-                {(level === "center"
-                  ? CenterMenus
-                  : level === "admin"
-                  ? AdminMenus
-                  : level === "teacher"
-                  ? TeacherMenus
-                  : level === "student"
-                  ? StudentMenus
-                  : level === "parent"
-                  ? ParentMenus
-                  : level === "tahfiz"
-                  ? TahfizMenus
-                  : StudentMenus
-                ).map((menu, i) => (
+    <>
+      <div
+        className='container-fluid d-flex flex-column bg-light'
+        style={{ minHeight: "100vh" }}
+      >
+        {/* Navbar */}
+        <div className='container-fluid bg-info fixed-top'>
+          <nav
+            className='navbar navbar-expand-lg'
+            aria-label='Thirteenth navbar example'
+          >
+            <div className='container-fluid'>
+              <a
+                className='navbar-brand col-lg-2 me-0 text-white'
+                href={
+                  level === "center"
+                    ? center
+                    : level === "admin"
+                    ? admin
+                    : level === "teacher"
+                    ? teacher
+                    : level === "student"
+                    ? student
+                    : level === "parent"
+                    ? parent
+                    : tahfiz
+                }
+              >
+                {user?.name}
+              </a>
+              <button
+                className='navbar-toggler'
+                type='button'
+                data-bs-toggle='collapse'
+                data-bs-target='#navbarsExample11'
+                aria-controls='navbarsExample11'
+                aria-expanded='false'
+                aria-label='Toggle navigation'
+              >
+                <span className='navbar-toggler-icon'></span>
+              </button>
+              <div
+                className='collapse navbar-collapse d-lg-flex'
+                id='navbarsExample11'
+              >
+                <div className='navbar-nav col-12 justify-content-lg-end d-flex gap-2'>
+                  {(level === "center"
+                    ? CenterMenus
+                    : level === "admin"
+                    ? AdminMenus
+                    : level === "teacher"
+                    ? TeacherMenus
+                    : level === "student"
+                    ? StudentMenus
+                    : level === "parent"
+                    ? ParentMenus
+                    : level === "tahfiz"
+                    ? TahfizMenus
+                    : StudentMenus
+                  ).map((menu, i) => (
+                    <button
+                      key={i}
+                      className='btn btn-light d-flex align-items-center gap-1'
+                      onClick={() => goToLink(menu.link)}
+                    >
+                      {menu.icon}
+                      {menu.label}
+                    </button>
+                  ))}
                   <button
-                    key={i}
-                    className='btn btn-light d-flex align-items-center gap-1'
-                    onClick={() => goToLink(menu.link)}
+                    className='btn btn-danger'
+                    disabled={isLoading}
+                    onClick={logoutHandler}
                   >
-                    {menu.icon}
-                    {menu.label}
+                    <Io.IoMdLogOut />
                   </button>
-                ))}
-                <button
-                  className='btn btn-danger'
-                  disabled={isLoading}
-                  onClick={logoutHandler}
-                >
-                  <Io.IoMdLogOut />
-                </button>
+                </div>
               </div>
             </div>
-          </div>
-        </nav>
-      </div>
-      {/* Main Content */}
-      <div
-        className='container-fluid'
-        style={{
-          marginTop: "60px",
-          height: dynamicHeight,
-          overflow: "auto",
-        }}
-      >
-        <Meta title={title} desc={desc} />
-        {children}
+          </nav>
+        </div>
+        {/* Main Content */}
+        <div
+          className='container-fluid'
+          style={{
+            marginTop: "60px",
+            height: dynamicHeight,
+            overflow: "auto",
+          }}
+        >
+          <Meta title={title} desc={desc} />
+          {children}
+        </div>
       </div>
       {/* Footer */}
-      <div className='container-fluid p-2 bg-info fixed-bottom text-center text-white'>
+      <div className='container-fluid p-2 bg-info text-center text-white'>
         LMS | NIBS
       </div>
-    </div>
+    </>
   );
 };
 
