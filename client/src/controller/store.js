@@ -19,6 +19,7 @@ import { ApiSubject } from "./api/admin/ApiSubject";
 // CBT
 import { ApiBank } from "./api/cbt/ApiBank";
 import { ApiExam } from "./api/cbt/ApiExam";
+import { ApiAnswer } from "./api/cbt/ApiAnswer";
 
 // LMS
 import { ApiChapter } from "./api/lms/ApiChapter";
@@ -32,6 +33,9 @@ import { ApiReport } from "./api/tahfiz/ApiReport";
 
 // Dashboard
 import { ApiDashboard } from "./api/dashboard/ApiDashboard";
+
+// Logs
+import { ApiLog } from "./api/log/ApiLog";
 
 const store = configureStore({
   reducer: {
@@ -50,6 +54,7 @@ const store = configureStore({
 
     [ApiBank.reducerPath]: ApiBank.reducer,
     [ApiExam.reducerPath]: ApiExam.reducer,
+    [ApiAnswer.reducerPath]: ApiAnswer.reducer,
 
     [ApiChapter.reducerPath]: ApiChapter.reducer,
     [ApiLms.reducerPath]: ApiLms.reducer,
@@ -61,6 +66,8 @@ const store = configureStore({
     [ApiReport.reducerPath]: ApiReport.reducer,
 
     [ApiDashboard.reducerPath]: ApiDashboard.reducer,
+
+    [ApiLog.reducerPath]: ApiLog.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat([
@@ -78,6 +85,7 @@ const store = configureStore({
 
       ApiBank.middleware,
       ApiExam.middleware,
+      ApiAnswer.middleware,
 
       ApiChapter.middleware,
       ApiLms.middleware,
@@ -88,6 +96,8 @@ const store = configureStore({
       ApiReport.middleware,
 
       ApiDashboard.middleware,
+
+      ApiLog.middleware,
     ]),
 });
 

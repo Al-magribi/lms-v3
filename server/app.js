@@ -1,6 +1,7 @@
 import express from "express";
 import cookieParser from "cookie-parser";
 import bodyParser from "body-parser";
+import useragent from "express-useragent";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -28,7 +29,7 @@ import routerSubject from "./router/admin/routerSubject.js";
 // CBT
 import routerBank from "./router/cbt/routerBank.js";
 import routerExam from "./router/cbt/routerExam.js";
-
+import routerAnswer from "./router/cbt/routerAnswer.js";
 // LMS
 import routerChapter from "./router/lms/routerChapter.js";
 import routerLmsStudent from "./router/lms/routerLms.js";
@@ -43,10 +44,13 @@ import routerReport from "./router/tahfiz/routerReport.js";
 // Dashboard
 import routerDash from "./router/dashboard/routerDash.js";
 
+// Logs
+import routerLogs from "./router/logs/routersLogs.js";
+
 app.use(cookieParser());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-
+app.use(useragent.express());
 // Static Folder
 app.use("/assets", express.static(path.join(__dirname, "assets")));
 
@@ -65,7 +69,7 @@ app.use("/api/admin/subject", routerSubject);
 
 app.use("/api/bank", routerBank);
 app.use("/api/exam", routerExam);
-
+app.use("/api/answer", routerAnswer);
 app.use("/api/chapter", routerChapter);
 app.use("/api/lms", routerLmsStudent);
 
@@ -76,5 +80,7 @@ app.use("/api/metrics", routerMetrics);
 app.use("/api/report", routerReport);
 
 app.use("/api/dash", routerDash);
+
+app.use("/api/logs", routerLogs);
 
 export default app;
