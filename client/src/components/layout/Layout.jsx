@@ -7,7 +7,7 @@ import {
 	TeacherMenus,
 	TahfizMenus,
 } from "../menu/Menus"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useLocation } from "react-router-dom"
 import { useEffect, useState } from "react"
 import { toast } from "react-hot-toast"
 import { setLogout } from "../../controller/slice/AuthSlice"
@@ -24,6 +24,7 @@ const tahfiz = "/tahfiz-dashboard"
 const Layout = ({ children, title, desc, levels }) => {
 	const dispatch = useDispatch()
 	const navigate = useNavigate()
+	const location = useLocation()
 	const [windowWidth, setWindowWidth] = useState(window.innerWidth)
 	const { user, isSignin } = useSelector((state) => state.auth)
 	const [logout, { isSuccess, isLoading, error, reset }] = useLogoutMutation()
@@ -81,6 +82,10 @@ const Layout = ({ children, title, desc, levels }) => {
 		return () => clearTimeout(timeout)
 	}, [user, isSignin, levels])
 
+	const isActiveMenu = (menuLink) => {
+		return location.pathname === menuLink
+	}
+
 	return (
 		<>
 			<div
@@ -123,34 +128,38 @@ const Layout = ({ children, title, desc, levels }) => {
 								className='collapse navbar-collapse d-lg-flex'
 								id='navbarsExample11'>
 								<div className='navbar-nav col-12 justify-content-lg-end d-flex gap-2'>
-									{(level === "center"
-										? CenterMenus
-										: level === "admin"
-										? AdminMenus
-										: level === "teacher"
-										? TeacherMenus
-										: level === "student"
-										? StudentMenus
-										: level === "parent"
-										? ParentMenus
-										: level === "tahfiz"
-										? TahfizMenus
-										: StudentMenus
-									).map((menu, i) => (
+									<div className='btn-group'>
+										{(level === "center"
+											? CenterMenus
+											: level === "admin"
+											? AdminMenus
+											: level === "teacher"
+											? TeacherMenus
+											: level === "student"
+											? StudentMenus
+											: level === "parent"
+											? ParentMenus
+											: level === "tahfiz"
+											? TahfizMenus
+											: StudentMenus
+										).map((menu, i) => (
+											<button
+												key={i}
+												className={`btn d-flex align-items-center gap-1 ${
+													isActiveMenu(menu.link) ? "btn-dark" : "btn-light"
+												}`}
+												onClick={() => goToLink(menu.link)}>
+												{menu.icon}
+												{menu.label}
+											</button>
+										))}
 										<button
-											key={i}
-											className='btn btn-light d-flex align-items-center gap-1'
-											onClick={() => goToLink(menu.link)}>
-											{menu.icon}
-											{menu.label}
+											className='btn btn-danger'
+											disabled={isLoading}
+											onClick={logoutHandler}>
+											<Io.IoMdLogOut />
 										</button>
-									))}
-									<button
-										className='btn btn-danger'
-										disabled={isLoading}
-										onClick={logoutHandler}>
-										<Io.IoMdLogOut />
-									</button>
+									</div>
 								</div>
 							</div>
 						</div>

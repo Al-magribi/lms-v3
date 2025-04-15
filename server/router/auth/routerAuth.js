@@ -1,145 +1,144 @@
-import express from "express";
-import { pool } from "../../config/config.js";
-import { authorize } from "../../middleware/auth.js";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+import express from "express"
+import { pool } from "../../config/config.js"
+import { authorize } from "../../middleware/auth.js"
+import bcrypt from "bcrypt"
+import jwt from "jsonwebtoken"
 
-const router = express.Router();
+const router = express.Router()
 
 router.post("/signin", async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const { nis, username, email, name, password } = req.body;
+	const client = await pool.connect()
+	try {
+		const { nis, username, email, name, password } = req.body
 
-    const userTypes = {
-      nis: "u_students",
-      username: "u_teachers",
-      email: "u_admin",
-      name: "u_parents",
-    };
+		const userTypes = {
+			nis: "u_students",
+			username: "u_teachers",
+			email: "u_admin",
+			name: "u_parents",
+		}
 
-    const key = Object.keys(userTypes).find((k) => req.body[k]);
-    if (!key)
-      return res.status(400).json({ message: "Kredensial tidak valid" });
+		const key = Object.keys(userTypes).find((k) => req.body[k])
+		if (!key) return res.status(400).json({ message: "Kredensial tidak valid" })
 
-    const data = await client.query(
-      `SELECT * FROM ${userTypes[key]} WHERE ${key} = $1`,
-      [req.body[key]]
-    );
+		const data = await client.query(
+			`SELECT * FROM ${userTypes[key]} WHERE ${key} = $1`,
+			[req.body[key]]
+		)
 
-    if (data.rowCount === 0)
-      return res.status(401).json({ message: "User tidak ditemukan" });
+		if (data.rowCount === 0)
+			return res.status(401).json({ message: "User tidak ditemukan" })
 
-    const user = data.rows[0];
-    if ((user.level === "admin" || user.level === "parent") && !user.isactive) {
-      return res.status(400).json({ message: "Email belum terverifikasi" });
-    }
+		const user = data.rows[0]
+		if ((user.level === "admin" || user.level === "parent") && !user.isactive) {
+			return res.status(400).json({ message: "Email belum terverifikasi" })
+		}
 
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) return res.status(401).json({ message: "Password salah" });
+		const match = await bcrypt.compare(password, user.password)
+		if (!match) return res.status(401).json({ message: "Password salah" })
 
-    const token = jwt.sign(
-      { id: user.id, level: user.level },
-      process.env.JWT,
-      { expiresIn: "7d" }
-    );
-    res.cookie("token", token, {
-      httpOnly: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+		const token = jwt.sign(
+			{ id: user.id, level: user.level },
+			process.env.JWT,
+			{ expiresIn: "7d" }
+		)
+		res.cookie("token", token, {
+			httpOnly: true,
+			maxAge: 7 * 24 * 60 * 60 * 1000,
+		})
 
-    // Log the signin activity for non-parent users
-    if (user.level !== "parent") {
-      const logData = {
-        student: user.level === "student" ? user.id : null,
-        teacher: user.level === "teacher" ? user.id : null,
-        admin:
-          user.level === "admin" ||
-          user.level === "tahfiz" ||
-          user.level === "center"
-            ? user.id
-            : null,
-        ip: req.ip,
-        browser: req.headers["user-agent"],
-        islogin: true,
-        ispenalty: null,
-        isactive: null,
-        isdone: null,
-        action: "login",
-      };
+		// Log the signin activity for non-parent users
+		if (user.level !== "parent") {
+			const logData = {
+				student: user.level === "student" ? user.id : null,
+				teacher: user.level === "teacher" ? user.id : null,
+				admin:
+					user.level === "admin" ||
+					user.level === "tahfiz" ||
+					user.level === "center"
+						? user.id
+						: null,
+				ip: req.ip,
+				browser: req.headers["user-agent"],
+				islogin: true,
+				ispenalty: null,
+				isactive: null,
+				isdone: null,
+				action: "login",
+			}
 
-      await client.query(
-        `INSERT INTO logs 
+			await client.query(
+				`INSERT INTO logs 
 		(student, teacher, admin, ip, browser, islogin, ispenalty, isactive, isdone, action)
 				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-        [
-          logData.student,
-          logData.teacher,
-          logData.admin,
-          logData.ip,
-          logData.browser,
-          logData.islogin,
-          logData.ispenalty,
-          logData.isactive,
-          logData.isdone,
-          logData.action,
-        ]
-      );
-    }
+				[
+					logData.student,
+					logData.teacher,
+					logData.admin,
+					logData.ip,
+					logData.browser,
+					logData.islogin,
+					logData.ispenalty,
+					logData.isactive,
+					logData.isdone,
+					logData.action,
+				]
+			)
+		}
 
-    res.status(200).json({ message: "Otentikasi Berhasil", user });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: error.message });
-  } finally {
-    client.release();
-  }
-});
+		res.status(200).json({ message: "Otentikasi Berhasil", user })
+	} catch (error) {
+		console.error(error)
+		res.status(500).json({ message: error.message })
+	} finally {
+		client.release()
+	}
+})
 
 router.get(
-  "/load-user",
-  authorize("admin", "student", "teacher", "parent", "center", "tahfiz"),
-  async (req, res) => {
-    const client = await pool.connect();
-    try {
-      const token = req.cookies.token;
-      const { level, id } = req.user;
+	"/load-user",
+	authorize("admin", "student", "teacher", "parent", "center", "tahfiz"),
+	async (req, res) => {
+		const client = await pool.connect()
+		try {
+			const token = req.cookies.token
+			const { level, id } = req.user
 
-      if (!token) {
-        return res.status(401).json({
-          message: "Token tidak ditemukan, login kembali.",
-        });
-      }
+			if (!token) {
+				return res.status(401).json({
+					message: "Token tidak ditemukan, login kembali.",
+				})
+			}
 
-      try {
-        jwt.verify(token, process.env.JWT);
-      } catch (err) {
-        return res.status(401).json({
-          message: "Token kadaluarsa, login kembali.",
-        });
-      }
+			try {
+				jwt.verify(token, process.env.JWT)
+			} catch (err) {
+				return res.status(401).json({
+					message: "Token kadaluarsa, login kembali.",
+				})
+			}
 
-      // Query untuk setiap level user
-      const queries = {
-        tahfiz: {
-          text: `SELECT * FROM u_admin WHERE id = $1`,
-          transform: (row) => row,
-        },
-        center: {
-          text: `SELECT * FROM u_admin WHERE id = $1`,
-          transform: (row) => row,
-        },
-        admin: {
-          text: `SELECT u_admin.id, u_admin.name, u_admin.email,
+			// Query untuk setiap level user
+			const queries = {
+				tahfiz: {
+					text: `SELECT * FROM u_admin WHERE id = $1`,
+					transform: (row) => row,
+				},
+				center: {
+					text: `SELECT * FROM u_admin WHERE id = $1`,
+					transform: (row) => row,
+				},
+				admin: {
+					text: `SELECT u_admin.id, u_admin.name, u_admin.email,
 						u_admin.activation, a_homebase.name AS homebase, 
 						u_admin.isactive, u_admin.phone, u_admin.level
 					FROM u_admin
 					LEFT JOIN a_homebase ON a_homebase.id = u_admin.homebase
 					WHERE u_admin.id = $1`,
-          transform: (row) => row,
-        },
-        student: {
-          text: `
+					transform: (row) => row,
+				},
+				student: {
+					text: `
 						WITH student_data AS (
 							SELECT 
 								u_students.*,
@@ -168,26 +167,26 @@ router.get(
 						)
 						SELECT * FROM student_data
 						LEFT JOIN class_data ON true`,
-          transform: (row) => ({
-            user_id: row.id,
-            name: row.name,
-            nis: row.nis,
-            level: row.level,
-            gender: row.gender,
-            homebase: row.homebase_name,
-            student_class_id: row.student_class_id,
-            periode: row.periode,
-            periode_name: row.periode_name,
-            periode_active: row.periode_active,
-            class_id: row.class_id,
-            class: row.class_name,
-            grade_id: row.grade_id,
-            grade: row.grade_name,
-            isactive: row.isactive,
-          }),
-        },
-        teacher: {
-          text: `
+					transform: (row) => ({
+						user_id: row.id,
+						name: row.name,
+						nis: row.nis,
+						level: row.level,
+						gender: row.gender,
+						homebase: row.homebase_name,
+						student_class_id: row.student_class_id,
+						periode: row.periode,
+						periode_name: row.periode_name,
+						periode_active: row.periode_active,
+						class_id: row.class_id,
+						class: row.class_name,
+						grade_id: row.grade_id,
+						grade: row.grade_name,
+						isactive: row.isactive,
+					}),
+				},
+				teacher: {
+					text: `
 						SELECT 
 							u_teachers.*,
 							a_class.name AS class_name,
@@ -212,23 +211,23 @@ router.get(
 							u_teachers.id, 
 							a_class.name,
 							hb.name`,
-          transform: (row) => ({
-            id: row.id,
-            nip: row.nip,
-            name: row.name,
-            email: row.email,
-            img: row.img,
-            homebase: row.homebase_name,
-            homeroom: row.homeroom,
-            class: row.class_name,
-            phone: row.phone,
-            gender: row.gender,
-            level: row.level,
-            subjects: row.subjects,
-          }),
-        },
-        parent: {
-          text: `
+					transform: (row) => ({
+						id: row.id,
+						nip: row.nip,
+						name: row.name,
+						email: row.email,
+						img: row.img,
+						homebase: row.homebase_name,
+						homeroom: row.homeroom,
+						class: row.class_name,
+						phone: row.phone,
+						gender: row.gender,
+						level: row.level,
+						subjects: row.subjects,
+					}),
+				},
+				parent: {
+					text: `
 						WITH parent_data AS (
 							SELECT 
 								u_parents.*,
@@ -257,117 +256,117 @@ router.get(
 							WHERE cl_students.student = (SELECT student_id FROM parent_data)
 						)
 						SELECT * FROM parent_data, class_data`,
-          transform: (row) => ({
-            id: row.id,
-            name: row.username,
-            email: row.email,
-            phone: row.phone,
-            student: row.student_name,
-            nis: row.nis,
-            homebase: row.homebase_name,
-            periode: row.periode,
-            periode_name: row.periode_name,
-            periode_active: row.periode_active,
-            grade_id: row.grade_id,
-            grade: row.grade_name,
-            class_id: row.class_id,
-            class: row.class_name,
-            level: "parent",
-          }),
-        },
-      };
+					transform: (row) => ({
+						id: row.id,
+						name: row.username,
+						email: row.email,
+						phone: row.phone,
+						student: row.student_name,
+						nis: row.nis,
+						homebase: row.homebase_name,
+						periode: row.periode,
+						periode_name: row.periode_name,
+						periode_active: row.periode_active,
+						grade_id: row.grade_id,
+						grade: row.grade_name,
+						class_id: row.class_id,
+						class: row.class_name,
+						level: "parent",
+					}),
+				},
+			}
 
-      const query = queries[level];
-      if (!query) {
-        return res.status(403).json({
-          message: "Akses tidak diizinkan untuk peran ini.",
-        });
-      }
+			const query = queries[level]
+			if (!query) {
+				return res.status(403).json({
+					message: "Akses tidak diizinkan untuk peran ini.",
+				})
+			}
 
-      const result = await client.query(query.text, [id]);
-      if (result.rows.length === 0) {
-        return res.status(404).json({
-          message: "Data tidak ditemukan.",
-        });
-      }
+			const result = await client.query(query.text, [id])
+			if (result.rows.length === 0) {
+				return res.status(404).json({
+					message: "Data tidak ditemukan.",
+				})
+			}
 
-      const userData = query.transform(result.rows[0]);
-      return res.status(200).json(userData);
-    } catch (error) {
-      console.error(error);
-      return res.status(500).json({
-        message: "Terjadi kesalahan pada server.",
-        error: error.message,
-      });
-    } finally {
-      client.release();
-    }
-  }
-);
+			const userData = query.transform(result.rows[0])
+			return res.status(200).json(userData)
+		} catch (error) {
+			console.error(error)
+			return res.status(500).json({
+				message: "Terjadi kesalahan pada server.",
+				error: error.message,
+			})
+		} finally {
+			client.release()
+		}
+	}
+)
 
 router.post("/logout", async (req, res) => {
-  const client = await pool.connect();
-  try {
-    // Get user information from the token
-    const token = req.cookies.token;
-    if (token) {
-      try {
-        const decoded = jwt.verify(token, process.env.JWT);
-        const { id, level } = decoded;
+	const client = await pool.connect()
+	try {
+		// Get user information from the token
+		const token = req.cookies.token
+		if (token) {
+			try {
+				const decoded = jwt.verify(token, process.env.JWT)
+				const { id, level } = decoded
 
-        // Log the logout activity for non-parent users
-        if (level !== "parent") {
-          const logData = {
-            student: level === "student" ? id : null,
-            teacher: level === "teacher" ? id : null,
-            admin:
-              level === "admin" || level === "tahfiz" || level === "center"
-                ? id
-                : null,
-            ip: req.ip,
-            browser: req.headers["user-agent"],
-            islogin: false,
-            ispenalty: null,
-            isactive: null,
-            isdone: null,
-            action: "logout",
-          };
+				// Log the logout activity for non-parent users
+				if (level !== "parent") {
+					const logData = {
+						student: level === "student" ? id : null,
+						teacher: level === "teacher" ? id : null,
+						admin:
+							level === "admin" || level === "tahfiz" || level === "center"
+								? id
+								: null,
+						ip: req.ip,
+						browser: req.headers["user-agent"],
+						islogin: false,
+						ispenalty: null,
+						isactive: null,
+						isdone: null,
+						action: "logout",
+					}
 
-          await client.query(
-            `INSERT INTO logs (student, teacher, admin, ip, browser, islogin, ispenalty, isactive, isdone, action)
+					await client.query(
+						`INSERT INTO logs (student, teacher, admin, ip, browser, islogin, ispenalty, isactive, isdone, action)
 						VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-            [
-              logData.student,
-              logData.teacher,
-              logData.admin,
-              logData.ip,
-              logData.browser,
-              logData.islogin,
-              logData.ispenalty,
-              logData.isactive,
-              logData.isdone,
-              logData.action,
-            ]
-          );
-        }
-      } catch (err) {
-        // Token verification failed, but we still want to clear the cookie
-        console.error("Token verification failed during logout:", err);
-      }
-    }
+						[
+							logData.student,
+							logData.teacher,
+							logData.admin,
+							logData.ip,
+							logData.browser,
+							logData.islogin,
+							logData.ispenalty,
+							logData.isactive,
+							logData.isdone,
+							logData.action,
+						]
+					)
+				}
+			} catch (err) {
+				// Token verification failed, but we still want to clear the cookie
+				console.error("Token verification failed during logout:", err)
+			}
+		}
 
-    res.cookie("token", "", {
-      httpOnly: true,
-      expires: new Date(0),
-    });
+		res.cookie("token", "", {
+			httpOnly: true,
+			expires: new Date(0),
+		})
 
-    return res.status(200).json({ message: "Berhasil keluar" });
-  } catch (error) {
-    console.error("Kesalahan saat logout:", error);
-    return res.status(500).json({ message: "Terjadi kesalahan saat logout" });
-  } finally {
-    client.release();
-  }
-});
+		return res.status(200).json({ message: "Berhasil keluar" })
+	} catch (error) {
+		console.error("Kesalahan saat logout:", error)
+		return res.status(500).json({ message: "Terjadi kesalahan saat logout" })
+	} finally {
+		client.release()
+	}
+})
 
-export default router;
+export default router

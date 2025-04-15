@@ -21,10 +21,10 @@ export const ApiLog = createApi({
       invalidatesTags: ["log"],
     }),
     finishCbt: builder.mutation({
-      query: ({ id }) => ({
+      query: ({ id, exam }) => ({
         url: "/finish-cbt",
         method: "POST",
-        params: { id },
+        params: { id, exam },
       }),
       invalidatesTags: ["log"],
     }),
@@ -42,6 +42,21 @@ export const ApiLog = createApi({
       }),
       providesTags: ["logs"],
     }),
+    retakeExam: builder.mutation({
+      query: ({ id, student, exam }) => ({
+        url: "/retake-exam",
+        params: { id, student, exam },
+      }),
+      invalidatesTags: ["logs"],
+    }),
+    rejoinExam: builder.mutation({
+      query: ({ id }) => ({
+        url: "/rejoin-exam",
+        method: "PUT",
+        params: { id },
+      }),
+      invalidatesTags: ["logs"],
+    }),
   }),
 });
 
@@ -51,4 +66,6 @@ export const {
   useFinishCbtMutation,
   useGetExamLogQuery,
   useGetFilterQuery,
+  useRetakeExamMutation,
+  useRejoinExamMutation,
 } = ApiLog;

@@ -5,6 +5,7 @@ import { authorize } from "../../middleware/auth.js";
 const create = "Berhasil direkam";
 const finish = "Berhasil menyelesaikan ujian";
 const update = "Berhasil diubah";
+const rejoin = "Diberikan izin untuk masuk";
 const remove = "Berhasil dihapus";
 
 const router = express.Router();
@@ -107,20 +108,21 @@ router.get("/get-user-log", authorize("student"), async (req, res) => {
   }
 });
 
-router.post("/finish-cbt", authorize("student"), async (req, res) => {
+router.put("/rejoin-exam", authorize("admin", "teacher"), async (req, res) => {
   const client = await pool.connect();
   try {
     const { id } = req.query;
 
     const isactive = false;
-    const isdone = true;
+    const ispenalty = false;
+    const isdone = false;
 
     await client.query(
-      `UPDATE logs SET isactive = $1, isdone = $2 WHERE id = $3`,
-      [isactive, isdone, id]
+      `UPDATE logs SET isactive = $1, ispenalty = $2, isdone = $3 WHERE id = $4`,
+      [isactive, ispenalty, isdone, id]
     );
 
-    res.status(200).json({ message: finish });
+    res.status(200).json({ message: rejoin });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: error.message });
@@ -128,6 +130,60 @@ router.post("/finish-cbt", authorize("student"), async (req, res) => {
     client.release();
   }
 });
+
+router.delete(
+  "/retake-exam",
+  authorize("admin", "teacher"),
+  async (req, res) => {
+    const client = await pool.connect();
+    try {
+      const { id, student, exam } = req.query;
+
+      await client.query(`DELETE FROM logs WHERE id = $1`, [id]);
+
+      await client.query(
+        `DELETE FROM c_answer WHERE student = $1 AND exam = $2`,
+        [student, exam]
+      );
+
+      res.status(200).json({ message: remove });
+    } catch (error) {
+      console.error(error);
+    }
+  }
+);
+
+router.post(
+  "/finish-cbt",
+  authorize("student", "admin", "teacher"),
+  async (req, res) => {
+    const client = await pool.connect();
+    try {
+      const { id, exam } = req.query;
+
+      const examData = await client.query(
+        `SELECT * FROM c_exam WHERE id = $1`,
+        [exam]
+      );
+
+      const isactive = false;
+      const isdone = true;
+      const action = `Ujian ${examData.rows[0].name} diselesaikan`;
+
+      await client.query(
+        `UPDATE logs SET isactive = $1, isdone = $2, action = $3 WHERE id = $4`,
+        [isactive, isdone, action, id]
+      );
+
+      res.status(200).json({ message: finish });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: error.message });
+    } finally {
+      client.release();
+    }
+  }
+);
 
 // ===============================
 // EXAM REPORT

@@ -27,8 +27,7 @@ const Navigation = ({
         <button
           className='btn btn-sm btn-primary'
           onClick={onPrevious}
-          disabled={currentPage === 1 || isLoading}
-        >
+          disabled={currentPage === 1 || isLoading}>
           <i className='bi bi-chevron-double-left'></i>
         </button>
 
@@ -39,8 +38,7 @@ const Navigation = ({
         <button
           className='btn btn-sm btn-primary'
           onClick={onNext}
-          disabled={currentPage === questionsLength || isLoading}
-        >
+          disabled={currentPage === questionsLength || isLoading}>
           <i className='bi bi-chevron-double-right'></i>
         </button>
       </div>
@@ -49,8 +47,7 @@ const Navigation = ({
         <button
           className='btn btn-sm btn-warning'
           onClick={onReset}
-          disabled={isLoading}
-        >
+          disabled={isLoading}>
           <i className='bi bi-recycle'></i> Sync
         </button>
         <button
@@ -61,9 +58,8 @@ const Navigation = ({
             !isAllAnswered()
               ? "Semua pertanyaan harus dijawab"
               : "Selesaikan ujian"
-          }
-        >
-          <i className='bi bi-check-circle'></i> Finish Exam
+          }>
+          <i className='bi bi-check-circle'></i> Selesaikan Ujian
         </button>
       </div>
     </div>
