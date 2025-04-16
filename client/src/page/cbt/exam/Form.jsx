@@ -20,6 +20,8 @@ const Form = ({ detail, setDetail }) => {
     classes: [],
     token: "",
     isshuffle: "",
+    mc_score: "",
+    essay_score: "",
   };
 
   const [formData, setFormData] = useState(initialFormState);
@@ -60,6 +62,8 @@ const Form = ({ detail, setDetail }) => {
         duration: detail.duration,
         token: detail.token,
         isshuffle: detail.isshuffle,
+        mc_score: detail.mc_score,
+        essay_score: detail.essay_score,
         bank: detail.banks.map((bank) => ({
           bankid: bank.id,
           type: bank.type,
@@ -224,6 +228,15 @@ const Form = ({ detail, setDetail }) => {
       />
 
       <input
+        type='text'
+        name='name'
+        className='form-control'
+        placeholder='Nama Ujian'
+        value={formData.name || ""}
+        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+      />
+
+      <input
         type='number'
         name='duration'
         className='form-control'
@@ -233,12 +246,25 @@ const Form = ({ detail, setDetail }) => {
       />
 
       <input
-        type='text'
-        name='name'
+        type='number'
+        name='mc_score'
+        id='mc_score'
         className='form-control'
-        placeholder='Nama Ujian'
-        value={formData.name || ""}
-        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+        placeholder='Persentase Nilai PG'
+        value={formData.mc_score}
+        onChange={(e) => setFormData({ ...formData, mc_score: e.target.value })}
+      />
+
+      <input
+        type='number'
+        name='essay_score'
+        id='essay_score'
+        className='form-control'
+        placeholder='Persentase Nilai Essay'
+        value={formData.essay_score}
+        onChange={(e) =>
+          setFormData({ ...formData, essay_score: e.target.value })
+        }
       />
 
       <select

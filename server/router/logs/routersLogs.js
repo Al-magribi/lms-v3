@@ -42,9 +42,12 @@ router.post("/add-cbt-logs", authorize("student"), async (req, res) => {
       if (!log.isactive && !log.ispenalty && !log.isdone) {
         // Update createdat with current time
         const isactive = true;
+        const action = `Masuk Ujian ${examData.rows[0].name}`;
         await client.query(
-          `UPDATE logs SET createdat = CURRENT_TIMESTAMP, isactive = $1 WHERE id = $2`,
-          [isactive, log.id]
+          `UPDATE logs SET createdat = CURRENT_TIMESTAMP, 
+          isactive = $1, action = $2 
+          WHERE id = $3`,
+          [isactive, action, log.id]
         );
         res.status(200).json({ message: update });
         return;

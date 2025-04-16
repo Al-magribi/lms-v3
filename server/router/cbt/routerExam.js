@@ -55,8 +55,18 @@ router.post("/create-exam", authorize("admin", "teacher"), async (req, res) => {
   const client = await pool.connect();
   try {
     const { homebase, id, level } = req.user;
-    const { teacher, bank, classes, name, duration, examid, token, isshuffle } =
-      req.body;
+    const {
+      teacher,
+      bank,
+      classes,
+      name,
+      duration,
+      examid,
+      token,
+      isshuffle,
+      mc_score,
+      essay_score,
+    } = req.body;
 
     await client.query("BEGIN");
 
@@ -65,16 +75,40 @@ router.post("/create-exam", authorize("admin", "teacher"), async (req, res) => {
 
     if (examId) {
       await client.query(
-        "UPDATE c_exam SET homebase = $1, teacher = $2, name = $3, duration = $4, token = $5, isshuffle = $6 WHERE id = $7",
-        [homebase, teacherId, name, duration, token, isshuffle, examId]
+        `UPDATE c_exam SET homebase = $1, teacher = $2, name = $3, 
+        duration = $4, token = $5, isshuffle = $6, 
+        mc_score = $7, essay_score = $8 
+        WHERE id = $9`,
+        [
+          homebase,
+          teacherId,
+          name,
+          duration,
+          token,
+          isshuffle,
+          mc_score,
+          essay_score,
+          examId,
+        ]
       );
       await client.query("DELETE FROM c_ebank WHERE exam = $1", [examId]);
       await client.query("DELETE FROM c_class WHERE exam = $1", [examId]);
     } else {
       const token = generateToken();
       const examResult = await client.query(
-        "INSERT INTO c_exam (homebase, teacher, name, duration, token, isshuffle) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
-        [homebase, teacherId, name, duration, token, isshuffle]
+        `INSERT INTO 
+            c_exam (homebase, teacher, name, duration, token, isshuffle, mc_score, essay_score) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+        [
+          homebase,
+          teacherId,
+          name,
+          duration,
+          token,
+          isshuffle,
+          mc_score,
+          essay_score,
+        ]
       );
       examId = examResult.rows[0].id;
     }

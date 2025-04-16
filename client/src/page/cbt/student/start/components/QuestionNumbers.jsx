@@ -14,10 +14,12 @@ const QuestionNumbers = ({
           {questionsData.map((question, index) => {
             const questionId = question?.id;
             const savedAnswer = answers[questionId];
+
+            // Improved check for answered questions
             const isAnswered =
               question.qtype === 2
                 ? Boolean(savedAnswer?.essay && savedAnswer.essay.trim() !== "")
-                : Boolean(savedAnswer?.mc);
+                : Boolean(savedAnswer?.mc && savedAnswer.mc !== "");
 
             return (
               <button

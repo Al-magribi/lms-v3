@@ -3,14 +3,14 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 export const ApiLog = createApi({
   reducerPath: "ApiLog",
   baseQuery: fetchBaseQuery({ baseUrl: `/api/logs`, credentials: "include" }),
-  tagTypes: ["logs", "log"],
+  tagTypes: ["logs", "report"],
   endpoints: (builder) => ({
     getUserLog: builder.query({
       query: ({ exam, student }) => ({
         url: "/get-user-log",
         params: { exam, student },
       }),
-      providesTags: ["log"],
+      providesTags: ["logs"],
     }),
     addCbtLogs: builder.mutation({
       query: (data) => ({
@@ -18,7 +18,7 @@ export const ApiLog = createApi({
         method: "POST",
         body: data,
       }),
-      invalidatesTags: ["log"],
+      invalidatesTags: ["logs", "report"],
     }),
     finishCbt: builder.mutation({
       query: ({ id, exam }) => ({
@@ -26,7 +26,7 @@ export const ApiLog = createApi({
         method: "POST",
         params: { id, exam },
       }),
-      invalidatesTags: ["log"],
+      invalidatesTags: ["logs", "report"],
     }),
     getFilter: builder.query({
       query: ({ exam }) => ({
@@ -45,9 +45,10 @@ export const ApiLog = createApi({
     retakeExam: builder.mutation({
       query: ({ id, student, exam }) => ({
         url: "/retake-exam",
+        method: "DELETE",
         params: { id, student, exam },
       }),
-      invalidatesTags: ["logs"],
+      invalidatesTags: ["logs", "report"],
     }),
     rejoinExam: builder.mutation({
       query: ({ id }) => ({
@@ -55,7 +56,7 @@ export const ApiLog = createApi({
         method: "PUT",
         params: { id },
       }),
-      invalidatesTags: ["logs"],
+      invalidatesTags: ["logs", "report"],
     }),
   }),
 });

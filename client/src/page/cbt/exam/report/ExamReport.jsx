@@ -1,12 +1,17 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import Layout from "../../../../components/layout/Layout";
 import { useParams } from "react-router-dom";
 import Filters from "./Filters";
-import TableData from "./TableData";
+
 const ExamReport = () => {
   const { name, examid, token } = useParams();
-
   const [classid, setClassid] = useState("");
+  const tableRef = useRef();
+
+  const handleRefetch = () => {
+    tableRef.current?.refetch();
+  };
+
   return (
     <Layout
       title={`Laporan Ujian ${name.replace(/-/g, " ")}`}
@@ -18,9 +23,8 @@ const ExamReport = () => {
         examid={examid}
         name={name}
         token={token}
+        onRefetch={handleRefetch}
       />
-
-      <TableData classid={classid} examid={examid} />
     </Layout>
   );
 };

@@ -87,11 +87,12 @@ const TableExam = ({ setDetail }) => {
       <table className='table table-striped table-bordered table-hover mb-0'>
         <thead>
           <tr>
-            <th className='text-center'>No</th>
             <th className='text-center'>Guru</th>
             <th className='text-center'>Bank Soal</th>
-            <th className='text-center'>Kelas</th>
             <th className='text-center'>Nama Ujian</th>
+            <th className='text-center'>PG</th>
+            <th className='text-center'>Essay</th>
+            <th className='text-center'>Kelas</th>
             <th className='text-center'>Acak Soal</th>
             <th className='text-center'>Durasi</th>
             <th className='text-center'>Status</th>
@@ -103,9 +104,6 @@ const TableExam = ({ setDetail }) => {
           {exams?.length > 0 ? (
             exams?.map((exam, i) => (
               <tr key={i}>
-                <td className='text-center align-middle'>
-                  {(page - 1) * limit + i + 1}
-                </td>
                 <td className='align-middle'>{exam.teacher_name}</td>
                 <td className='align-middle'>
                   {exam.banks.map((bank) => (
@@ -116,14 +114,25 @@ const TableExam = ({ setDetail }) => {
                     </p>
                   ))}
                 </td>
-                <td className='align-middle d-flex flex-column gap-2'>
-                  {exam.classes?.map((item) => (
-                    <p key={item.id} className='m-0 badge bg-primary'>
-                      {item.name}
-                    </p>
-                  ))}
-                </td>
                 <td className='align-middle'>{exam.name}</td>
+                <td className='text-center align-middle'>
+                  <p className='m-0 badge bg-success'>{`${exam.mc_score}%`}</p>
+                </td>
+                <td className='text-center align-middle'>
+                  <p className='m-0 badge bg-success'>{`${exam.essay_score}%`}</p>
+                </td>
+                <td className='text-center align-middle'>
+                  <div
+                    style={{ width: 100 }}
+                    className='d-flex align-items-center justify-content-center flex-wrap gap-2'
+                  >
+                    {exam.classes?.map((item) => (
+                      <p key={item.id} className='m-0 badge bg-primary'>
+                        {item.name}
+                      </p>
+                    ))}
+                  </div>
+                </td>
                 <td className='text-center align-middle'>
                   {exam.isshuffle ? (
                     <p className='m-0 badge bg-success'>Ya</p>
@@ -186,7 +195,7 @@ const TableExam = ({ setDetail }) => {
             ))
           ) : (
             <tr>
-              <td colSpan={8}>Data belum tersedia</td>
+              <td colSpan={11}>Data belum tersedia</td>
             </tr>
           )}
         </tbody>

@@ -24,7 +24,7 @@ const AnswerCard = ({
           <textarea
             className='form-control'
             rows='4'
-            placeholder='Enter your answer here...'
+            placeholder='Ketikkan jawabanmu disini...'
             value={savedEssay || essay}
             onChange={(e) => setEssay(e.target.value)}
             onBlur={() => handleSubmit()}
@@ -38,7 +38,10 @@ const AnswerCard = ({
       <div className='d-flex flex-column gap-2'>
         {currentQuestion.choices &&
           currentQuestion.choices.map((choice, index) => {
-            const isSelected = answers[currentQuestion.id]?.mc === choice.key;
+            // Improved check for selected answer
+            const savedAnswer = answers[currentQuestion.id]?.mc;
+            const isSelected = savedAnswer && savedAnswer === choice.key;
+
             return (
               <div key={index} className='form-check'>
                 <input

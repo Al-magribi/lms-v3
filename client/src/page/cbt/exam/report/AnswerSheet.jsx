@@ -1,22 +1,72 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { useGetStudentAnswerQuery } from "../../../../controller/api/cbt/ApiAnswer";
+import {
+  useGetStudentAnswerQuery,
+  useGradeEssayMutation,
+} from "../../../../controller/api/cbt/ApiAnswer";
+import { printAnswerSheet } from "./printAnswerSheet";
+import { useSelector } from "react-redux";
+import { toast } from "react-hot-toast";
+import ScoreSummary from "./components/ScoreSummary";
+import StudentInfo from "./components/StudentInfo";
+import AnswerItem from "./components/AnswerItem";
 
 const AnswerSheet = ({ detail }) => {
   const { examid, name } = useParams();
+  const [isPrintReady, setIsPrintReady] = useState(false);
+  const { user } = useSelector((state) => state.auth);
+  const isTeacherOrAdmin = user?.level === "teacher" || user?.level === "admin";
+  const [gradingAnswers, setGradingAnswers] = useState({});
 
-  const { data, isLoading, isError, error } = useGetStudentAnswerQuery(
+  const { data, isLoading, isError, error, refetch } = useGetStudentAnswerQuery(
     {
       student: detail.student_id,
       exam: examid,
     },
     {
-      skip: !detail.student_id, // Skip query if student_id is not available
+      skip: !detail.student_id,
     }
   );
 
-  // Access the first element of the array
+  const [gradeEssay, { isLoading: isGrading }] = useGradeEssayMutation();
+
   const studentData = data?.[0];
+
+  useEffect(() => {
+    if (studentData) {
+      setIsPrintReady(true);
+    }
+  }, [studentData]);
+
+  const handlePrint = () => {
+    if (!studentData) return;
+    printAnswerSheet(studentData, name, detail);
+  };
+
+  const handleGradeEssay = async (answerId, maxPoint) => {
+    const point = gradingAnswers[answerId];
+
+    if (point === undefined || point === "") {
+      toast.error("Nilai tidak boleh kosong");
+      return;
+    }
+
+    if (point < 0 || point > maxPoint) {
+      toast.error(`Nilai harus antara 0 dan ${maxPoint}`);
+      return;
+    }
+
+    try {
+      await gradeEssay({
+        answer_id: answerId,
+        point: parseInt(point),
+      }).unwrap();
+      toast.success("Nilai berhasil disimpan");
+      refetch();
+    } catch (error) {
+      toast.error(error.data?.message || "Gagal menyimpan nilai");
+    }
+  };
 
   return (
     <div
@@ -26,21 +76,26 @@ const AnswerSheet = ({ detail }) => {
       data-bs-keyboard='false'
       tabIndex='-1'
       aria-labelledby='staticBackdropLabel'
-      aria-hidden='true'>
-      <div className='modal-dialog modal-xl modal-dialog-scrollable'>
+      aria-hidden='true'
+    >
+      <div className='modal-dialog modal-lg modal-dialog-scrollable'>
         <div className='modal-content'>
           <div className='modal-header'>
-            <div className='modal-title' id='staticBackdropLabel'>
+            <div
+              className='modal-title d-flex flex-column justify-content-end align-items-start'
+              id='staticBackdropLabel'
+            >
               <p className='m-0 h5'>{name?.replace(/-/g, " ")}</p>
-              <span className='text-muted'>
+              <small className='text-muted'>
                 {detail?.nis} - {detail?.student_name}
-              </span>
+              </small>
             </div>
             <button
               type='button'
               className='btn-close'
               data-bs-dismiss='modal'
-              aria-label='Close'></button>
+              aria-label='Close'
+            ></button>
           </div>
           <div className='modal-body'>
             {isLoading ? (
@@ -52,100 +107,20 @@ const AnswerSheet = ({ detail }) => {
               </div>
             ) : studentData ? (
               <>
-                {/* Student Info Card */}
-                <div className='card mb-3'>
-                  <div className='card-body'>
-                    <h5 className='card-title mb-3'>Lembar Jawaban</h5>
-                    <table className='table table-sm table-borderless mb-0'>
-                      <tbody>
-                        <tr>
-                          <td>
-                            <strong>NIS</strong>
-                          </td>
-                          <td>: {studentData.student_nis}</td>
-                          <td>
-                            <strong>Tingkat</strong>
-                          </td>
-                          <td>: {studentData.student_grade}</td>
-                          <td>
-                            <strong>Ujian</strong>
-                          </td>
-                          <td>: {name.replace(/-/g, " ")}</td>
-                        </tr>
-                        <tr>
-                          <td>
-                            <strong>Nama</strong>
-                          </td>
-                          <td>: {studentData.student_name}</td>
-                          <td>
-                            <strong>Kelas</strong>
-                          </td>
-                          <td>: {studentData.student_class}</td>
-                          <td>
-                            <strong>Tanggal</strong>
-                          </td>
-                          <td>
-                            :{" "}
-                            {studentData.log_exam
-                              ? new Date(studentData.log_exam).toLocaleString(
-                                  "id-ID",
-                                  {
-                                    weekday: "long",
-                                    day: "2-digit",
-                                    month: "long",
-                                    year: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                    hour12: false,
-                                  }
-                                )
-                              : "-"}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* Answers Section */}
+                <ScoreSummary studentData={studentData} />
+                <StudentInfo studentData={studentData} name={name} />
                 {studentData.answers && studentData.answers.length > 0 ? (
                   studentData.answers.map((answer, index) => (
-                    <div key={answer.question_id} className='card mb-3'>
-                      <div className='card-body'>
-                        <div className='d-flex justify-content-between align-items-center mb-2'>
-                          <h6 className='card-title mb-0'>
-                            <span className='badge bg-primary'>
-                              Pertanyaan {index + 1}
-                            </span>
-                          </h6>
-                          <span
-                            className={`badge ${
-                              answer.point > 0 ? "bg-success" : "bg-danger"
-                            }`}>
-                            {answer.point} Poin
-                          </span>
-                        </div>
-                        <p
-                          className='card-text'
-                          dangerouslySetInnerHTML={{
-                            __html: answer.question_text,
-                          }}></p>
-                        <div className='mt-3 d-flex gap-4'>
-                          <p
-                            className={`m-0 badge ${
-                              answer.point > 0 ? "bg-success" : "bg-danger"
-                            }`}>
-                            Jawaban Siswa:{" "}
-                            <strong className='m-0'>
-                              {answer.answer?.toUpperCase() || "-"}
-                            </strong>
-                          </p>
-                          <p className='m-0 badge bg-success'>
-                            Jawaban Benar: <strong>{answer.correct}</strong>
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+                    <AnswerItem
+                      key={answer.question_id}
+                      answer={answer}
+                      index={index}
+                      isTeacherOrAdmin={isTeacherOrAdmin}
+                      gradingAnswers={gradingAnswers}
+                      setGradingAnswers={setGradingAnswers}
+                      handleGradeEssay={handleGradeEssay}
+                      isGrading={isGrading}
+                    />
                   ))
                 ) : (
                   <div className='alert alert-info mt-3' role='alert'>
@@ -162,9 +137,26 @@ const AnswerSheet = ({ detail }) => {
           <div className='modal-footer'>
             <button
               type='button'
-              className='btn btn-secondary'
-              data-bs-dismiss='modal'>
+              className='btn btn-sm btn-secondary'
+              data-bs-dismiss='modal'
+            >
               Tutup
+            </button>
+
+            <button
+              type='button'
+              className='btn btn-sm btn-danger'
+              onClick={refetch}
+            >
+              <i className='bi bi-repeat'></i>
+            </button>
+
+            <button
+              type='button'
+              className='btn btn-sm btn-primary'
+              onClick={handlePrint}
+            >
+              <i className='bi bi-printer'></i> Cetak
             </button>
           </div>
         </div>

@@ -116,11 +116,11 @@ const StartPage = () => {
   };
 
   const finishExam = async () => {
-    toast.promise(finishCbt({ id: examid }).unwrap(), {
+    toast.promise(finishCbt({ id: log.id, exam: examid }).unwrap(), {
       loading: "Submitting exam...",
       success: (data) => {
         toast.success("Exam submitted successfully");
-        navigate("/student/cbt");
+        navigate("/siswa-daftar-ujian");
         return data.message || "Exam submitted successfully";
       },
       error: (err) =>

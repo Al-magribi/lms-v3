@@ -20,7 +20,19 @@ export const ApiAnswer = createApi({
       }),
       providesTags: ["answer"],
     }),
+    gradeEssay: builder.mutation({
+      query: (body) => ({
+        url: "/grade-essay",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["answer"],
+    }),
   }),
 });
 
-export const { useAddAnswerMutation, useGetStudentAnswerQuery } = ApiAnswer;
+export const {
+  useAddAnswerMutation,
+  useGetStudentAnswerQuery,
+  useGradeEssayMutation,
+} = ApiAnswer;

@@ -46,15 +46,22 @@ const Body = ({
   const [addAnswer, { isLoading, isSuccess, isError, reset }] =
     useAddAnswerMutation();
 
+  console.log(answer);
+
   // Load saved answers when component mounts
   useEffect(() => {
     if (answer) {
       const savedAnswers = {};
       answer.forEach((ans) => {
-        savedAnswers[ans.question] = {
-          mc: ans.mc,
-          essay: ans.essay,
-        };
+        if (ans.question_id) {
+          savedAnswers[ans.question_id] = {
+            id: ans.id,
+            mc: ans.mc || null,
+            essay: ans.essay || null,
+            point: ans.point || 0,
+            qtype: ans.qtype,
+          };
+        }
       });
       setAnswers(savedAnswers);
       // Set initial key if there's an answer for current question
@@ -66,14 +73,14 @@ const Body = ({
 
   // Update key when changing questions
   useEffect(() => {
-    if (currentQuestion && answers[currentQuestion.id]?.mc) {
-      setKey(answers[currentQuestion.id].mc);
+    if (currentQuestion && answers[currentQuestion.id]) {
+      if (currentQuestion.qtype === 2) {
+        setEssay(answers[currentQuestion.id].essay || "");
+      } else {
+        setKey(answers[currentQuestion.id].mc || "");
+      }
     } else {
       setKey("");
-    }
-    if (currentQuestion && answers[currentQuestion.id]?.essay) {
-      setEssay(answers[currentQuestion.id].essay);
-    } else {
       setEssay("");
     }
   }, [currentQuestion, answers]);
@@ -86,8 +93,7 @@ const Body = ({
     const answerValue = currentQuestion.qtype === 2 ? essay : selectedKey;
 
     const data = {
-      id:
-        answer?.find((ans) => ans.question === currentQuestion.id)?.id || null,
+      id: answers[currentQuestion.id]?.id || null,
       student: user.user_id,
       exam: examid,
       question: currentQuestion.id,
@@ -98,21 +104,27 @@ const Body = ({
     toast.promise(
       addAnswer(data)
         .unwrap()
-        .then((res) => res.message),
+        .then((res) => {
+          // Update the answer ID in the local state
+          if (res.id) {
+            setAnswers((prev) => ({
+              ...prev,
+              [currentQuestion.id]: {
+                ...prev[currentQuestion.id],
+                id: res.id,
+                mc: currentQuestion.qtype === 2 ? null : answerValue,
+                essay: currentQuestion.qtype === 2 ? answerValue : null,
+              },
+            }));
+          }
+          return res.message;
+        }),
       {
         loading: "Meyimpan data...",
         success: (message) => message,
         error: (error) => error.data.message,
       }
     );
-
-    setAnswers((prev) => ({
-      ...prev,
-      [currentQuestion.id]: {
-        mc: currentQuestion.qtype === 2 ? null : answerValue,
-        essay: currentQuestion.qtype === 2 ? answerValue : null,
-      },
-    }));
   };
 
   // Auto-save answer when moving to next question

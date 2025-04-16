@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, forwardRef, useImperativeHandle } from "react";
 import Table from "../../../../components/table/Table";
 import {
   useFinishCbtMutation,
@@ -9,12 +9,16 @@ import {
 import { toast } from "react-hot-toast";
 import AnswerSheet from "./AnswerSheet";
 
-const TableData = ({ classid, examid }) => {
+const TableData = forwardRef(({ classid, examid }, ref) => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState("");
 
-  const { data = {}, isLoading } = useGetExamLogQuery({
+  const {
+    data = {},
+    isLoading,
+    refetch,
+  } = useGetExamLogQuery({
     exam: examid,
     classid: classid,
     page,
@@ -27,6 +31,10 @@ const TableData = ({ classid, examid }) => {
   const [finishCbt, { isLoading: finishLoad }] = useFinishCbtMutation();
   const [rejoinExam, { isLoading: rejoinLoad }] = useRejoinExamMutation();
   const [retakeExam, { isLoading: retakeLoad }] = useRetakeExamMutation();
+
+  useImperativeHandle(ref, () => ({
+    refetch,
+  }));
 
   const hanldeFinish = (id) => {
     toast.promise(
@@ -77,7 +85,8 @@ const TableData = ({ classid, examid }) => {
         limit={limit}
         setLimit={setLimit}
         setSearch={setSearch}
-        totalData={totalData}>
+        totalData={totalData}
+      >
         <table className='table table-striped table-hover table-bordered'>
           <thead className='table-light'>
             <tr>
@@ -159,7 +168,8 @@ const TableData = ({ classid, examid }) => {
                         title='Lihat Detail'
                         data-bs-toggle='modal'
                         data-bs-target='#answerSheet'
-                        onClick={() => setDetail(item)}>
+                        onClick={() => setDetail(item)}
+                      >
                         <i className='bi bi-eye'></i>
                       </button>
 
@@ -167,7 +177,8 @@ const TableData = ({ classid, examid }) => {
                         className='btn btn-sm btn-warning'
                         title='Izinkan Masuk'
                         onClick={() => handleRejoin(item.log_id)}
-                        disabled={rejoinLoad || !item.isactive}>
+                        disabled={rejoinLoad || !item.isactive}
+                      >
                         <i className='bi bi-arrow-repeat'></i>
                       </button>
 
@@ -175,7 +186,8 @@ const TableData = ({ classid, examid }) => {
                         className='btn btn-sm btn-success'
                         title='Selesaikan'
                         onClick={() => hanldeFinish(item.log_id)}
-                        disabled={finishLoad || item.isdone || !item.isactive}>
+                        disabled={finishLoad || item.isdone || !item.isactive}
+                      >
                         <i className='bi bi-check-circle'></i>
                       </button>
 
@@ -185,7 +197,8 @@ const TableData = ({ classid, examid }) => {
                         onClick={() =>
                           handleRetake(item.log_id, item.student_id)
                         }
-                        disabled={retakeLoad || !item.isdone}>
+                        disabled={retakeLoad || !item.isdone}
+                      >
                         <i className='bi bi-recycle'></i>
                       </button>
                     </div>
@@ -208,6 +221,6 @@ const TableData = ({ classid, examid }) => {
       <AnswerSheet detail={detail} />
     </>
   );
-};
+});
 
 export default TableData;
