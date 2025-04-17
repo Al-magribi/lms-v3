@@ -28,6 +28,20 @@ export const ApiAnswer = createApi({
       }),
       invalidatesTags: ["answer"],
     }),
+    getLineChartData: builder.query({
+      query: (exam) => ({
+        url: "/get-line-chart-data",
+        params: { exam },
+      }),
+      providesTags: ["answer"],
+    }),
+    getExamScoreList: builder.query({
+      query: ({ exam, classid, page, limit, search }) => ({
+        url: "/get-exam-score-list",
+        params: { exam, classid, page, limit, search },
+      }),
+      providesTags: ["answer"],
+    }),
   }),
 });
 
@@ -35,4 +49,6 @@ export const {
   useAddAnswerMutation,
   useGetStudentAnswerQuery,
   useGradeEssayMutation,
+  useGetLineChartDataQuery,
+  useGetExamScoreListQuery,
 } = ApiAnswer;

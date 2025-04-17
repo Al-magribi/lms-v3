@@ -1,33 +1,28 @@
 import React, { useState } from "react";
 import { useGetFilterQuery } from "../../../../controller/api/log/ApiLog";
-import TableData from "./TableData";
-import ScoreChart from "./ScoreChart";
-import ScoreList from "./ScoreList";
 
-const Filters = ({ classid, setClassid, examid, name, token, onRefetch }) => {
+const Filters = ({
+  classid,
+  setClassid,
+  examid,
+  name,
+  token,
+  onRefetch,
+  activeView,
+  setActiveView,
+  onExport,
+}) => {
   const [lastUpdateTime, setLastUpdateTime] = useState(null);
-  const [activeView, setActiveView] = useState("table"); // Default view is table
-  const { data: classes } = useGetFilterQuery(
+  const { data: classes, refetch: refetchClasses } = useGetFilterQuery(
     { exam: examid },
     { skip: !examid }
   );
 
   const handleRefetch = () => {
     setLastUpdateTime(new Date().toLocaleString());
+    // Refetch all data
+    refetchClasses();
     onRefetch();
-  };
-
-  const renderActiveView = () => {
-    switch (activeView) {
-      case "table":
-        return <TableData examid={examid} classid={classid} />;
-      case "chart":
-        return <ScoreChart examid={examid} classid={classid} />;
-      case "list":
-        return <ScoreList examid={examid} classid={classid} />;
-      default:
-        return null;
-    }
   };
 
   return (
@@ -40,7 +35,7 @@ const Filters = ({ classid, setClassid, examid, name, token, onRefetch }) => {
           </div>
 
           {lastUpdateTime && (
-            <span className='badge bg-info'>
+            <span className='badge bg-danger'>
               Terakhir diperbarui: {lastUpdateTime}
             </span>
           )}
@@ -71,6 +66,16 @@ const Filters = ({ classid, setClassid, examid, name, token, onRefetch }) => {
           >
             <i className='bi bi-file-earmark-excel'></i>
           </button>
+
+          {(activeView === "table" || activeView === "list") && (
+            <button
+              className='btn btn-sm btn-primary'
+              onClick={onExport}
+              title='Export to Excel'
+            >
+              <i className='bi bi-file-earmark-arrow-down'></i>
+            </button>
+          )}
         </div>
 
         <div className='btn-group'>
@@ -97,8 +102,6 @@ const Filters = ({ classid, setClassid, examid, name, token, onRefetch }) => {
           </button>
         </div>
       </div>
-
-      <div className='mt-3'>{renderActiveView()}</div>
     </div>
   );
 };

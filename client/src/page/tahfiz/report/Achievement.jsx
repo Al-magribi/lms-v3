@@ -156,8 +156,10 @@ const Achievement = () => {
                         {grade.target.map((target, targetIndex) => (
                           <div key={targetIndex} className='mb-2'>
                             <div className='d-flex justify-content-between'>
-                              <span>{target.juz}</span>
-                              <small>
+                              <span className='badge bg-success'>
+                                {target.juz}
+                              </span>
+                              <small className='badge bg-danger'>
                                 {target.verses} Ayat | {target.lines} Baris
                               </small>
                             </div>

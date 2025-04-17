@@ -12,8 +12,20 @@ export const ApiDashboard = createApi({
       query: () => "/teacher-stats",
       providesTags: ["TeacherDash"],
     }),
+    getStudentDashboard: builder.query({
+      query: () => "/student-stats",
+      providesTags: ["StudentDash"],
+    }),
+    getCenterDashboard: builder.query({
+      query: () => "/center-stats",
+      providesTags: ["CenterDash"],
+    }),
   }),
 });
 
-export const { useGetAdminDashboardQuery, useGetTeacherDashboardQuery } =
-  ApiDashboard;
+export const {
+  useGetAdminDashboardQuery,
+  useGetTeacherDashboardQuery,
+  useGetStudentDashboardQuery,
+  useGetCenterDashboardQuery,
+} = ApiDashboard;

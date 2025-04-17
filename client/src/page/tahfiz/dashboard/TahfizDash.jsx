@@ -46,18 +46,25 @@ const TahfizDash = () => {
                           </p>
                           <div className='border-top p-2 d-flex gap-2 justify-content-center flex-wrap'>
                             {grade.target.map((target, idx) => (
-                              <p key={idx} className='m-0 small'>
+                              <p
+                                key={idx}
+                                className='m-0 small badge bg-primary'
+                              >
                                 {target.juz} ({target.verses} ayat -{" "}
                                 {target.lines} Baris)
                               </p>
                             ))}
                           </div>
                           <div className='border-top p-2 d-flex gap-2 justify-content-center'>
-                            <p className='m-0 rounded-pill bg-success p-2 text-white'>
-                              Selesai: {grade.completed}
-                            </p>
-                            <p className='m-0 rounded-pill bg-danger p-2 text-white'>
-                              Belum Selesai: {grade.uncompleted}
+                            <p className='m-0 h6'>
+                              Tuntas:{" "}
+                              <span className='badge bg-success'>
+                                {grade.completed}
+                              </span>{" "}
+                              dari{" "}
+                              <span className='badge bg-danger'>
+                                {grade.uncompleted}
+                              </span>
                             </p>
                           </div>
                         </div>

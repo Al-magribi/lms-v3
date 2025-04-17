@@ -1,4 +1,9 @@
-import React, { useState, forwardRef, useImperativeHandle } from "react";
+import React, {
+  useState,
+  forwardRef,
+  useImperativeHandle,
+  useRef,
+} from "react";
 import Table from "../../../../components/table/Table";
 import {
   useFinishCbtMutation,
@@ -13,6 +18,7 @@ const TableData = forwardRef(({ classid, examid }, ref) => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState("");
+  const tableRef = useRef();
 
   const {
     data = {},
@@ -34,6 +40,7 @@ const TableData = forwardRef(({ classid, examid }, ref) => {
 
   useImperativeHandle(ref, () => ({
     refetch,
+    getTableElement: () => tableRef.current,
   }));
 
   const hanldeFinish = (id) => {
@@ -87,7 +94,10 @@ const TableData = forwardRef(({ classid, examid }, ref) => {
         setSearch={setSearch}
         totalData={totalData}
       >
-        <table className='table table-striped table-hover table-bordered'>
+        <table
+          ref={tableRef}
+          className='table table-striped table-hover table-bordered'
+        >
           <thead className='table-light'>
             <tr>
               <th scope='col' className='text-center'>

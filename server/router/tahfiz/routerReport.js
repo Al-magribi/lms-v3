@@ -1,49 +1,49 @@
-import { Router } from "express"
-import { authorize } from "../../middleware/auth.js"
-import { pool } from "../../config/config.js"
+import { Router } from "express";
+import { authorize } from "../../middleware/auth.js";
+import { pool } from "../../config/config.js";
 
-const create = "Berhasil disimpan"
-const update = "Berhasil diubah"
-const remove = "Berhasil dihapus"
+const create = "Berhasil disimpan";
+const update = "Berhasil diubah";
+const remove = "Berhasil dihapus";
 
-const router = Router()
+const router = Router();
 
 const fetchQueryResults = async (query, params = []) => {
-	const client = await pool.connect()
-	try {
-		const { rows } = await client.query(query, params)
-		return rows
-	} catch (error) {
-		throw new Error(error.message)
-	} finally {
-		client.release()
-	}
-}
+  const client = await pool.connect();
+  try {
+    const { rows } = await client.query(query, params);
+    return rows;
+  } catch (error) {
+    throw new Error(error.message);
+  } finally {
+    client.release();
+  }
+};
 
 const buildStudentData = async (rows) => {
-	// Gunakan Map untuk memastikan unik data per tanggal dan NIS
-	const uniqueResults = new Map()
+  // Gunakan Map untuk memastikan unik data per tanggal dan NIS
+  const uniqueResults = new Map();
 
-	for (const row of rows) {
-		const dates = await fetchQueryResults(
-			`SELECT DISTINCT DATE(createdat) AS date FROM t_scoring WHERE userid = $1 AND type_id = $2`,
-			[row.userid, row.type_id]
-		)
+  for (const row of rows) {
+    const dates = await fetchQueryResults(
+      `SELECT DISTINCT DATE(createdat) AS date FROM t_scoring WHERE userid = $1 AND type_id = $2`,
+      [row.userid, row.type_id]
+    );
 
-		for (const date of dates) {
-			const uniqueKey = `${row.userid}_${date.date}_${row.type_id}` // Kombinasi unik userid dan tanggal
+    for (const date of dates) {
+      const uniqueKey = `${row.userid}_${date.date}_${row.type_id}`; // Kombinasi unik userid dan tanggal
 
-			if (!uniqueResults.has(uniqueKey)) {
-				const surahs = await fetchQueryResults(
-					`SELECT * FROM t_process
+      if (!uniqueResults.has(uniqueKey)) {
+        const surahs = await fetchQueryResults(
+          `SELECT * FROM t_process
            INNER JOIN t_surah ON t_process.surah_id = t_surah.id
            WHERE userid = $1 AND DATE(t_process.createdat) = $2 AND type_id = $3
 					 ORDER BY t_surah.id ASC`,
-					[row.userid, date.date, row.type_id]
-				)
+          [row.userid, date.date, row.type_id]
+        );
 
-				const categories = await fetchQueryResults(
-					`SELECT 
+        const categories = await fetchQueryResults(
+          `SELECT 
             t_scoring.*, 
             t_categories.name, 
             DATE(t_scoring.createdat) AS created_date 
@@ -56,11 +56,11 @@ const buildStudentData = async (rows) => {
           WHERE 
             t_scoring.indicator_id IS NULL 
             AND t_scoring.type_id = $1 AND t_scoring.userid = $2 AND DATE(t_scoring.createdat) = $3`,
-					[row.type_id, row.userid, date.date]
-				)
+          [row.type_id, row.userid, date.date]
+        );
 
-				const indicators = await fetchQueryResults(
-					`SELECT 
+        const indicators = await fetchQueryResults(
+          `SELECT 
             t_scoring.*, 
             t_indicators.name, 
             DATE(t_scoring.createdat) AS created_date 
@@ -75,78 +75,78 @@ const buildStudentData = async (rows) => {
             AND t_scoring.type_id = $1 AND t_scoring.userid = $2 AND DATE(t_scoring.createdat) = $3
           ORDER BY 
             t_indicators.name ASC`,
-					[row.type_id, row.userid, date.date]
-				)
+          [row.type_id, row.userid, date.date]
+        );
 
-				const scores = categories.map((category) => {
-					const relatedIndicators = indicators.filter(
-						(indi) => indi.category_id === category.category_id
-					)
+        const scores = categories.map((category) => {
+          const relatedIndicators = indicators.filter(
+            (indi) => indi.category_id === category.category_id
+          );
 
-					return {
-						id: category.id,
-						category_id: category.category_id,
-						category: category.name,
-						poin: Number(category.poin),
-						date: category.created_date,
-						indicators: relatedIndicators.map((indi) => ({
-							id: indi.id,
-							indicator_id: indi.indicator_id,
-							indicator: indi.name,
-							poin: indi.poin,
-						})),
-					}
-				})
+          return {
+            id: category.id,
+            category_id: category.category_id,
+            category: category.name,
+            poin: Number(category.poin),
+            date: category.created_date,
+            indicators: relatedIndicators.map((indi) => ({
+              id: indi.id,
+              indicator_id: indi.indicator_id,
+              indicator: indi.name,
+              poin: indi.poin,
+            })),
+          };
+        });
 
-				const totalPoints = scores.reduce((acc, score) => acc + score.poin, 0)
+        const totalPoints = scores.reduce((acc, score) => acc + score.poin, 0);
 
-				uniqueResults.set(uniqueKey, {
-					userid: row.userid,
-					nis: row.nis,
-					name: row.student_name,
-					grade: row.grade,
-					class: row.class_name,
-					scores,
-					surahs: surahs.map((surah) => ({
-						id: surah.id,
-						surah_id: surah.surah_id,
-						name: surah.name,
-						from_ayat: surah.from_count,
-						to_ayat: surah.to_count,
-						from_line: surah.from_line,
-						to_line: surah.to_line,
-					})),
-					type_id: row.type_id,
-					type: row.type_name,
-					examiner: row.examiner_name,
-					examiner_id: row.examiner_id,
-					totalPoints,
-					date: date.date,
-				})
-			}
-		}
-	}
+        uniqueResults.set(uniqueKey, {
+          userid: row.userid,
+          nis: row.nis,
+          name: row.student_name,
+          grade: row.grade,
+          class: row.class_name,
+          scores,
+          surahs: surahs.map((surah) => ({
+            id: surah.id,
+            surah_id: surah.surah_id,
+            name: surah.name,
+            from_ayat: surah.from_count,
+            to_ayat: surah.to_count,
+            from_line: surah.from_line,
+            to_line: surah.to_line,
+          })),
+          type_id: row.type_id,
+          type: row.type_name,
+          examiner: row.examiner_name,
+          examiner_id: row.examiner_id,
+          totalPoints,
+          date: date.date,
+        });
+      }
+    }
+  }
 
-	// Return all unique results
-	return Array.from(uniqueResults.values()).sort(
-		(a, b) => new Date(b.date) - new Date(a.date)
-	)
-}
+  // Return all unique results
+  return Array.from(uniqueResults.values()).sort(
+    (a, b) => new Date(b.date) - new Date(a.date)
+  );
+};
 
 router.get("/get-all", async (req, res) => {
-	const client = await pool.connect()
-	try {
-		const { page = 1, limit = 10, search = "", type } = req.query
+  const client = await pool.connect();
+  try {
+    const { page = 1, limit = 10, search = "", type } = req.query;
 
-		// Konversi page dan limit ke angka
-		const numericLimit = parseInt(limit, 10)
-		const numericOffset = (parseInt(page, 10) - 1) * numericLimit
+    // Konversi page dan limit ke angka
+    const numericLimit = parseInt(limit, 10);
+    const numericOffset = (parseInt(page, 10) - 1) * numericLimit;
 
-		// Kondisi tambahan untuk filter berdasarkan type_id
-		const typeFilter = type ? "AND t.id = $2" : ""
+    // Kondisi tambahan untuk filter berdasarkan type_id
+    const typeFilter = type ? "AND t.id = $2" : "";
 
-		// Main query dengan search, type filter, dan pagination
-		const mainQuery = `
+    // Main query dengan search, type filter, dan pagination
+    const mainQuery = `
       SELECT
         us.id AS userid,
         us.nis AS nis,
@@ -172,10 +172,10 @@ router.get("/get-all", async (req, res) => {
       GROUP BY
         us.id, us.nis, us.name, g.name, c.name, t.name, e.name, ts.type_id, t.id, e.id
       LIMIT ${numericLimit} OFFSET ${numericOffset}
-    `
+    `;
 
-		// Count query dengan search dan type filter
-		const countQuery = `
+    // Count query dengan search dan type filter
+    const countQuery = `
       SELECT COUNT(*) AS total
       FROM (
         SELECT
@@ -194,51 +194,51 @@ router.get("/get-all", async (req, res) => {
         GROUP BY
           us.id, us.name, g.name, c.name, t.name, e.name, ts.type_id, t.id, e.id
       ) AS subquery
-    `
+    `;
 
-		// Menyusun parameter secara dinamis
-		const params = [`%${search}%`]
-		if (type) {
-			params.push(type) // Tambahkan type jika ada
-		}
+    // Menyusun parameter secara dinamis
+    const params = [`%${search}%`];
+    if (type) {
+      params.push(type); // Tambahkan type jika ada
+    }
 
-		// Eksekusi query utama
-		const rows = await fetchQueryResults(mainQuery, params)
+    // Eksekusi query utama
+    const rows = await fetchQueryResults(mainQuery, params);
 
-		// Eksekusi query untuk menghitung total data
-		const countResult = await fetchQueryResults(countQuery, params)
+    // Eksekusi query untuk menghitung total data
+    const countResult = await fetchQueryResults(countQuery, params);
 
-		const totalData = parseInt(countResult[0]?.total || 0, 10)
-		const totalPages = Math.ceil(totalData / numericLimit)
+    const totalData = parseInt(countResult[0]?.total || 0, 10);
+    const totalPages = Math.ceil(totalData / numericLimit);
 
-		// Memproses data untuk laporan
-		const report = await buildStudentData(rows)
+    // Memproses data untuk laporan
+    const report = await buildStudentData(rows);
 
-		res.status(200).json({
-			report,
-			totalData,
-			totalPages,
-		})
-	} catch (error) {
-		console.error(error)
-		res.status(500).json({ message: error.message })
-	} finally {
-		client.release()
-	}
-})
+    res.status(200).json({
+      report,
+      totalData,
+      totalPages,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
+  }
+});
 
 router.get("/get-report/:userid", async (req, res) => {
-	const client = await pool.connect()
-	try {
-		const { userid } = req.params
-		const { page = 1, limit = 10 } = req.query
+  const client = await pool.connect();
+  try {
+    const { userid } = req.params;
+    const { page = 1, limit = 10 } = req.query;
 
-		// Konversi page dan limit ke angka
-		const numericLimit = parseInt(limit, 10)
-		const numericOffset = (parseInt(page, 10) - 1) * numericLimit
+    // Konversi page dan limit ke angka
+    const numericLimit = parseInt(limit, 10);
+    const numericOffset = (parseInt(page, 10) - 1) * numericLimit;
 
-		// Main query untuk mendapatkan data siswa berdasarkan userid dengan paginasi
-		const mainQuery = `
+    // Main query untuk mendapatkan data siswa berdasarkan userid dengan paginasi
+    const mainQuery = `
       SELECT
         us.id AS userid,
         us.name AS student_name,
@@ -262,10 +262,10 @@ router.get("/get-report/:userid", async (req, res) => {
       GROUP BY
         us.id, us.name, g.name, c.name, t.name, e.name, ts.type_id, t.id, e.name
       LIMIT ${numericLimit} OFFSET ${numericOffset}
-    `
+    `;
 
-		// Count query untuk menghitung total data
-		const countQuery = `
+    // Count query untuk menghitung total data
+    const countQuery = `
       SELECT COUNT(*) AS total
       FROM (
         SELECT
@@ -283,43 +283,43 @@ router.get("/get-report/:userid", async (req, res) => {
         GROUP BY
           us.id, us.name, g.name, c.name, t.name, e.name, ts.type_id, t.id, e.name
       ) AS subquery
-    `
+    `;
 
-		// Eksekusi query utama
-		const rows = await fetchQueryResults(mainQuery, [userid])
+    // Eksekusi query utama
+    const rows = await fetchQueryResults(mainQuery, [userid]);
 
-		if (rows.length === 0) {
-			return res.status(404).json({ message: "Data tidak ditemukan" })
-		}
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Data tidak ditemukan" });
+    }
 
-		// Eksekusi query untuk menghitung total data
-		const countResult = await fetchQueryResults(countQuery, [userid])
-		const totalData = parseInt(countResult[0]?.total || 0, 10)
-		const totalPages = Math.ceil(totalData / numericLimit)
+    // Eksekusi query untuk menghitung total data
+    const countResult = await fetchQueryResults(countQuery, [userid]);
+    const totalData = parseInt(countResult[0]?.total || 0, 10);
+    const totalPages = Math.ceil(totalData / numericLimit);
 
-		// Memproses data untuk laporan
-		const report = await buildStudentData(rows)
+    // Memproses data untuk laporan
+    const report = await buildStudentData(rows);
 
-		res.status(200).json({
-			report,
-			totalData,
-			totalPages,
-		})
-	} catch (error) {
-		console.error(error)
-		res.status(500).json({ message: error.message })
-	} finally {
-		client.release()
-	}
-})
+    res.status(200).json({
+      report,
+      totalData,
+      totalPages,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
+  }
+});
 
 router.get("/get-report/:type_id", async (req, res) => {
-	const client = await pool.connect()
-	try {
-		const { type_id } = req.params
-		const { page, limit, search } = req.query
+  const client = await pool.connect();
+  try {
+    const { type_id } = req.params;
+    const { page, limit, search } = req.query;
 
-		const mainQuery = `
+    const mainQuery = `
       SELECT
         us.id AS userid,
         us.name AS student_name,
@@ -342,69 +342,69 @@ router.get("/get-report/:type_id", async (req, res) => {
         ts.type_id = $1
       GROUP BY
         us.id, us.name, g.name, c.name, t.name, e.name, ts.type_id, t.id, e.id
-    `
+    `;
 
-		const rows = await fetchQueryResults(mainQuery, [type_id])
+    const rows = await fetchQueryResults(mainQuery, [type_id]);
 
-		const result = await buildStudentData(rows, type_id)
+    const result = await buildStudentData(rows, type_id);
 
-		res.status(200).json(result)
-	} catch (error) {
-		console.error(error)
-		res.status(500).json({ message: error.message })
-	} finally {
-		client.release()
-	}
-})
+    res.status(200).json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
+  }
+});
 
 router.delete("/delete-report", authorize("tahfiz"), async (req, res) => {
-	const client = await pool.connect()
-	try {
-		const { userid, typeId, createdat } = req.query
+  const client = await pool.connect();
+  try {
+    const { userid, typeId, createdat } = req.query;
 
-		console.log(req.query)
+    console.log(req.query);
 
-		// Konversi ISO date string ke format yang sesuai untuk SQL timestamp
-		const formattedDate = new Date(createdat).toISOString() // Pastikan validasi dilakukan
+    // Konversi ISO date string ke format yang sesuai untuk SQL timestamp
+    const formattedDate = new Date(createdat).toISOString(); // Pastikan validasi dilakukan
 
-		if (isNaN(Date.parse(formattedDate))) {
-			return res.status(400).json({ message: "Format tanggal tidak valid." })
-		}
+    if (isNaN(Date.parse(formattedDate))) {
+      return res.status(400).json({ message: "Format tanggal tidak valid." });
+    }
 
-		// Query untuk menghapus data berdasarkan userid, type_id, dan createdat
-		const deleteScore = `
+    // Query untuk menghapus data berdasarkan userid, type_id, dan createdat
+    const deleteScore = `
         DELETE FROM t_scoring
         WHERE userid = $1 AND type_id = $2 AND DATE(createdat) = $3
-      `
+      `;
 
-		const deleteSurah = `
+    const deleteSurah = `
         DELETE FROM t_process WHERE userid = $1 AND DATE(createdat) = $2
-        `
+        `;
 
-		const result = await client.query(deleteScore, [userid, typeId, createdat])
-		const resultSurah = await client.query(deleteSurah, [userid, createdat])
+    const result = await client.query(deleteScore, [userid, typeId, createdat]);
+    const resultSurah = await client.query(deleteSurah, [userid, createdat]);
 
-		// Jika tidak ada data yang dihapus, berikan respons 404
-		if (result.rowCount === 0) {
-			return res
-				.status(404)
-				.json({ message: "Data tidak ditemukan atau sudah dihapus." })
-		}
+    // Jika tidak ada data yang dihapus, berikan respons 404
+    if (result.rowCount === 0) {
+      return res
+        .status(404)
+        .json({ message: "Data tidak ditemukan atau sudah dihapus." });
+    }
 
-		res.status(200).json({ message: remove })
-	} catch (error) {
-		console.error(error)
-		res.status(500).json({ message: error.message })
-	} finally {
-		client.release()
-	}
-})
+    res.status(200).json({ message: remove });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
+  }
+});
 
 router.get("/get-report-target", async (req, res) => {
-	const client = await pool.connect()
-	try {
-		// Query untuk mendapatkan periode aktif
-		const activePeriodeQuery = `
+  const client = await pool.connect();
+  try {
+    // Query untuk mendapatkan periode aktif
+    const activePeriodeQuery = `
 			SELECT 
 				p.id as periode_id,
 				p.name as periode,
@@ -413,216 +413,306 @@ router.get("/get-report-target", async (req, res) => {
 			FROM a_periode p
 			INNER JOIN a_homebase h ON p.homebase = h.id
 			WHERE p.isactive = true
-		`
+		`;
 
-		const activePeriodes = await fetchQueryResults(activePeriodeQuery)
+    const activePeriodes = await fetchQueryResults(activePeriodeQuery);
 
-		if (activePeriodes.length === 0) {
-			return res.status(404).json({ message: "Tidak ada periode aktif" })
-		}
+    if (activePeriodes.length === 0) {
+      return res.status(404).json({ message: "Tidak ada periode aktif" });
+    }
 
-		const result = []
+    const result = [];
 
-		// Proses untuk setiap periode aktif
-		for (const periode of activePeriodes) {
-			// Query untuk mendapatkan data grade dan target
-			const gradeTargetQuery = `
+    for (const periode of activePeriodes) {
+      // Query untuk mendapatkan target per grade dengan total ayat dan baris yang harus dicapai
+      const gradeTargetQuery = `
 				SELECT 
 					g.id as grade_id,
 					g.name as grade_name,
-					tj.id as juz_id,
-					tj.name as juz_name,
-					SUM(tji.to_ayat - tji.from_ayat + 1) as total_verses,
-					SUM(tji.lines) as total_lines
+					ARRAY_AGG(DISTINCT tj.id) as juz_ids,
+					ARRAY_AGG(DISTINCT tj.name) as juz_names,
+					SUM(tji.lines) as total_target_lines
 				FROM a_grade g
 				LEFT JOIN t_target t ON g.id = t.grade_id
 				LEFT JOIN t_juz tj ON t.juz_id = tj.id
 				LEFT JOIN t_juzitems tji ON tj.id = tji.juz_id
 				WHERE g.homebase = $1
-				GROUP BY g.id, g.name, tj.id, tj.name
-				ORDER BY g.id, tj.id
-			`
+				GROUP BY g.id, g.name
+				ORDER BY g.id
+			`;
 
-			const gradeTargets = await fetchQueryResults(gradeTargetQuery, [
-				periode.homebase_id,
-			])
+      const gradeTargets = await fetchQueryResults(gradeTargetQuery, [
+        periode.homebase_id,
+      ]);
 
-			// Query untuk mendapatkan data siswa dan progress
-			const studentProgressQuery = `
-				WITH surah_progress AS (
+      // Query untuk mendapatkan progress siswa dengan perhitungan ketuntasan yang lebih akurat
+      const studentProgressQuery = `
+				WITH student_progress AS (
 					SELECT 
-						tp.userid,
-						tp.juz_id,
-						ts.id as surah_id,
-						ts.name as surah_name,
-						SUM(tp.to_count - tp.from_count + 1) as verses_completed,
-						SUM(tp.to_line - tp.from_line + 1) as lines_completed
-					FROM t_process tp
-					LEFT JOIN t_surah ts ON tp.surah_id = ts.id
-					WHERE tp.type_id = 6
-					GROUP BY tp.userid, tp.juz_id, ts.id, ts.name
+						us.id as userid,
+						us.nis,
+						us.name as student_name,
+						g.id as grade_id,
+						g.name as grade_name,
+						c.name as class_name,
+						t.juz_id,
+						tj.name as juz_name,
+						COALESCE(SUM(tp.to_count - tp.from_count + 1), 0) as completed_verses,
+						(
+							SELECT SUM(tji.lines)
+							FROM t_target tt
+							JOIN t_juzitems tji ON tt.juz_id = tji.juz_id
+							WHERE tt.grade_id = g.id AND tt.juz_id = t.juz_id
+						) as target_lines
+					FROM u_students us
+					INNER JOIN cl_students cs ON us.id = cs.student AND cs.periode = $1
+					INNER JOIN a_class c ON cs.classid = c.id
+					INNER JOIN a_grade g ON c.grade = g.id
+					INNER JOIN t_target t ON g.id = t.grade_id
+					INNER JOIN t_juz tj ON t.juz_id = tj.id
+					LEFT JOIN t_process tp ON us.id = tp.userid 
+						AND tp.juz_id = t.juz_id 
+						AND tp.type_id = 6
+					WHERE us.homebase = $2
+					GROUP BY us.id, us.nis, us.name, g.id, g.name, c.name, t.juz_id, tj.name
 				)
 				SELECT 
-					us.id as userid,
-					us.nis,
-					us.name as student_name,
-					g.id as grade_id,
-					g.name as grade_name,
-					c.name as class_name,
-					tj.id as juz_id,
-					tj.name as juz_name,
-					sp.surah_id,
-					sp.surah_name,
-					sp.verses_completed,
-					sp.lines_completed,
-					ts.ayat as total_verses,
-					ts.lines as total_lines
-				FROM u_students us
-				INNER JOIN cl_students cs ON us.id = cs.student AND cs.periode = $1
-				INNER JOIN a_class c ON cs.classid = c.id
-				INNER JOIN a_grade g ON c.grade = g.id
-				LEFT JOIN surah_progress sp ON us.id = sp.userid
-				LEFT JOIN t_juz tj ON sp.juz_id = tj.id
-				LEFT JOIN t_surah ts ON sp.surah_id = ts.id
-				WHERE us.homebase = $2
-				ORDER BY g.id, us.id, tj.id, sp.surah_id
-			`
+					userid,
+					nis,
+					student_name,
+					grade_id,
+					grade_name,
+					class_name,
+					ARRAY_AGG(juz_name) as juz_names,
+					ARRAY_AGG(completed_verses) as completed_verses,
+					ARRAY_AGG(target_lines) as target_lines,
+					ARRAY_AGG(
+						CASE 
+							WHEN target_lines > 0 THEN 
+								ROUND((completed_verses::numeric / target_lines::numeric) * 100, 2)
+							ELSE 0 
+						END
+					) as progress_percentages
+				FROM student_progress
+				GROUP BY userid, nis, student_name, grade_id, grade_name, class_name
+				ORDER BY class_name, student_name
+			`;
 
-			const studentProgress = await fetchQueryResults(studentProgressQuery, [
-				periode.periode_id,
-				periode.homebase_id,
-			])
+      const studentProgress = await fetchQueryResults(studentProgressQuery, [
+        periode.periode_id,
+        periode.homebase_id,
+      ]);
 
-			// Mengelompokkan data
-			const periodeData = {
-				periode: periode.periode,
-				periode_id: periode.periode_id,
-				homebase: periode.homebase,
-				homebase_id: periode.homebase_id,
-				grade: [],
-			}
+      // Mengelompokkan data per grade
+      const gradeData = gradeTargets.map((grade) => {
+        const students = studentProgress.filter(
+          (s) => s.grade_id === grade.grade_id
+        );
 
-			// Mengelompokkan target per grade
-			const gradeMap = new Map()
-			gradeTargets.forEach((gt) => {
-				if (!gradeMap.has(gt.grade_id)) {
-					gradeMap.set(gt.grade_id, {
-						name: gt.grade_name,
-						id: gt.grade_id,
-						target: [],
-						students: [],
-					})
-				}
-				if (gt.juz_id) {
-					gradeMap.get(gt.grade_id).target.push({
-						juz: gt.juz_name,
-						verses: gt.total_verses,
-						lines: gt.total_lines,
-					})
-				}
-			})
+        // Menghitung siswa yang tuntas (semua target mencapai 100%)
+        const completedStudents = students.filter((student) =>
+          student.progress_percentages.every((percentage) => percentage >= 100)
+        ).length;
 
-			// Mengelompokkan progress siswa
-			const studentMap = new Map()
-			studentProgress.forEach((sp) => {
-				const studentKey = `${sp.grade_id}_${sp.userid}`
-				let student = studentMap.get(studentKey)
-				if (!student) {
-					student = {
-						userid: sp.userid,
-						nis: sp.nis,
-						name: sp.student_name,
-						grade: sp.grade_name,
-						class: sp.class_name,
-						progress: [],
-					}
-					studentMap.set(studentKey, student)
-				}
+        const totalStudents = students.length;
+        const achievement =
+          totalStudents > 0
+            ? Number(((completedStudents / totalStudents) * 100).toFixed(2))
+            : 0;
 
-				if (sp.juz_id) {
-					let progress = student.progress.find((p) => p.juz === sp.juz_name)
-					if (!progress) {
-						progress = {
-							juz: sp.juz_name,
-							verses: 0,
-							lines: 0,
-							persentase: 0,
-							surah: [],
-						}
-						student.progress.push(progress)
-					}
+        return {
+          id: grade.grade_id,
+          name: grade.grade_name,
+          target: grade.juz_names.map((name, idx) => ({
+            juz: name,
+            lines: grade.total_target_lines,
+          })),
+          achievement,
+          completed: completedStudents,
+          uncompleted: totalStudents - completedStudents,
+          students: students.map((student) => ({
+            userid: student.userid,
+            nis: student.nis,
+            name: student.student_name,
+            grade: student.grade_name,
+            class: student.class_name,
+            progress: student.juz_names.map((juz, idx) => ({
+              juz: juz,
+              lines: student.completed_verses[idx],
+              persentase: student.progress_percentages[idx],
+            })),
+          })),
+        };
+      });
 
-					progress.surah.push({
-						surah: sp.surah_name,
-						verses: parseInt(sp.verses_completed, 10),
-						lines: parseInt(sp.lines_completed, 10),
-					})
+      result.push({
+        periode: periode.periode,
+        periode_id: periode.periode_id,
+        homebase: periode.homebase,
+        homebase_id: periode.homebase_id,
+        grade: gradeData,
+      });
+    }
 
-					progress.verses += parseInt(sp.verses_completed, 10)
-					progress.lines += parseInt(sp.lines_completed, 10)
-				}
+    res.status(200).json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
+  }
+});
 
-				// Filter progress untuk hanya menyertakan juz yang ada dalam target
-				const filteredProgress = student.progress.filter((p) => {
-					const target = gradeMap
-						.get(sp.grade_id)
-						.target.find((t) => t.juz === p.juz)
-					if (target) {
-						// Update persentase berdasarkan lines target
-						p.persentase = Number(
-							((p.lines / parseInt(target.lines, 10)) * 100).toFixed(2)
-						)
-						return true
-					}
-					return false
-				})
+router.get("/get-student-report", async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { userid } = req.query;
 
-				// Update data siswa dengan progress yang difilter
-				studentMap.set(studentKey, {
-					...student,
-					progress: filteredProgress,
-				})
-			})
+    // Get student basic info with class details
+    const studentQuery = `
+      SELECT 
+        us.id as student_id,
+        us.nis as student_nis,
+        us.name as student_name,
+        g.name as grade,
+        c.name as class,
+        h.name as homebase
+      FROM u_students us
+      INNER JOIN cl_students cs ON us.id = cs.student
+      INNER JOIN a_class c ON cs.classid = c.id
+      INNER JOIN a_grade g ON c.grade = g.id
+      INNER JOIN a_homebase h ON g.homebase = h.id
+      WHERE us.id = $1
+    `;
 
-			// Menggabungkan data
-			gradeMap.forEach((gradeData, gradeId) => {
-				// Filter siswa untuk grade ini
-				const gradeStudents = Array.from(studentMap.values())
-					.filter((s) => s.grade === gradeData.name)
-					.map((s) => ({
-						...s,
-						progress: Array.from(s.progress.values()),
-					}))
+    const studentInfo = await fetchQueryResults(studentQuery, [userid]);
 
-				// Hitung achievement
-				const totalStudents = gradeStudents.length
-				const completedStudents = gradeStudents.filter((s) =>
-					s.progress.some((p) => p.persentase >= 100)
-				).length
-				const uncompletedStudents = totalStudents - completedStudents
-				const achievement = Number(
-					((completedStudents / totalStudents) * 100).toFixed(2)
-				)
+    if (studentInfo.length === 0) {
+      return res.status(404).json({ message: "Student not found" });
+    }
 
-				periodeData.grade.push({
-					...gradeData,
-					achievement,
-					completed: completedStudents,
-					uncompleted: uncompletedStudents,
-					students: gradeStudents,
-				})
-			})
+    // Get target juz based on student's grade
+    const targetQuery = `
+      SELECT 
+        tj.id as juz_id,
+        tj.name as juz,
+        SUM(tji.lines) as total_lines,
+        SUM(tji.to_ayat - tji.from_ayat + 1) as total_verses
+      FROM t_target tt
+      INNER JOIN t_juz tj ON tt.juz_id = tj.id
+      INNER JOIN t_juzitems tji ON tj.id = tji.juz_id
+      WHERE tt.grade_id = (
+        SELECT c.grade 
+        FROM cl_students cs
+        INNER JOIN a_class c ON cs.classid = c.id
+        WHERE cs.student = $1
+      )
+      GROUP BY tj.id, tj.name
+    `;
 
-			result.push(periodeData)
-		}
+    const targets = await fetchQueryResults(targetQuery, [userid]);
 
-		res.status(200).json(result)
-	} catch (error) {
-		console.error(error)
-		res.status(500).json({ message: error.message })
-	} finally {
-		client.release()
-	}
-})
+    // Get student's progress for each juz
+    const memorization = await Promise.all(
+      targets.map(async (target) => {
+        // Get completed verses and lines for this juz
+        const progressQuery = `
+          SELECT 
+            COALESCE(SUM(tp.to_count - tp.from_count + 1), 0) as completed_verses,
+            COALESCE(SUM(tp.to_line - tp.from_line + 1), 0) as completed_lines
+          FROM t_process tp
+          WHERE tp.userid = $1 AND tp.juz_id = $2 AND tp.type_id = 6
+        `;
 
-export default router
+        const progress = await fetchQueryResults(progressQuery, [
+          userid,
+          target.juz_id,
+        ]);
+
+        // Get surah details for this juz
+        const surahQuery = `
+          SELECT 
+            ts.id as surah_id,
+            ts.name as surah_name,
+            tp.to_count as verse,
+            tp.to_line as line
+          FROM t_process tp
+          INNER JOIN t_surah ts ON tp.surah_id = ts.id
+          WHERE tp.userid = $1 AND tp.juz_id = $2 AND tp.type_id = 6
+          ORDER BY tp.createdat DESC
+        `;
+
+        const surahs = await fetchQueryResults(surahQuery, [
+          userid,
+          target.juz_id,
+        ]);
+
+        const completedVerses = parseInt(progress[0]?.completed_verses || 0);
+        const completedLines = parseInt(progress[0]?.completed_lines || 0);
+        const totalVerses = parseInt(target.total_verses);
+        const totalLines = parseInt(target.total_lines);
+
+        return {
+          juz: target.juz,
+          lines: totalLines,
+          verses: totalVerses,
+          completed: completedVerses,
+          uncompleted: totalVerses - completedVerses,
+          progress:
+            totalVerses > 0
+              ? Number(((completedVerses / totalVerses) * 100).toFixed(2))
+              : 0,
+          surah: surahs,
+        };
+      })
+    );
+
+    const result = {
+      student_id: studentInfo[0].student_id,
+      student_nis: studentInfo[0].student_nis,
+      student_name: studentInfo[0].student_name,
+      grade: studentInfo[0].grade,
+      class: studentInfo[0].class,
+      homebase: studentInfo[0].homebase,
+      memorization,
+    };
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+export default router;
+
+const result = [
+  {
+    student_id: "id siswa diambil dari u_students",
+    student_nis: "id siswa diambil dari u_students",
+    student_name: "nama siswa diambil dari u_students",
+    grade: "kelas siswa diambil dari cl_students",
+    class: "kelas siswa diambil dari cl_students",
+    homebase: "homebase siswa diambil dari cl_students",
+    memorization: [
+      {
+        juz: "juz diambil dari t_target berdasarkan garde",
+        lines: "total baris yang harus dibaca berdasarkan juz",
+        verses: "total ayat yang harus dibaca berdasarkan juz",
+        completed: "total ayat yang sudah dibaca berdasarkan juz",
+        uncompleted: "total ayat yang belum dibaca berdasarkan juz",
+        progress: "persentase ketuntasan siswa berdasarkan juz",
+        surah: [
+          {
+            surah_id: "id surah diambil dari t_process",
+            surah_name: "nama surah diambil dari t_process",
+            verse: "ayat akhir diambil dari t_process",
+            line: "baris akhir diambil dari t_process",
+          },
+        ],
+      },
+    ],
+  },
+];

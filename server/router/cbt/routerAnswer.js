@@ -253,34 +253,238 @@ router.post("/grade-essay", authorize("admin", "teacher"), async (req, res) => {
   }
 });
 
+router.get(
+  "/get-line-chart-data",
+  authorize("admin", "teacher"),
+  async (req, res) => {
+    const client = await pool.connect();
+    try {
+      const { exam } = req.query;
+
+      const query = `
+        WITH student_scores AS (
+          SELECT 
+            us.id as student_id,
+            ROUND(
+              (
+                SUM(
+                  CASE 
+                    WHEN cq.qtype = 1 AND ca.point > 0 THEN ca.point 
+                    ELSE 0 
+                  END
+                ) * ce.mc_score / 100.0
+              ) + 
+              (
+                SUM(
+                  CASE 
+                    WHEN cq.qtype = 2 THEN ca.point 
+                    ELSE 0 
+                  END
+                ) * ce.essay_score / 100.0
+              ),
+              2
+            ) as final_score
+          FROM u_students us
+          JOIN c_answer ca ON us.id = ca.student
+          JOIN c_exam ce ON ca.exam = ce.id
+          JOIN c_question cq ON ca.question = cq.id
+          WHERE ca.exam = $1
+          GROUP BY us.id, ce.mc_score, ce.essay_score
+        ),
+        score_ranges AS (
+          SELECT 
+            CASE 
+              WHEN final_score >= 0 AND final_score <= 10 THEN '0-10'
+              WHEN final_score > 10 AND final_score <= 20 THEN '11-20'
+              WHEN final_score > 20 AND final_score <= 30 THEN '21-30'
+              WHEN final_score > 30 AND final_score <= 40 THEN '31-40'
+              WHEN final_score > 40 AND final_score <= 50 THEN '41-50'
+              WHEN final_score > 50 AND final_score <= 60 THEN '51-60'
+              WHEN final_score > 60 AND final_score <= 70 THEN '61-70'
+              WHEN final_score > 70 AND final_score <= 80 THEN '71-80'
+              WHEN final_score > 80 AND final_score <= 90 THEN '81-90'
+              WHEN final_score > 90 AND final_score <= 100 THEN '91-100'
+            END as score_range,
+            COUNT(*) as quantity
+          FROM student_scores
+          GROUP BY score_range
+          ORDER BY score_range
+        )
+        SELECT 
+          COALESCE(score_range, '0-10') as score,
+          COALESCE(quantity, 0) as quantity
+        FROM score_ranges
+      `;
+
+      const result = await client.query(query, [exam]);
+      res.status(200).json(result.rows);
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: error.message });
+    } finally {
+      client.release();
+    }
+  }
+);
+
+router.get(
+  "/get-exam-score-list",
+  authorize("admin", "teacher"),
+  async (req, res) => {
+    const client = await pool.connect();
+    try {
+      const { exam, classid, page = 1, limit = 10, search = "" } = req.query;
+      const offset = (page - 1) * limit;
+
+      // Base query for exam info
+      const examInfoQuery = `
+        SELECT 
+          ce.id as exam_id,
+          ce.name as exam_name,
+          ce.token as exam_token,
+          ut.name as teacher_name,
+          ah.name as homebase_name,
+          ce.mc_score,
+          ce.essay_score
+        FROM c_exam ce
+        JOIN u_teachers ut ON ce.teacher = ut.id
+        JOIN a_homebase ah ON ce.homebase = ah.id
+        WHERE ce.id = $1
+      `;
+      const examInfo = await client.query(examInfoQuery, [exam]);
+
+      if (examInfo.rows.length === 0) {
+        return res.status(404).json({ message: "Exam not found" });
+      }
+
+      // Query for students with their scores
+      const studentsQuery = `
+        WITH student_data AS (
+          SELECT 
+            us.id as student_id,
+            us.nis as student_nis,
+            us.name as student_name,
+            ag.name as student_grade,
+            ac.name as student_class,
+            (
+              SELECT l.createdat 
+              FROM logs l 
+              WHERE l.student = us.id AND l.exam = $1 AND l.islogin = true 
+              ORDER BY l.createdat DESC 
+              LIMIT 1
+            ) as log_exam,
+            COUNT(CASE WHEN ca.mc IS NOT NULL AND ca.point > 0 THEN 1 END) as correct,
+            COUNT(CASE WHEN ca.mc IS NOT NULL AND ca.point = 0 THEN 1 END) as incorrect,
+            SUM(CASE WHEN ca.mc IS NOT NULL AND ca.point > 0 THEN ca.point ELSE 0 END) as mc_score,
+            SUM(CASE WHEN ca.essay IS NOT NULL THEN ca.point ELSE 0 END) as essay_score,
+            ROUND(
+              (
+                SUM(CASE WHEN ca.mc IS NOT NULL AND ca.point > 0 THEN ca.point ELSE 0 END) * ce.mc_score / 100.0
+              ) + 
+              (
+                SUM(CASE WHEN ca.essay IS NOT NULL THEN ca.point ELSE 0 END) * ce.essay_score / 100.0
+              ),
+              2
+            ) as score
+          FROM u_students us
+          JOIN cl_students cls ON us.id = cls.student
+          JOIN a_class ac ON cls.classid = ac.id
+          JOIN a_grade ag ON ac.grade = ag.id
+          JOIN c_class cc ON cc.exam = $1 AND cc.classid = cls.classid
+          LEFT JOIN c_answer ca ON us.id = ca.student AND ca.exam = $1
+          JOIN c_exam ce ON ce.id = $1
+          WHERE ($2::integer IS NULL OR cls.classid = $2)
+          AND (
+            LOWER(us.name) LIKE LOWER($3) OR 
+            LOWER(us.nis) LIKE LOWER($3)
+          )
+          GROUP BY 
+            us.id, us.nis, us.name, ag.name, ac.name, ce.mc_score, ce.essay_score
+        ),
+        counted_data AS (
+          SELECT COUNT(*) OVER() as total_count, student_data.*
+          FROM student_data
+          ORDER BY score DESC, CAST(student_class AS TEXT) ASC, student_name ASC
+          LIMIT $4 OFFSET $5
+        )
+        SELECT 
+          COALESCE(json_agg(
+            json_build_object(
+              'student_id', student_id,
+              'student_nis', student_nis,
+              'student_name', student_name,
+              'student_grade', student_grade,
+              'student_class', student_class,
+              'log_exam', log_exam,
+              'correct', correct,
+              'incorrect', incorrect,
+              'mc_score', mc_score,
+              'essay_score', essay_score,
+              'score', score
+            )
+          ), '[]') as students,
+          MAX(total_count) as total_count
+        FROM counted_data
+      `;
+
+      const searchPattern = `%${search}%`;
+      const result = await client.query(studentsQuery, [
+        exam,
+        classid || null,
+        searchPattern,
+        limit,
+        offset,
+      ]);
+
+      const totalData = parseInt(result.rows[0].total_count || 0);
+      const totalPages = parseInt(Math.ceil(totalData / limit));
+
+      res.status(200).json({
+        ...examInfo.rows[0],
+        students: result.rows[0].students,
+        totalData,
+        totalPages,
+      });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: error.message });
+    } finally {
+      client.release();
+    }
+  }
+);
+
 export default router;
 
 const result = [
   {
-    student_id: "Id siswa diambil dari u_students",
-    student_name: "Nama siswa diambil dari u_students",
-    student_nis: "NIS siswa diambil dari u_students",
-    student_grade:
-      "Tingkat kelas siswa diambil dari a_grade berdasarkan cl_students.grade",
-    student_class:
-      "Kelas siswa diambil dari a_class berdasarkan cl_students.classid",
-    log_exam:
-      "Tanggal ujian diambil dari log dengan kombinasi exam dan student",
-    correct: "jumlah Jawaban benar diambil dari c_answer.point > 0",
-    incorrect: " jumlah Jawaban salah diambil dari c_answer.point = 0",
-    pg_score:
-      "Jumlah PG benar diambil dari c_answer.point yang c_answer.mc tidak null",
-    essay_score:
-      "Nilai Essay diambil dari c_answer.point yang c_answer.essay tidak null",
-    score:
-      "pg_score dikali c_exam.pg_score ditambah essay_score dikali c_exam.essay_score, 2 angka dibelakang koma",
-    answer: [
+    exam_name: "Nama ujian diambil dari c_exam",
+    exam_token: "Token ujian diambil dari c_exam",
+    teacher_name: "Nama guru diambil dari teacher di c_exam",
+    homebase_name: "Nama sekolah diambil dari homebase di c_exam",
+    mc_score: "presentase PG diambil dari c_exam.mc_score",
+    essay_score: "presentase Essay diambil dari c_exam.essay_score",
+    students: [
       {
-        question_id: "Id pertanyaan diambil dari c_question",
-        question_text: "Pertanyaan diambil dari c_question",
-        answer: "Jawaban siswa diambil dari c_answer",
-        correct: "Jawaban benar diambil dari c_question",
-        point: "Nilai diambil dari c_answer",
+        student_id: "Id siswa diambil dari u_students",
+        student_nis: "NIS siswa diambil dari u_students",
+        student_name: "Nama siswa diambil dari u_students",
+        student_grade:
+          "Tingkat kelas siswa diambil dari a_grade berdasarkan cl_students.grade",
+        student_class:
+          "Kelas siswa diambil dari a_class berdasarkan cl_students.classid",
+        log_exam:
+          "Tanggal ujian diambil dari log dengan kombinasi exam dan student",
+        correct:
+          "jumlah Jawaban benar diambil dari c_answer.point > 0 dan c_answer.essay null",
+        incorrect:
+          " jumlah Jawaban salah diambil dari c_answer.point = 0 dan c_answer.essay null",
+        mc_score:
+          "Jumlah PG benar diambil dari c_answer.point yang c_answer.mc tidak null",
+        essay_score:
+          "Nilai Essay diambil dari c_answer.point yang c_answer.essay tidak null",
+        score:
+          "pg_score dikali c_exam.mc_score ditambah essay_score dikali c_exam.essay_score, 2 angka dibelakang koma",
       },
     ],
   },

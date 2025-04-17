@@ -67,6 +67,7 @@ const TahfizMetric = lazy(() => import("./page/tahfiz/metric/TahfizMetric"));
 const TahfizMemo = lazy(() => import("./page/tahfiz/memo/TahfizMemo"));
 const TahfizStudent = lazy(() => import("./page/tahfiz/memo/TahfizStudent"));
 const TahfizReport = lazy(() => import("./page/tahfiz/report/TahfizReport"));
+const StudentReport = lazy(() => import("./page/tahfiz/report/StudentReport"));
 
 function App() {
   const dispatch = useDispatch();
@@ -202,6 +203,11 @@ function App() {
             />
 
             <Route path='/tahfiz-laporan' element={<TahfizReport />} />
+
+            <Route
+              path='/tahfiz-laporan-siswa/:userid/:name/:grade/:classname'
+              element={<StudentReport />}
+            />
           </Routes>
         </Suspense>
       </BrowserRouter>
