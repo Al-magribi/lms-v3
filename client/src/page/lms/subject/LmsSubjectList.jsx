@@ -19,8 +19,7 @@ const LmsSubjectList = () => {
         <div key={subject.id} className='col-lg-2 col-md-4 col-6'>
           <div
             className='card shadow pointer'
-            onClick={() => goToLink(subject.name, subject.id)}
-          >
+            onClick={() => goToLink(subject.name, subject.id)}>
             <div className='card-header h5 bg-primary text-white'>
               {subject.name}
             </div>

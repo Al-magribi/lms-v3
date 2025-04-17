@@ -80,7 +80,7 @@ const Table = ({
     return pages;
   };
   return (
-    <div className='p-2 rounded shadow border bg-white'>
+    <div className='p-2 rounded border bg-white'>
       <div style={{ height: height }} className='d-flex flex-column gap-2'>
         <div className='d-flex flex-wrap align-items-center justify-content-between'>
           <input
@@ -100,8 +100,7 @@ const Table = ({
               id='limit'
               className='form-select'
               value={limitValue || ""}
-              onChange={handleLimit}
-            >
+              onChange={handleLimit}>
               <option value='10'>10</option>
               <option value='20'>20</option>
               <option value='50'>50</option>
@@ -114,8 +113,7 @@ const Table = ({
               <button
                 data-bs-toggle='modal'
                 data-bs-target={`#${id}`}
-                className='btn btn-success'
-              >
+                className='btn btn-success'>
                 Tambah
               </button>
             )}
@@ -134,8 +132,7 @@ const Table = ({
                 <button
                   className='page-link'
                   aria-label='Previous'
-                  onClick={() => handlePageChange(page - 1)}
-                >
+                  onClick={() => handlePageChange(page - 1)}>
                   <span aria-hidden='true'>&laquo;</span>
                 </button>
               </li>
@@ -144,25 +141,23 @@ const Table = ({
                   key={pageNumber}
                   className={`page-items ${
                     page === pageNumber ? "active" : ""
-                  }`}
-                >
+                  }`}>
                   <button
                     className='page-link'
-                    onClick={() => handlePageChange(pageNumber)}
-                  >
+                    onClick={() => handlePageChange(pageNumber)}>
                     {pageNumber}
                   </button>
                 </li>
               ))}
 
               <li
-                className={`page-item ${page === totalPages ? "disabled" : ""}`}
-              >
+                className={`page-item ${
+                  page === totalPages ? "disabled" : ""
+                }`}>
                 <button
                   className='page-link'
                   aria-label='Next'
-                  onClick={() => handlePageChange(page + 1)}
-                >
+                  onClick={() => handlePageChange(page + 1)}>
                   <span aria-hidden='true'>&raquo;</span>
                 </button>
               </li>

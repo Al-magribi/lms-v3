@@ -97,15 +97,15 @@ const Form = ({ detail, setDetail }) => {
   return (
     <form
       onSubmit={addHandler}
-      className='rounded border bg-white p-2 d-flex flex-column gap-2 shadow'
-    >
+      className='rounded border bg-white p-2 d-flex flex-column gap-2'>
       <p className='m-0 h6'>Target Hafalan</p>
 
       <select
         className='form-select'
         value={formData.grade_id}
-        onChange={(e) => setFormData({ ...formData, grade_id: e.target.value })}
-      >
+        onChange={(e) =>
+          setFormData({ ...formData, grade_id: e.target.value })
+        }>
         <option value='' hidden>
           Pilih Tingkat
         </option>
@@ -129,15 +129,13 @@ const Form = ({ detail, setDetail }) => {
         <button
           type='button'
           className='btn btn-sm  btn-warning'
-          onClick={cancel}
-        >
+          onClick={cancel}>
           Batal
         </button>
         <button
           type='submit'
           className='btn btn-sm btn-success'
-          disabled={isLoading}
-        >
+          disabled={isLoading}>
           Simpan
         </button>
       </div>

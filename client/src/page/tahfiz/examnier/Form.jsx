@@ -53,8 +53,7 @@ const Form = ({ detail, setDetail }) => {
   return (
     <form
       onSubmit={addHandler}
-      className='rounded border shadow bg-white p-2 d-flex flex-column gap-2'
-    >
+      className='rounded border bg-white p-2 d-flex flex-column gap-2'>
       <p className='m-0 h6'>Penguji</p>
 
       <input
@@ -72,15 +71,13 @@ const Form = ({ detail, setDetail }) => {
         <button
           type='button'
           className='btn btn-sm btn-warning'
-          onClick={cancel}
-        >
+          onClick={cancel}>
           Batal
         </button>
         <button
           type='submit'
           className='btn btn-sm btn-success'
-          disabled={isLoading}
-        >
+          disabled={isLoading}>
           Simpan
         </button>
       </div>

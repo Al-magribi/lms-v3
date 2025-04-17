@@ -4,6 +4,7 @@ import { useSigninMutation } from "../controller/api/auth/ApiAuth";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { setLogin } from "../controller/slice/AuthSlice";
+import "./Index.css";
 
 const Index = () => {
   const dispatch = useDispatch();
@@ -100,76 +101,153 @@ const Index = () => {
       </div>
 
       <div
-        className='d-flex align-items-center justify-content-center flex-column gap-2'
-        style={{ height: "100vh" }}
-      >
-        <img src='/logo.png' alt='logo' style={{ height: 100, width: 100 }} />
+        className='d-flex align-items-center justify-content-center flex-column gap-3'
+        style={{ height: "100vh" }}>
+        <img
+          src='/logo.png'
+          alt='logo'
+          style={{ height: 120, width: 120, marginBottom: "1rem" }}
+        />
 
         {role === "none" && (
-          <>
-            <button
-              className='btn btn-sm btn-info btn-sign-in'
-              onClick={() => handleRoleChange("admin")}
-            >
-              Admin
-            </button>
-            <button
-              className='btn btn-sm btn-info btn-sign-in'
-              onClick={() => handleRoleChange("teacher")}
-            >
-              Guru
-            </button>
-            <button
-              className='btn btn-sm btn-info btn-sign-in'
-              onClick={() => handleRoleChange("student")}
-            >
-              Siswa
-            </button>
-            <button
-              className='btn btn-sm btn-info btn-sign-in'
-              onClick={() => handleRoleChange("parent")}
-            >
-              Wali Murid
-            </button>
+          <div className='d-flex flex-wrap justify-content-center gap-3'>
+            <div
+              className='card bg-info text-white transition-card'
+              style={{
+                width: "150px",
+                height: "150px",
+                cursor: "pointer",
+                transition: "all 0.3s ease",
+                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+              }}
+              onClick={() => handleRoleChange("admin")}>
+              <div className='card-body d-flex flex-column align-items-center justify-content-center gap-2'>
+                <i
+                  className='bi bi-person-badge-fill transition-icon'
+                  style={{ fontSize: "2rem" }}></i>
+                <h5 className='card-title mb-0'>Admin</h5>
+              </div>
+            </div>
 
-            <button
-              className='btn btn-sm btn-info btn-sign-in'
-              onClick={handleSignup}
-            >
-              Pendaftaran
-            </button>
-          </>
+            <div
+              className='card bg-info text-white transition-card'
+              style={{
+                width: "150px",
+                height: "150px",
+                cursor: "pointer",
+                transition: "all 0.3s ease",
+                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+              }}
+              onClick={() => handleRoleChange("teacher")}>
+              <div className='card-body d-flex flex-column align-items-center justify-content-center gap-2'>
+                <i
+                  className='bi bi-person-workspace transition-icon'
+                  style={{ fontSize: "2rem" }}></i>
+                <h5 className='card-title mb-0'>Guru</h5>
+              </div>
+            </div>
+
+            <div
+              className='card bg-info text-white transition-card'
+              style={{
+                width: "150px",
+                height: "150px",
+                cursor: "pointer",
+                transition: "all 0.3s ease",
+                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+              }}
+              onClick={() => handleRoleChange("student")}>
+              <div className='card-body d-flex flex-column align-items-center justify-content-center gap-2'>
+                <i
+                  className='bi bi-mortarboard-fill transition-icon'
+                  style={{ fontSize: "2rem" }}></i>
+                <h5 className='card-title mb-0'>Siswa</h5>
+              </div>
+            </div>
+
+            <div
+              className='card bg-info text-white transition-card'
+              style={{
+                width: "150px",
+                height: "150px",
+                cursor: "pointer",
+                transition: "all 0.3s ease",
+                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+              }}
+              onClick={() => handleRoleChange("parent")}>
+              <div className='card-body d-flex flex-column align-items-center justify-content-center gap-2'>
+                <i
+                  className='bi bi-people-fill transition-icon'
+                  style={{ fontSize: "2rem" }}></i>
+                <h5 className='card-title mb-0'>Wali Murid</h5>
+              </div>
+            </div>
+
+            <div
+              className='card bg-info text-white transition-card'
+              style={{
+                width: "150px",
+                height: "150px",
+                cursor: "pointer",
+                transition: "all 0.3s ease",
+                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+              }}
+              onClick={handleSignup}>
+              <div className='card-body d-flex flex-column align-items-center justify-content-center gap-2'>
+                <i
+                  className='bi bi-person-plus-fill transition-icon'
+                  style={{ fontSize: "2rem" }}></i>
+                <h5 className='card-title mb-0'>Pendaftaran</h5>
+              </div>
+            </div>
+          </div>
         )}
 
         {role !== "none" && !isSignup && (
           <form
             style={{ width: 300 }}
-            className='d-flex flex-column gap-2'
-            onSubmit={loginHandler}
-          >
-            <input
-              type={role === "admin" || role === "parent" ? "email" : "text"}
-              placeholder={
-                role === "student"
-                  ? "NIS"
-                  : role === "teacher"
-                  ? "USERNAME"
-                  : "EMAIL"
-              }
-              value={accountValue}
-              onChange={(e) => setAccountValue(e.target.value)}
-              required
-              className='form-control'
-            />
+            className='d-flex flex-column gap-3'
+            onSubmit={loginHandler}>
+            <div className='input-group'>
+              <span className='input-group-text'>
+                <i
+                  className={`bi ${
+                    role === "student"
+                      ? "bi-person-badge"
+                      : role === "teacher"
+                      ? "bi-person-workspace"
+                      : "bi-envelope"
+                  }`}></i>
+              </span>
+              <input
+                type={role === "admin" || role === "parent" ? "email" : "text"}
+                placeholder={
+                  role === "student"
+                    ? "NIS"
+                    : role === "teacher"
+                    ? "USERNAME"
+                    : "EMAIL"
+                }
+                value={accountValue}
+                onChange={(e) => setAccountValue(e.target.value)}
+                required
+                className='form-control'
+              />
+            </div>
 
-            <input
-              type={showPassword ? "text" : "password"}
-              placeholder='Password'
-              className='form-control'
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div className='input-group'>
+              <span className='input-group-text'>
+                <i className='bi bi-lock-fill'></i>
+              </span>
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder='Password'
+                className='form-control'
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
 
             <div className='form-check'>
               <input
@@ -181,8 +259,7 @@ const Index = () => {
               />
               <label
                 className='form-check-label text-white'
-                htmlFor='flexCheckDefault'
-              >
+                htmlFor='flexCheckDefault'>
                 Tampilkan Password
               </label>
             </div>
@@ -190,26 +267,27 @@ const Index = () => {
             <div className='d-flex justify-content-between'>
               <button
                 type='button'
-                className='btn btn-danger'
-                onClick={() => setRole("none")}
-              >
-                <i className='bi bi-arrow-left'></i> Kembali
+                className='btn btn-danger d-flex align-items-center gap-2'
+                onClick={() => setRole("none")}>
+                <i className='bi bi-arrow-left'></i>
+                Kembali
               </button>
               <button
                 type='submit'
-                className='btn btn-success'
-                disabled={isLoading}
-              >
+                className='btn btn-success d-flex align-items-center gap-2'
+                disabled={isLoading}>
                 {isLoading ? (
                   <>
                     <span
                       className='spinner-border spinner-border-sm'
-                      aria-hidden='true'
-                    ></span>
+                      aria-hidden='true'></span>
                     <span role='status'>Loading...</span>
                   </>
                 ) : (
-                  "Masuk"
+                  <>
+                    <i className='bi bi-box-arrow-in-right'></i>
+                    Masuk
+                  </>
                 )}
               </button>
             </div>

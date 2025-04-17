@@ -50,8 +50,7 @@ const FormJuz = ({ detail, setDetail }) => {
   return (
     <form
       onSubmit={addHandler}
-      className='rounded border shadow p-2 d-flex flex-column gap-2 bg-white'
-    >
+      className='rounded border p-2 d-flex flex-column gap-2 bg-white'>
       <p className='m-0 h6'>Tambah Juz</p>
 
       <input
@@ -66,15 +65,13 @@ const FormJuz = ({ detail, setDetail }) => {
         <button
           type='button'
           className='btn btn-sm btn-warning'
-          onClick={cancel}
-        >
+          onClick={cancel}>
           Batal
         </button>
         <button
           type='submit'
           className='btn btn-sm btn-success'
-          disabled={isLoading}
-        >
+          disabled={isLoading}>
           Simpan
         </button>
       </div>

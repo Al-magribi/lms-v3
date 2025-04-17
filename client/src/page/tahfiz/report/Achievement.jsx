@@ -33,8 +33,7 @@ const StudentDetailModal = ({ show, onClose, students, gradeName }) => {
               <button
                 type='button'
                 className='btn-close'
-                onClick={onClose}
-              ></button>
+                onClick={onClose}></button>
             </div>
             <div className='modal-body'>
               <div className='table-responsive'>
@@ -44,7 +43,7 @@ const StudentDetailModal = ({ show, onClose, students, gradeName }) => {
                       <th>NIS</th>
                       <th>Nama</th>
                       <th>Kelas</th>
-                      <th>Progress</th>
+                      <th style={{ width: "30%" }}>Progress</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -62,8 +61,7 @@ const StudentDetailModal = ({ show, onClose, students, gradeName }) => {
                               </small>
                               <div
                                 className='progress'
-                                style={{ height: "5px" }}
-                              >
+                                style={{ height: "5px" }}>
                                 <div
                                   className={`progress-bar ${
                                     p.persentase >= 100
@@ -78,8 +76,7 @@ const StudentDetailModal = ({ show, onClose, students, gradeName }) => {
                                   style={{ width: `${p.persentase}%` }}
                                   aria-valuenow={p.persentase}
                                   aria-valuemin='0'
-                                  aria-valuemax='100'
-                                ></div>
+                                  aria-valuemax='100'></div>
                               </div>
                             </div>
                           ))}
@@ -94,8 +91,7 @@ const StudentDetailModal = ({ show, onClose, students, gradeName }) => {
               <button
                 type='button'
                 className='btn btn-secondary'
-                onClick={onClose}
-              >
+                onClick={onClose}>
                 Tutup
               </button>
             </div>
@@ -114,6 +110,8 @@ const Achievement = () => {
     students: [],
     gradeName: "",
   });
+
+  console.log(data);
 
   if (isLoading || !data) return <div>Loading...</div>;
 
@@ -190,8 +188,7 @@ const Achievement = () => {
                               style={{ width: `${grade.achievement}%` }}
                               aria-valuenow={grade.achievement}
                               aria-valuemin='0'
-                              aria-valuemax='100'
-                            >
+                              aria-valuemax='100'>
                               {grade.achievement}%
                             </div>
                           </div>
@@ -215,8 +212,7 @@ const Achievement = () => {
                                 students: grade.students,
                                 gradeName: grade.name,
                               })
-                            }
-                          >
+                            }>
                             Lihat Detail Siswa
                           </button>
                         </div>

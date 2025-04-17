@@ -80,8 +80,7 @@ const Form = ({ detail, setDetail }) => {
   return (
     <form
       onSubmit={addHandler}
-      className='d-flex flex-column gap-2 rounded border p-2 shadow bg-white'
-    >
+      className='d-flex flex-column gap-2 rounded border p-2 bg-white'>
       <p className='m-0 h6'>BAB</p>
       <input
         type='text'

@@ -18,8 +18,7 @@ const StudentReport = () => {
     return (
       <Layout
         title={`Laporan Hafalan ${name.replace(/-/g, " ")}`}
-        levels={["tahfiz", "student", "parent"]}
-      >
+        levels={["tahfiz", "student", "parent"]}>
         <div className='d-flex justify-content-center'>
           <div className='spinner-border text-primary' role='status'>
             <span className='visually-hidden'>Loading...</span>
@@ -32,8 +31,7 @@ const StudentReport = () => {
   return (
     <Layout
       title={`Laporan Hafalan ${name.replace(/-/g, " ")}`}
-      levels={["tahfiz", "student", "parent"]}
-    >
+      levels={["tahfiz", "student", "parent"]}>
       <div className='d-print-none container mb-2'>
         <button className='btn btn-primary' onClick={handlePrint}>
           <i className='bi bi-printer me-2'></i>
@@ -75,8 +73,7 @@ const StudentReport = () => {
                     <div className='progress' style={{ height: "20px" }}>
                       <div
                         className='progress-bar bg-success'
-                        style={{ width: `${juz.progress}%` }}
-                      >
+                        style={{ width: `${juz.progress}%` }}>
                         {juz.progress}%
                       </div>
                     </div>
@@ -108,8 +105,7 @@ const StudentReport = () => {
                     {juz.surah.map((surah, idx) => (
                       <div
                         key={idx}
-                        className='d-flex justify-content-between align-items-center mb-1'
-                      >
+                        className='d-flex justify-content-between align-items-center mb-1'>
                         <span>{surah.surah_name}</span>
                         <span className='badge bg-info'>
                           {surah.verse} ayat | {surah.line} baris
@@ -121,17 +117,6 @@ const StudentReport = () => {
               </div>
             </div>
           ))}
-        </div>
-
-        <div className='mt-4 text-end'>
-          <p className='m-0'>Mengetahui,</p>
-          <img
-            src='/ttd-tahfiz.png'
-            alt='tanda tangan tahfiz'
-            className='img-fluid object-fit-contain'
-            style={{ width: 80 }}
-          />
-          <p className='m-0'>{import.meta.env.VITE_TAHFIZ}</p>
         </div>
       </div>
     </Layout>

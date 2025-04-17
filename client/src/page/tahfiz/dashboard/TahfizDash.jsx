@@ -11,7 +11,7 @@ const TahfizDash = () => {
 
     return data.map((item, index) => (
       <div key={index} className='col-12 mb-4'>
-        <div className='card shadow'>
+        <div className='card'>
           <div className='card-header'>
             <h5 className='mb-0'>
               {item.homebase} {item.periode}
@@ -48,8 +48,7 @@ const TahfizDash = () => {
                             {grade.target.map((target, idx) => (
                               <p
                                 key={idx}
-                                className='m-0 small badge bg-primary'
-                              >
+                                className='m-0 small badge bg-primary'>
                                 {target.juz} ({target.verses} ayat -{" "}
                                 {target.lines} Baris)
                               </p>

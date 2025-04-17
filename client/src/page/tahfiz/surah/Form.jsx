@@ -67,8 +67,7 @@ const Form = ({ detail, setDetail }) => {
   return (
     <form
       onSubmit={addHandler}
-      className='rounded border shadow bg-white d-flex flex-column gap-2 p-2'
-    >
+      className='rounded border bg-white d-flex flex-column gap-2 p-2'>
       <p className='m-0 h6'>Surah</p>
 
       <input

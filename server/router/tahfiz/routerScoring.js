@@ -403,8 +403,8 @@ router.post("/add-score", authorize("tahfiz"), async (req, res) => {
       // Check for existing data with the same surah_id only for type_id 6 (Harian)
       if (poin.type_id === 6) {
         const existingData = await client.query(
-          `SELECT from_count, to_count, from_line, to_line 
-          FROM t_process 
+          `SELECT from_count, to_count, from_line, to_line, juz_id
+          FROM t_process
           WHERE userid = $1 AND periode_id = $2 AND surah_id = $3 AND type_id = 6
           ORDER BY createdat DESC
           LIMIT 1`,
@@ -414,18 +414,21 @@ router.post("/add-score", authorize("tahfiz"), async (req, res) => {
         if (existingData.rows.length > 0) {
           const lastData = existingData.rows[0];
 
-          // Validasi ayat
-          if (fromAyat <= lastData.to_count) {
-            throw new Error(
-              "Dari ayat tidak boleh lebih kecil atau sama dengan ayat terakhir sebelumnya"
-            );
-          }
+          // Check if juzId from request matches juz_id from database
+          if (juzId === lastData.juz_id) {
+            // Validasi ayat
+            if (fromAyat <= lastData.to_count) {
+              throw new Error(
+                "Dari ayat tidak boleh lebih kecil atau sama dengan ayat terakhir sebelumnya untuk Juz yang sama"
+              );
+            }
 
-          // Validasi baris
-          if (fromLine <= lastData.to_line) {
-            throw new Error(
-              "Dari baris tidak boleh lebih kecil atau sama dengan baris terakhir sebelumnya"
-            );
+            // Validasi baris
+            if (fromLine <= lastData.to_line) {
+              throw new Error(
+                "Dari baris tidak boleh lebih kecil atau sama dengan baris terakhir sebelumnya untuk Juz yang sama"
+              );
+            }
           }
         }
       }

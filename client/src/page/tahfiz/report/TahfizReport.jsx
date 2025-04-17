@@ -12,7 +12,7 @@ const TahfizReport = () => {
 
   return (
     <Layout title={"Laporan Hafalan Siswa"} levels={["tahfiz"]}>
-      <div className='container-fluid card p-2 shadow mb-2'>
+      <div className='container-fluid card p-2 mb-2'>
         <div className='card-body p-0 text-end'>
           <div className='btn-group'>
             {types?.map((type) => (
@@ -21,21 +21,18 @@ const TahfizReport = () => {
                 className={`btn btn-sm ${
                   typeId === type.id ? "btn-secondary" : "btn-outline-secondary"
                 }`}
-                onClick={() => setTypeId(type.id)}
-              >
+                onClick={() => setTypeId(type.id)}>
                 {type.name}
               </button>
             ))}
             <button
               className='btn btn-sm btn-danger'
-              onClick={() => setTypeId("")}
-            >
+              onClick={() => setTypeId("")}>
               <i className='bi bi-recycle'></i>
             </button>
             <button
               className='btn btn-sm btn-success'
-              onClick={() => setAchievement(!achievement)}
-            >
+              onClick={() => setAchievement(!achievement)}>
               {achievement ? "Laporan" : "Capaian"}
             </button>
           </div>

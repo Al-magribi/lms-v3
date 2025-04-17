@@ -163,8 +163,7 @@ const Form = ({ detail, setDetail }) => {
   return (
     <form
       onSubmit={addHandler}
-      className='rounded p-2 border bg-white d-flex flex-column gap-2 shadow'
-    >
+      className='rounded p-2 border bg-white d-flex flex-column gap-2'>
       <p className='m-0 h6'>{detail?.id ? "Edit Ujian" : "Tambah Ujian"}</p>
 
       <Select
@@ -273,8 +272,7 @@ const Form = ({ detail, setDetail }) => {
         value={formData.isshuffle}
         onChange={(e) =>
           setFormData({ ...formData, isshuffle: e.target.value })
-        }
-      >
+        }>
         <option value='' hidden>
           Acak Soal
         </option>
@@ -286,15 +284,13 @@ const Form = ({ detail, setDetail }) => {
         <button
           type='button'
           className='btn btn-sm btn-warning'
-          onClick={cancel}
-        >
+          onClick={cancel}>
           Batal
         </button>
         <button
           type='submit'
           className='btn btn-sm btn-success'
-          disabled={isLoading}
-        >
+          disabled={isLoading}>
           {detail?.id ? "Update" : "Simpan"}
         </button>
       </div>

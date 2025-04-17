@@ -180,10 +180,14 @@ router.get("/admin-stats", authorize("admin"), async (req, res) => {
             FROM l_chapter ch
             LEFT JOIN l_content co ON co.chapter = ch.id
             LEFT JOIN l_file f ON f.content = co.id
-            LEFT JOIN a_subject s ON ch.subject = s.id
-            WHERE s.homebase = $1
+            WHERE ch.createdat >= (
+              SELECT createdat 
+              FROM l_chapter 
+              ORDER BY createdat DESC 
+              LIMIT 1 OFFSET 9
+            )
         `,
-      [homebaseId]
+      []
     );
 
     res.json({
@@ -411,21 +415,31 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
     `);
 
     // Get exam statistics
-    const examStats = await pool.query(`
+    const examStats = await pool.query(
+      `
       SELECT 
         COUNT(*) as total_exams,
-        COUNT(CASE WHEN isactive = true THEN 1 END) as active_exams,
-        COUNT(DISTINCT teacher) as teacher_count,
-        COUNT(DISTINCT classid) as class_count,
-        COUNT(DISTINCT subject) as subject_count
+        COUNT(CASE WHEN e.isactive = true THEN 1 END) as active_exams,
+        COUNT(DISTINCT e.teacher) as teacher_count,
+        COUNT(DISTINCT c.classid) as class_count,
+        COUNT(DISTINCT cb.subject) as subject_count
       FROM c_exam e
       LEFT JOIN c_class c ON c.exam = e.id
       LEFT JOIN c_ebank eb ON eb.exam = e.id
       LEFT JOIN c_bank cb ON cb.id = eb.bank
-    `);
+      WHERE e.createdat >= (
+        SELECT createdat 
+        FROM c_exam 
+        ORDER BY createdat DESC 
+        LIMIT 1 OFFSET 9
+      )
+    `,
+      []
+    );
 
     // Get learning material statistics
-    const learningStats = await pool.query(`
+    const learningStats = await pool.query(
+      `
       SELECT 
         COUNT(DISTINCT ch.id) as total_chapters,
         COUNT(DISTINCT co.id) as total_contents,
@@ -434,10 +448,19 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
       FROM l_chapter ch
       LEFT JOIN l_content co ON co.chapter = ch.id
       LEFT JOIN l_file f ON f.content = co.id
-    `);
+      WHERE ch.createdat >= (
+        SELECT createdat 
+        FROM l_chapter 
+        ORDER BY createdat DESC 
+        LIMIT 1 OFFSET 9
+      )
+    `,
+      []
+    );
 
     // Get recent activities
-    const recentActivities = await pool.query(`
+    const recentActivities = await pool.query(
+      `
       SELECT 
         'exam' as type,
         e.name as title,
@@ -445,7 +468,12 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
         e.createdat
       FROM c_exam e
       JOIN u_teachers t ON e.teacher = t.id
-      WHERE e.createdat >= NOW() - INTERVAL '7 days'
+      WHERE e.createdat >= (
+        SELECT createdat 
+        FROM c_exam 
+        ORDER BY createdat DESC 
+        LIMIT 1 OFFSET 9
+      )
       UNION ALL
       SELECT 
         'subject' as type,
@@ -455,7 +483,12 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
       FROM a_subject s
       JOIN at_subject ats ON ats.subject = s.id
       JOIN u_teachers t ON ats.teacher = t.id
-      WHERE s.createdat >= NOW() - INTERVAL '7 days'
+      WHERE s.createdat >= (
+        SELECT createdat 
+        FROM a_subject 
+        ORDER BY createdat DESC 
+        LIMIT 1 OFFSET 9
+      )
       UNION ALL
       SELECT 
         'chapter' as type,
@@ -464,10 +497,17 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
         ch.createdat
       FROM l_chapter ch
       JOIN u_teachers t ON ch.teacher = t.id
-      WHERE ch.createdat >= NOW() - INTERVAL '7 days'
+      WHERE ch.createdat >= (
+        SELECT createdat 
+        FROM l_chapter 
+        ORDER BY createdat DESC 
+        LIMIT 1 OFFSET 9
+      )
       ORDER BY createdat DESC
       LIMIT 10
-    `);
+    `,
+      []
+    );
 
     // Get homebase statistics
     const homebaseStats = await pool.query(`

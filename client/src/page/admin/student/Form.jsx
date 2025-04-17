@@ -77,8 +77,7 @@ const Form = ({ detail, setDetail }) => {
   return (
     <form
       onSubmit={addHandler}
-      className='p-2 bg-white rounded border shadow d-flex flex-column gap-2'
-    >
+      className='p-2 bg-white rounded border d-flex flex-column gap-2'>
       <p className='m-0 h6'>Siswa</p>
 
       <select
@@ -86,8 +85,7 @@ const Form = ({ detail, setDetail }) => {
         id='entry'
         className='form-select'
         value={formData.entry}
-        onChange={handleChange}
-      >
+        onChange={handleChange}>
         <option value='' hidden>
           Tahun Masuk
         </option>
@@ -116,8 +114,7 @@ const Form = ({ detail, setDetail }) => {
         id='gender'
         className='form-select'
         value={formData.gender}
-        onChange={handleChange}
-      >
+        onChange={handleChange}>
         <option value='' hidden>
           Jenis Kelamin
         </option>
@@ -129,15 +126,13 @@ const Form = ({ detail, setDetail }) => {
         <button
           type='button'
           className='btn btn-sm btn-warning'
-          onClick={cancel}
-        >
+          onClick={cancel}>
           Batal
         </button>
         <button
           type='submit'
           className='btn btn-sm btn-success'
-          disabled={isLoading}
-        >
+          disabled={isLoading}>
           Simpan
         </button>
       </div>

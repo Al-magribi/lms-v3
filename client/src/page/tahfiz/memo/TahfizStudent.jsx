@@ -162,42 +162,40 @@ const TahfizStudent = () => {
                       />
                     </div>
                   </div>
-
-                  <div className='card'>
-                    <div className='card-body'>
-                      <Category />
-                    </div>
-                  </div>
                 </div>
               </div>
 
               {/* Right Column - List and Save Button */}
               <div className='col-lg-6'>
-                <div className='d-flex flex-column gap-4'>
-                  <div className='card'>
-                    <div className='card-body'>
-                      <ListSurah data={tableData} deleteSurah={deleteSurah} />
-                    </div>
-                  </div>
-
-                  <div className='text-end'>
-                    <button
-                      className='btn btn-primary'
-                      disabled={tableData?.length === 0 || isLoading}
-                      onClick={handleSave}
-                    >
-                      {isLoading ? (
-                        <span
-                          className='spinner-border spinner-border-sm me-2'
-                          role='status'
-                          aria-hidden='true'
-                        ></span>
-                      ) : null}
-                      Simpan
-                    </button>
+                <div className='card'>
+                  <div className='card-body'>
+                    <Category />
                   </div>
                 </div>
               </div>
+
+              <div className='col-12'>
+                <div className='card'>
+                  <div className='card-body'>
+                    <ListSurah data={tableData} deleteSurah={deleteSurah} />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className='text-end mt-2'>
+              <button
+                className='btn btn-primary'
+                disabled={tableData?.length === 0 || isLoading}
+                onClick={handleSave}>
+                {isLoading ? (
+                  <span
+                    className='spinner-border spinner-border-sm me-2'
+                    role='status'
+                    aria-hidden='true'></span>
+                ) : null}
+                Simpan
+              </button>
             </div>
           </div>
         </div>

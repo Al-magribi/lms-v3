@@ -70,8 +70,7 @@ const FormSurah = ({ detail, setDetail }) => {
   return (
     <form
       onSubmit={addHanlder}
-      className='mt-2 rounded border shadow bg-white p-2 d-flex flex-column gap-2'
-    >
+      className='mt-2 rounded border bg-white p-2 d-flex flex-column gap-2'>
       <p className='m-0 h6'>Tambah Surah</p>
 
       <select
@@ -80,8 +79,7 @@ const FormSurah = ({ detail, setDetail }) => {
         className='form-select'
         required
         value={juzId}
-        onChange={(e) => setJuzId(e.target.value)}
-      >
+        onChange={(e) => setJuzId(e.target.value)}>
         <option value='' hidden>
           Pilih Juz
         </option>
@@ -99,8 +97,7 @@ const FormSurah = ({ detail, setDetail }) => {
         className='form-select'
         required
         value={surahId}
-        onChange={(e) => setSurahId(e.target.value)}
-      >
+        onChange={(e) => setSurahId(e.target.value)}>
         <option value='' hidden>
           Pilih Surah
         </option>
@@ -115,8 +112,7 @@ const FormSurah = ({ detail, setDetail }) => {
         className='form-select'
         value={fromAyat}
         onChange={(e) => setFromAyat(e.target.value)}
-        disabled={!surahId}
-      >
+        disabled={!surahId}>
         <option value='' hidden>
           Dari Ayat
         </option>
@@ -131,8 +127,7 @@ const FormSurah = ({ detail, setDetail }) => {
         className='form-select'
         value={toAyat}
         onChange={(e) => setToAyat(e.target.value)}
-        disabled={!surahId}
-      >
+        disabled={!surahId}>
         <option value='' hidden>
           Sampai Ayat
         </option>
@@ -158,15 +153,13 @@ const FormSurah = ({ detail, setDetail }) => {
         <button
           type='button'
           className='btn btn-sm btn-warning me-2'
-          onClick={setDetail}
-        >
+          onClick={setDetail}>
           Batal
         </button>
         <button
           type='submit'
           className='btn btn-sm btn-success'
-          disabled={isLoading}
-        >
+          disabled={isLoading}>
           Simpan
         </button>
       </div>
