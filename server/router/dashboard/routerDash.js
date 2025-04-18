@@ -190,56 +190,158 @@ router.get("/admin-stats", authorize("admin"), async (req, res) => {
       []
     );
 
-    // New queries for db_student data
-    // Student demographic data
+    // Student demographic data untuk admin (filter by homebaseid, ignore null birth_date)
     const studentDemographics = await pool.query(
       `
-            SELECT 
-                COUNT(*) as total_students,
-                COUNT(CASE WHEN gender = 'L' THEN 1 END) as male_count,
-                COUNT(CASE WHEN gender = 'P' THEN 1 END) as female_count,
-                COUNT(CASE WHEN EXTRACT(YEAR FROM AGE(birth_date)) BETWEEN 11 AND 12 THEN 1 END) as age_11_12,
-                COUNT(CASE WHEN EXTRACT(YEAR FROM AGE(birth_date)) BETWEEN 13 AND 14 THEN 1 END) as age_13_14,
-                COUNT(CASE WHEN EXTRACT(YEAR FROM AGE(birth_date)) BETWEEN 15 AND 16 THEN 1 END) as age_15_16,
-                COUNT(CASE WHEN EXTRACT(YEAR FROM AGE(birth_date)) BETWEEN 17 AND 18 THEN 1 END) as age_17_18,
-                COUNT(CASE WHEN EXTRACT(YEAR FROM AGE(birth_date)) BETWEEN 19 AND 20 THEN 1 END) as age_19_20
-            FROM db_student
-            WHERE homebaseid = $1
-        `,
+      WITH valid_students AS (
+        SELECT
+          id,
+          gender,
+          birth_date,
+          EXTRACT(YEAR FROM AGE(CURRENT_DATE, birth_date))::integer as age
+        FROM db_student
+        WHERE birth_date IS NOT NULL AND homebaseid = $1
+      ),
+      age_stats AS (
+        SELECT
+          MIN(age) as min_age,
+          MAX(age) as max_age,
+          COUNT(*) as total_students,
+          COUNT(CASE WHEN gender = 'L' THEN 1 END) as male_count,
+          COUNT(CASE WHEN gender = 'P' THEN 1 END) as female_count
+        FROM valid_students
+      ),
+      -- Create dynamic age ranges based on actual data (filtered by homebase)
+      age_ranges AS (
+        SELECT
+          CASE 
+            WHEN age < (SELECT MIN(age) + 2 FROM valid_students)
+              THEN concat('<', (SELECT MIN(age) + 2 FROM valid_students))
+            WHEN age >= (SELECT MAX(age) - 1 FROM valid_students)
+              THEN concat('>', (SELECT MAX(age) - 2 FROM valid_students))
+            ELSE concat(
+              FLOOR(age/2) * 2, '-', 
+              FLOOR(age/2) * 2 + 1
+            )
+          END as age_group,
+          CASE 
+            WHEN age < (SELECT MIN(age) + 2 FROM valid_students) THEN 1
+            WHEN age >= (SELECT MAX(age) - 1 FROM valid_students) THEN 999
+            ELSE FLOOR(age/2) * 2
+          END as sort_order,
+          id,
+          gender,
+          age
+        FROM valid_students
+      ),
+      age_distribution_calc AS (
+        SELECT
+          age_group,
+          sort_order,
+          COUNT(*) as count
+        FROM age_ranges
+        GROUP BY age_group, sort_order
+        ORDER BY sort_order
+      )
+      SELECT
+        COALESCE((SELECT total_students FROM age_stats), 0) as total_students,
+        COALESCE((SELECT male_count FROM age_stats), 0) as male_count,
+        COALESCE((SELECT female_count FROM age_stats), 0) as female_count,
+        COALESCE((SELECT min_age FROM age_stats), 0) as min_age,
+        COALESCE((SELECT max_age FROM age_stats), 0) as max_age,
+        COALESCE(
+          (SELECT json_agg(json_build_object(
+            'age_group', age_group,
+            'count', count
+          ) ORDER BY sort_order)
+           FROM age_distribution_calc),
+          '[]'::json
+        ) as age_distribution;
+    `,
       [homebaseId]
     );
 
     // Geographical distribution of students
     const geographicalDistribution = await pool.query(
       `
-            SELECT 
-                p.name as province_name,
-                COUNT(*) as student_count
-            FROM db_student ds
-            JOIN db_province p ON ds.provinceid = p.id
-            WHERE ds.homebaseid = $1
-            GROUP BY p.id, p.name
-            ORDER BY student_count DESC
-            LIMIT 5
-        `,
+      WITH province_stats AS (
+        SELECT 
+          p.name as province_name,
+          COUNT(*) as student_count
+        FROM db_student ds
+        JOIN db_province p ON ds.provinceid = p.id
+        WHERE ds.homebaseid = $1
+        GROUP BY p.id, p.name
+        ORDER BY student_count DESC
+        LIMIT 5
+      ),
+      city_stats AS (
+        SELECT 
+          c.name as city_name,
+          p.name as province_name,
+          COUNT(*) as student_count
+        FROM db_student ds
+        JOIN db_city c ON ds.cityid = c.id
+        JOIN db_province p ON c.provinceid = p.id
+        WHERE ds.homebaseid = $1
+        GROUP BY c.id, c.name, p.name
+        ORDER BY student_count DESC
+        LIMIT 5
+      ),
+      district_stats AS (
+        SELECT 
+          d.name as district_name,
+          c.name as city_name,
+          p.name as province_name,
+          COUNT(*) as student_count
+        FROM db_student ds
+        JOIN db_district d ON ds.districtid = d.id
+        JOIN db_city c ON d.cityid = c.id
+        JOIN db_province p ON c.provinceid = p.id
+        WHERE ds.homebaseid = $1
+        GROUP BY d.id, d.name, c.name, p.name
+        ORDER BY student_count DESC
+        LIMIT 5
+      ),
+      village_stats AS (
+        SELECT 
+          v.name as village_name,
+          d.name as district_name,
+          c.name as city_name,
+          p.name as province_name,
+          COUNT(*) as student_count
+        FROM db_student ds
+        JOIN db_village v ON ds.villageid = v.id
+        JOIN db_district d ON v.districtid = d.id
+        JOIN db_city c ON d.cityid = c.id
+        JOIN db_province p ON c.provinceid = p.id
+        WHERE ds.homebaseid = $1
+        GROUP BY v.id, v.name, d.name, c.name, p.name
+        ORDER BY student_count DESC
+        LIMIT 5
+      )
+      SELECT 
+        json_build_object(
+          'provinces', (SELECT json_agg(province_stats) FROM province_stats),
+          'cities', (SELECT json_agg(city_stats) FROM city_stats),
+          'districts', (SELECT json_agg(district_stats) FROM district_stats),
+          'villages', (SELECT json_agg(village_stats) FROM village_stats)
+        ) as geographical_data
+      `,
       [homebaseId]
     );
 
     // Family information statistics
-    const familyStats = await pool.query(
-      `
-            SELECT 
-                COUNT(CASE WHEN father_name IS NOT NULL THEN 1 END) as with_father_info,
-                COUNT(CASE WHEN mother_name IS NOT NULL THEN 1 END) as with_mother_info,
-                COUNT(CASE WHEN father_job IS NOT NULL THEN 1 END) as with_father_job,
-                COUNT(CASE WHEN mother_job IS NOT NULL THEN 1 END) as with_mother_job,
-                COUNT(CASE WHEN father_phone IS NOT NULL THEN 1 END) as with_father_phone,
-                COUNT(CASE WHEN mother_phone IS NOT NULL THEN 1 END) as with_mother_phone
-            FROM db_student
-            WHERE homebaseid = $1
-        `,
-      [homebaseId]
-    );
+    const familyStats = await pool.query(`
+      SELECT 
+        COUNT(CASE WHEN father_name IS NOT NULL THEN 1 END) as with_father_info,
+        COUNT(CASE WHEN mother_name IS NOT NULL THEN 1 END) as with_mother_info,
+        COUNT(CASE WHEN father_job IS NOT NULL THEN 1 END) as with_father_job,
+        COUNT(CASE WHEN mother_job IS NOT NULL THEN 1 END) as with_mother_job,
+        COUNT(CASE WHEN father_phone IS NOT NULL THEN 1 END) as with_father_phone,
+        COUNT(CASE WHEN mother_phone IS NOT NULL THEN 1 END) as with_mother_phone
+      FROM db_student
+    `);
 
     // Student entry statistics
     const entryStats = await pool.query(`
@@ -261,9 +363,8 @@ router.get("/admin-stats", authorize("admin"), async (req, res) => {
       recentActivities: recentActivities.rows,
       examStats: examStats.rows[0],
       learningStats: learningStats.rows[0],
-      // New data from db_student
       studentDemographics: studentDemographics.rows[0],
-      geographicalDistribution: geographicalDistribution.rows,
+      geographicalDistribution: geographicalDistribution.rows[0],
       familyStats: familyStats.rows[0],
       entryStats: entryStats.rows,
     });
@@ -585,31 +686,135 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
       LIMIT 10
     `);
 
-    // New queries for db_student data
-    // Student demographic data
+    // Student demographic data untuk center (semua siswa tanpa filter homebase, ignore null birth_date)
     const studentDemographics = await pool.query(`
-      SELECT 
-        COUNT(*) as total_students,
-        COUNT(CASE WHEN gender = 'L' THEN 1 END) as male_count,
-        COUNT(CASE WHEN gender = 'P' THEN 1 END) as female_count,
-        COUNT(CASE WHEN EXTRACT(YEAR FROM AGE(birth_date)) BETWEEN 11 AND 12 THEN 1 END) as age_11_12,
-        COUNT(CASE WHEN EXTRACT(YEAR FROM AGE(birth_date)) BETWEEN 13 AND 14 THEN 1 END) as age_13_14,
-        COUNT(CASE WHEN EXTRACT(YEAR FROM AGE(birth_date)) BETWEEN 15 AND 16 THEN 1 END) as age_15_16,
-        COUNT(CASE WHEN EXTRACT(YEAR FROM AGE(birth_date)) BETWEEN 17 AND 18 THEN 1 END) as age_17_18,
-        COUNT(CASE WHEN EXTRACT(YEAR FROM AGE(birth_date)) BETWEEN 19 AND 20 THEN 1 END) as age_19_20
-      FROM db_student
+      WITH valid_students AS (
+        SELECT
+          id,
+          gender,
+          birth_date,
+          EXTRACT(YEAR FROM AGE(CURRENT_DATE, birth_date))::integer as age
+        FROM db_student
+        WHERE birth_date IS NOT NULL
+      ),
+      age_stats AS (
+        SELECT
+          MIN(age) as min_age,
+          MAX(age) as max_age,
+          COUNT(*) as total_students,
+          COUNT(CASE WHEN gender = 'L' THEN 1 END) as male_count,
+          COUNT(CASE WHEN gender = 'P' THEN 1 END) as female_count
+        FROM valid_students
+      ),
+      -- Create dynamic age ranges based on actual data
+      age_ranges AS (
+        SELECT
+          CASE 
+            WHEN age < (SELECT MIN(age) + 2 FROM valid_students) 
+              THEN concat('<', (SELECT MIN(age) + 2 FROM valid_students))
+            WHEN age >= (SELECT MAX(age) - 1 FROM valid_students)
+              THEN concat('>', (SELECT MAX(age) - 2 FROM valid_students))
+            ELSE concat(
+              FLOOR(age/2) * 2, '-', 
+              FLOOR(age/2) * 2 + 1
+            )
+          END as age_group,
+          CASE 
+            WHEN age < (SELECT MIN(age) + 2 FROM valid_students) THEN 1
+            WHEN age >= (SELECT MAX(age) - 1 FROM valid_students) THEN 999
+            ELSE FLOOR(age/2) * 2
+          END as sort_order,
+          id,
+          gender,
+          age
+        FROM valid_students
+      ),
+      age_distribution_calc AS (
+        SELECT
+          age_group,
+          sort_order,
+          COUNT(*) as count
+        FROM age_ranges
+        GROUP BY age_group, sort_order
+        ORDER BY sort_order
+      )
+      SELECT
+        COALESCE((SELECT total_students FROM age_stats), 0) as total_students,
+        COALESCE((SELECT male_count FROM age_stats), 0) as male_count,
+        COALESCE((SELECT female_count FROM age_stats), 0) as female_count,
+        COALESCE((SELECT min_age FROM age_stats), 0) as min_age,
+        COALESCE((SELECT max_age FROM age_stats), 0) as max_age,
+        COALESCE(
+          (SELECT json_agg(json_build_object(
+            'age_group', age_group,
+            'count', count
+          ) ORDER BY sort_order)
+           FROM age_distribution_calc),
+          '[]'::json
+        ) as age_distribution;
     `);
 
     // Geographical distribution of students
     const geographicalDistribution = await pool.query(`
+      WITH province_stats AS (
+        SELECT 
+          p.name as province_name,
+          COUNT(*) as student_count
+        FROM db_student ds
+        JOIN db_province p ON ds.provinceid = p.id
+        GROUP BY p.id, p.name
+        ORDER BY student_count DESC
+        LIMIT 5
+      ),
+      city_stats AS (
+        SELECT 
+          c.name as city_name,
+          p.name as province_name,
+          COUNT(*) as student_count
+        FROM db_student ds
+        JOIN db_city c ON ds.cityid = c.id
+        JOIN db_province p ON c.provinceid = p.id
+        GROUP BY c.id, c.name, p.name
+        ORDER BY student_count DESC
+        LIMIT 5
+      ),
+      district_stats AS (
+        SELECT 
+          d.name as district_name,
+          c.name as city_name,
+          p.name as province_name,
+          COUNT(*) as student_count
+        FROM db_student ds
+        JOIN db_district d ON ds.districtid = d.id
+        JOIN db_city c ON d.cityid = c.id
+        JOIN db_province p ON c.provinceid = p.id
+        GROUP BY d.id, d.name, c.name, p.name
+        ORDER BY student_count DESC
+        LIMIT 5
+      ),
+      village_stats AS (
+        SELECT 
+          v.name as village_name,
+          d.name as district_name,
+          c.name as city_name,
+          p.name as province_name,
+          COUNT(*) as student_count
+        FROM db_student ds
+        JOIN db_village v ON ds.villageid = v.id
+        JOIN db_district d ON v.districtid = d.id
+        JOIN db_city c ON d.cityid = c.id
+        JOIN db_province p ON c.provinceid = p.id
+        GROUP BY v.id, v.name, d.name, c.name, p.name
+        ORDER BY student_count DESC
+        LIMIT 5
+      )
       SELECT 
-        p.name as province_name,
-        COUNT(*) as student_count
-      FROM db_student ds
-      JOIN db_province p ON ds.provinceid = p.id
-      GROUP BY p.id, p.name
-      ORDER BY student_count DESC
-      LIMIT 5
+        json_build_object(
+          'provinces', (SELECT json_agg(province_stats) FROM province_stats),
+          'cities', (SELECT json_agg(city_stats) FROM city_stats),
+          'districts', (SELECT json_agg(district_stats) FROM district_stats),
+          'villages', (SELECT json_agg(village_stats) FROM village_stats)
+        ) as geographical_data
     `);
 
     // Family information statistics
@@ -644,9 +849,8 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
       recentActivities: recentActivities.rows,
       homebaseStats: homebaseStats.rows,
       activityLogs: activityLogs.rows,
-      // New data from db_student
       studentDemographics: studentDemographics.rows[0],
-      geographicalDistribution: geographicalDistribution.rows,
+      geographicalDistribution: geographicalDistribution.rows[0],
       familyStats: familyStats.rows[0],
       entryStats: entryStats.rows,
     });

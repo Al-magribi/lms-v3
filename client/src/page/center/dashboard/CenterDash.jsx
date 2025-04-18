@@ -13,7 +13,7 @@ import {
   Title,
 } from "chart.js";
 import StudentDemographics from "./components/StudentDemographics";
-import GeographicalDistribution from "./components/GeographicalDistribution";
+import GeographicalDistribution from "../../../components/geographical/GeographicalDistribution";
 import EntryYearDistribution from "./components/EntryYearDistribution";
 import FamilyInformation from "./components/FamilyInformation";
 
@@ -40,11 +40,10 @@ const CenterDash = () => {
     return (
       <Layout title={"Admin Dashboard"}>
         <div
-          className="d-flex justify-content-center align-items-center"
-          style={{ height: "50vh" }}
-        >
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
+          className='d-flex justify-content-center align-items-center'
+          style={{ height: "50vh" }}>
+          <div className='spinner-border text-primary' role='status'>
+            <span className='visually-hidden'>Loading...</span>
           </div>
         </div>
       </Layout>
@@ -54,11 +53,11 @@ const CenterDash = () => {
   if (error) {
     return (
       <Layout title={"Admin Dashboard"}>
-        <div className="alert alert-danger" role="alert">
-          <h4 className="alert-heading">Error!</h4>
+        <div className='alert alert-danger' role='alert'>
+          <h4 className='alert-heading'>Error!</h4>
           <p>Failed to load dashboard data. Please try again later.</p>
           <hr />
-          <p className="mb-0">Error details: {error.message}</p>
+          <p className='mb-0'>Error details: {error.message}</p>
         </div>
       </Layout>
     );
@@ -81,38 +80,38 @@ const CenterDash = () => {
 
   return (
     <Layout title={"Admin Dashboard"} levels={["center"]}>
-      <div className="container-fluid">
+      <div className='container-fluid'>
         {/* Overview Cards */}
-        <div className="row mb-4">
-          <div className="col-md-3">
-            <div className="card bg-primary text-white">
-              <div className="card-body">
-                <h5 className="card-title">Total Students</h5>
-                <h2 className="card-text">{basicStats?.total_students || 0}</h2>
+        <div className='row mb-4'>
+          <div className='col-md-3'>
+            <div className='card bg-primary text-white'>
+              <div className='card-body'>
+                <h5 className='card-title'>Total Students</h5>
+                <h2 className='card-text'>{basicStats?.total_students || 0}</h2>
               </div>
             </div>
           </div>
-          <div className="col-md-3">
-            <div className="card bg-success text-white">
-              <div className="card-body">
-                <h5 className="card-title">Total Teachers</h5>
-                <h2 className="card-text">{basicStats?.total_teachers || 0}</h2>
+          <div className='col-md-3'>
+            <div className='card bg-success text-white'>
+              <div className='card-body'>
+                <h5 className='card-title'>Total Teachers</h5>
+                <h2 className='card-text'>{basicStats?.total_teachers || 0}</h2>
               </div>
             </div>
           </div>
-          <div className="col-md-3">
-            <div className="card bg-info text-white">
-              <div className="card-body">
-                <h5 className="card-title">Total Classes</h5>
-                <h2 className="card-text">{basicStats?.total_classes || 0}</h2>
+          <div className='col-md-3'>
+            <div className='card bg-info text-white'>
+              <div className='card-body'>
+                <h5 className='card-title'>Total Classes</h5>
+                <h2 className='card-text'>{basicStats?.total_classes || 0}</h2>
               </div>
             </div>
           </div>
-          <div className="col-md-3">
-            <div className="card bg-warning text-white">
-              <div className="card-body">
-                <h5 className="card-title">Total Homebase</h5>
-                <h2 className="card-text">{basicStats?.total_homebase || 0}</h2>
+          <div className='col-md-3'>
+            <div className='card bg-warning text-white'>
+              <div className='card-body'>
+                <h5 className='card-title'>Total Homebase</h5>
+                <h2 className='card-text'>{basicStats?.total_homebase || 0}</h2>
               </div>
             </div>
           </div>
@@ -122,11 +121,8 @@ const CenterDash = () => {
         <StudentDemographics studentDemographics={studentDemographics} />
 
         {/* Geographical Distribution and Entry Year */}
-        <div className="row mb-4">
-          <GeographicalDistribution
-            geographicalDistribution={geographicalDistribution}
-            studentDemographics={studentDemographics}
-          />
+        <div className='row mb-3'>
+          <GeographicalDistribution data={geographicalDistribution} />
           <EntryYearDistribution
             entryStats={entryStats}
             studentDemographics={studentDemographics}
@@ -140,15 +136,15 @@ const CenterDash = () => {
         />
 
         {/* Homebase Statistics */}
-        <div className="row mb-4">
-          <div className="col-md-12">
-            <div className="card">
-              <div className="card-header">
-                <h5 className="card-title mb-0">Statistik Homebase</h5>
+        <div className='row mb-4'>
+          <div className='col-md-12'>
+            <div className='card'>
+              <div className='card-header'>
+                <h5 className='card-title mb-0'>Statistik Homebase</h5>
               </div>
-              <div className="card-body">
-                <div className="table-responsive">
-                  <table className="table table-striped">
+              <div className='card-body'>
+                <div className='table-responsive'>
+                  <table className='table table-striped'>
                     <thead>
                       <tr>
                         <th>Homebase</th>
@@ -177,15 +173,15 @@ const CenterDash = () => {
         </div>
 
         {/* Students Distribution by Grade */}
-        <div className="row mb-4">
-          <div className="col-md-6">
-            <div className="card">
-              <div className="card-header">
-                <h5 className="card-title mb-0">Students by Grade</h5>
+        <div className='row mb-4'>
+          <div className='col-md-6'>
+            <div className='card'>
+              <div className='card-header'>
+                <h5 className='card-title mb-0'>Students by Grade</h5>
               </div>
-              <div className="card-body">
-                <div className="table-responsive">
-                  <table className="table table-striped">
+              <div className='card-body'>
+                <div className='table-responsive'>
+                  <table className='table table-striped'>
                     <thead>
                       <tr>
                         <th>Grade</th>
@@ -210,19 +206,19 @@ const CenterDash = () => {
             </div>
           </div>
 
-          <div className="col-md-6">
-            <div className="card">
-              <div className="card-header">
-                <h5 className="card-title mb-0">Teacher Composition</h5>
+          <div className='col-md-6'>
+            <div className='card'>
+              <div className='card-header'>
+                <h5 className='card-title mb-0'>Teacher Composition</h5>
               </div>
-              <div className="card-body">
-                <div className="row">
-                  <div className="col-md-6">
+              <div className='card-body'>
+                <div className='row'>
+                  <div className='col-md-6'>
                     <h6>Gender Distribution</h6>
                     <p>Male: {teacherComposition?.male_count || 0}</p>
                     <p>Female: {teacherComposition?.female_count || 0}</p>
                   </div>
-                  <div className="col-md-6">
+                  <div className='col-md-6'>
                     <h6>Homeroom Teachers</h6>
                     <p>Total: {teacherComposition?.homeroom_count || 0}</p>
                   </div>
@@ -233,23 +229,23 @@ const CenterDash = () => {
         </div>
 
         {/* Learning Materials and Exams */}
-        <div className="row mb-4">
-          <div className="col-md-6">
-            <div className="card">
-              <div className="card-header">
-                <h5 className="card-title mb-0">Learning Materials</h5>
+        <div className='row mb-4'>
+          <div className='col-md-6'>
+            <div className='card'>
+              <div className='card-header'>
+                <h5 className='card-title mb-0'>Learning Materials</h5>
               </div>
-              <div className="card-body">
-                <div className="row">
-                  <div className="col-md-4">
+              <div className='card-body'>
+                <div className='row'>
+                  <div className='col-md-4'>
                     <h6>Chapters</h6>
                     <p>{learningStats?.total_chapters || 0}</p>
                   </div>
-                  <div className="col-md-4">
+                  <div className='col-md-4'>
                     <h6>Contents</h6>
                     <p>{learningStats?.total_contents || 0}</p>
                   </div>
-                  <div className="col-md-4">
+                  <div className='col-md-4'>
                     <h6>Files</h6>
                     <p>{learningStats?.total_files || 0}</p>
                   </div>
@@ -258,22 +254,22 @@ const CenterDash = () => {
             </div>
           </div>
 
-          <div className="col-md-6">
-            <div className="card">
-              <div className="card-header">
-                <h5 className="card-title mb-0">Exam Statistics</h5>
+          <div className='col-md-6'>
+            <div className='card'>
+              <div className='card-header'>
+                <h5 className='card-title mb-0'>Exam Statistics</h5>
               </div>
-              <div className="card-body">
-                <div className="row">
-                  <div className="col-md-4">
+              <div className='card-body'>
+                <div className='row'>
+                  <div className='col-md-4'>
                     <h6>Total Exams</h6>
                     <p>{examStats?.total_exams || 0}</p>
                   </div>
-                  <div className="col-md-4">
+                  <div className='col-md-4'>
                     <h6>Active Exams</h6>
                     <p>{examStats?.active_exams || 0}</p>
                   </div>
-                  <div className="col-md-4">
+                  <div className='col-md-4'>
                     <h6>Teachers</h6>
                     <p>{examStats?.teacher_count || 0}</p>
                   </div>
@@ -284,15 +280,15 @@ const CenterDash = () => {
         </div>
 
         {/* Recent Activities */}
-        <div className="row">
-          <div className="col-md-12">
-            <div className="card">
-              <div className="card-header">
-                <h5 className="card-title mb-0">Recent Activities</h5>
+        <div className='row'>
+          <div className='col-md-12'>
+            <div className='card'>
+              <div className='card-header'>
+                <h5 className='card-title mb-0'>Recent Activities</h5>
               </div>
-              <div className="card-body">
-                <div className="table-responsive">
-                  <table className="table table-striped">
+              <div className='card-body'>
+                <div className='table-responsive'>
+                  <table className='table table-striped'>
                     <thead>
                       <tr>
                         <th>Type</th>

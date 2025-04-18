@@ -7,13 +7,13 @@ const EntryYearDistribution = ({
   entryChartOptions,
 }) => {
   return (
-    <div className="col-md-6">
-      <div className="card h-100">
-        <div className="card-header">
-          <h5 className="card-title mb-0">Distribusi Siswa per Tahun Masuk</h5>
+    <div className='col-md-6 mt-4'>
+      <div className='card h-100'>
+        <div className='card-header'>
+          <h5 className='card-title mb-0'>Distribusi Siswa per Tahun Masuk</h5>
         </div>
-        <div className="card-body">
-          <div className="d-flex align-items-center justify-content-center h-50">
+        <div className='card-body'>
+          <div className='d-flex align-items-center justify-content-center h-50'>
             <Bar
               data={{
                 labels: entryStats?.map((item) => item.entry_name) || [],
@@ -33,8 +33,8 @@ const EntryYearDistribution = ({
               options={entryChartOptions}
             />
           </div>
-          <div className="table-responsive mt-4">
-            <table className="table table-striped">
+          <div className='table-responsive mt-4'>
+            <table className='table table-striped'>
               <thead>
                 <tr>
                   <th>Tahun Masuk</th>
