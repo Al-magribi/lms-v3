@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import Layout from "../../../components/layout/Layout";
 import { useGetAdminDashboardQuery } from "../../../controller/api/dashboard/ApiDashboard";
-import { Doughnut, Bar } from "react-chartjs-2";
+import { Doughnut, Bar, Pie } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   ArcElement,
@@ -177,6 +177,118 @@ const AdminDash = () => {
     },
   };
 
+  // New chart data for db_student information
+  // Geographical Distribution Chart
+  const geographicalChartData = {
+    labels:
+      data?.geographicalDistribution?.map((item) => item.province_name) || [],
+    datasets: [
+      {
+        data:
+          data?.geographicalDistribution?.map(
+            (item) => parseInt(item.student_count) || 0
+          ) || [],
+        backgroundColor: [
+          "rgba(54, 162, 235, 0.8)",
+          "rgba(255, 99, 132, 0.8)",
+          "rgba(75, 192, 192, 0.8)",
+          "rgba(255, 206, 86, 0.8)",
+          "rgba(153, 102, 255, 0.8)",
+        ],
+        borderColor: [
+          "rgba(54, 162, 235, 1)",
+          "rgba(255, 99, 132, 1)",
+          "rgba(75, 192, 192, 1)",
+          "rgba(255, 206, 86, 1)",
+          "rgba(153, 102, 255, 1)",
+        ],
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  // Entry Year Distribution Chart
+  const entryChartData = {
+    labels: data?.entryStats?.map((item) => item.entry_name) || [],
+    datasets: [
+      {
+        label: "Jumlah Siswa",
+        data:
+          data?.entryStats?.map((item) => parseInt(item.student_count) || 0) ||
+          [],
+        backgroundColor: "rgba(54, 162, 235, 0.8)",
+        borderColor: "rgba(54, 162, 235, 1)",
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const entryChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: "bottom",
+      },
+      title: {
+        display: true,
+        text: "Distribusi Siswa per Tahun Masuk",
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+      },
+    },
+  };
+
+  // Family Information Chart
+  const familyChartData = {
+    labels: [
+      "Data Ayah",
+      "Data Ibu",
+      "Pekerjaan Ayah",
+      "Pekerjaan Ibu",
+      "Kontak Ayah",
+      "Kontak Ibu",
+    ],
+    datasets: [
+      {
+        label: "Jumlah Siswa",
+        data: [
+          parseInt(data?.familyStats?.with_father_info) || 0,
+          parseInt(data?.familyStats?.with_mother_info) || 0,
+          parseInt(data?.familyStats?.with_father_job) || 0,
+          parseInt(data?.familyStats?.with_mother_job) || 0,
+          parseInt(data?.familyStats?.with_father_phone) || 0,
+          parseInt(data?.familyStats?.with_mother_phone) || 0,
+        ],
+        backgroundColor: "rgba(75, 192, 192, 0.8)",
+        borderColor: "rgba(75, 192, 192, 1)",
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const familyChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: "bottom",
+      },
+      title: {
+        display: true,
+        text: "Informasi Keluarga Siswa",
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+      },
+    },
+  };
+
   return (
     <Layout title={"Dashboard"} levels={["admin"]}>
       <div className="container-fluid p-4">
@@ -334,6 +446,423 @@ const AdminDash = () => {
                     Guru Wali Kelas:{" "}
                     {data?.teacherComposition?.homeroom_count || 0}
                   </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* New Section: Student Demographics from db_student */}
+        <div className="row g-4 mb-4">
+          <div className="col-12">
+            <div className="card">
+              <div className="card-header">
+                <h5 className="card-title mb-0">Data Demografis Siswa</h5>
+              </div>
+              <div className="card-body">
+                <div className="row">
+                  <div className="col-md-6">
+                    <div className="table-responsive">
+                      <table className="table table-striped">
+                        <thead>
+                          <tr>
+                            <th>Informasi</th>
+                            <th>Jumlah</th>
+                            <th>Persentase</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td>Total Siswa</td>
+                            <td>
+                              {parseInt(
+                                data?.studentDemographics?.total_students
+                              ) || 0}
+                            </td>
+                            <td>100%</td>
+                          </tr>
+                          <tr>
+                            <td>Laki-laki</td>
+                            <td>
+                              {parseInt(
+                                data?.studentDemographics?.male_count
+                              ) || 0}
+                            </td>
+                            <td>
+                              {(
+                                ((parseInt(
+                                  data?.studentDemographics?.male_count
+                                ) || 0) /
+                                  (parseInt(
+                                    data?.studentDemographics?.total_students
+                                  ) || 1)) *
+                                100
+                              ).toFixed(1)}
+                              %
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>Perempuan</td>
+                            <td>
+                              {parseInt(
+                                data?.studentDemographics?.female_count
+                              ) || 0}
+                            </td>
+                            <td>
+                              {(
+                                ((parseInt(
+                                  data?.studentDemographics?.female_count
+                                ) || 0) /
+                                  (parseInt(
+                                    data?.studentDemographics?.total_students
+                                  ) || 1)) *
+                                100
+                              ).toFixed(1)}
+                              %
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>Dengan Tanggal Lahir</td>
+                            <td>
+                              {parseInt(
+                                data?.studentDemographics?.with_birth_date
+                              ) || 0}
+                            </td>
+                            <td>
+                              {(
+                                ((parseInt(
+                                  data?.studentDemographics?.with_birth_date
+                                ) || 0) /
+                                  (parseInt(
+                                    data?.studentDemographics?.total_students
+                                  ) || 1)) *
+                                100
+                              ).toFixed(1)}
+                              %
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>Dengan Tempat Lahir</td>
+                            <td>
+                              {parseInt(
+                                data?.studentDemographics?.with_birth_place
+                              ) || 0}
+                            </td>
+                            <td>
+                              {(
+                                ((parseInt(
+                                  data?.studentDemographics?.with_birth_place
+                                ) || 0) /
+                                  (parseInt(
+                                    data?.studentDemographics?.total_students
+                                  ) || 1)) *
+                                100
+                              ).toFixed(1)}
+                              %
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>Dengan Alamat</td>
+                            <td>
+                              {parseInt(
+                                data?.studentDemographics?.with_address
+                              ) || 0}
+                            </td>
+                            <td>
+                              {(
+                                ((parseInt(
+                                  data?.studentDemographics?.with_address
+                                ) || 0) /
+                                  (parseInt(
+                                    data?.studentDemographics?.total_students
+                                  ) || 1)) *
+                                100
+                              ).toFixed(1)}
+                              %
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                  <div className="col-md-6">
+                    <div style={{ height: "300px", position: "relative" }}>
+                      <Pie
+                        data={{
+                          labels: ["Laki-laki", "Perempuan"],
+                          datasets: [
+                            {
+                              data: [
+                                parseInt(
+                                  data?.studentDemographics?.male_count
+                                ) || 0,
+                                parseInt(
+                                  data?.studentDemographics?.female_count
+                                ) || 0,
+                              ],
+                              backgroundColor: [
+                                "rgba(54, 162, 235, 0.8)",
+                                "rgba(255, 99, 132, 0.8)",
+                              ],
+                              borderColor: [
+                                "rgba(54, 162, 235, 1)",
+                                "rgba(255, 99, 132, 1)",
+                              ],
+                              borderWidth: 1,
+                            },
+                          ],
+                        }}
+                        options={chartOptions}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* New Section: Geographical Distribution */}
+        <div className="row g-4 mb-4">
+          <div className="col-12 col-lg-6">
+            <div className="card h-100">
+              <div className="card-header">
+                <h5 className="card-title mb-0">Distribusi Geografis Siswa</h5>
+              </div>
+              <div className="card-body">
+                <div style={{ height: "300px", position: "relative" }}>
+                  <Doughnut
+                    data={geographicalChartData}
+                    options={chartOptions}
+                  />
+                </div>
+                <div className="table-responsive mt-4">
+                  <table className="table table-striped">
+                    <thead>
+                      <tr>
+                        <th>Provinsi</th>
+                        <th>Jumlah Siswa</th>
+                        <th>Persentase</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(data?.geographicalDistribution || []).map(
+                        (item, index) => (
+                          <tr key={index}>
+                            <td>{item.province_name}</td>
+                            <td>{parseInt(item.student_count) || 0}</td>
+                            <td>
+                              {(
+                                ((parseInt(item.student_count) || 0) /
+                                  (parseInt(
+                                    data?.studentDemographics?.total_students
+                                  ) || 1)) *
+                                100
+                              ).toFixed(1)}
+                              %
+                            </td>
+                          </tr>
+                        )
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Entry Year Distribution */}
+          <div className="col-12 col-lg-6">
+            <div className="card h-100">
+              <div className="card-header">
+                <h5 className="card-title mb-0">
+                  Distribusi Siswa per Tahun Masuk
+                </h5>
+              </div>
+              <div className="card-body">
+                <div style={{ height: "300px", position: "relative" }}>
+                  <Bar data={entryChartData} options={entryChartOptions} />
+                </div>
+                <div className="table-responsive mt-4">
+                  <table className="table table-striped">
+                    <thead>
+                      <tr>
+                        <th>Tahun Masuk</th>
+                        <th>Jumlah Siswa</th>
+                        <th>Persentase</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(data?.entryStats || []).map((item, index) => (
+                        <tr key={index}>
+                          <td>{item.entry_name}</td>
+                          <td>{parseInt(item.student_count) || 0}</td>
+                          <td>
+                            {(
+                              ((parseInt(item.student_count) || 0) /
+                                (parseInt(
+                                  data?.studentDemographics?.total_students
+                                ) || 1)) *
+                              100
+                            ).toFixed(1)}
+                            %
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* New Section: Family Information */}
+        <div className="row g-4 mb-4">
+          <div className="col-12">
+            <div className="card">
+              <div className="card-header">
+                <h5 className="card-title mb-0">Informasi Keluarga Siswa</h5>
+              </div>
+              <div className="card-body">
+                <div className="row">
+                  <div className="col-md-6">
+                    <div style={{ height: "300px", position: "relative" }}>
+                      <Bar
+                        data={familyChartData}
+                        options={familyChartOptions}
+                      />
+                    </div>
+                  </div>
+                  <div className="col-md-6">
+                    <div className="table-responsive">
+                      <table className="table table-striped">
+                        <thead>
+                          <tr>
+                            <th>Informasi</th>
+                            <th>Jumlah</th>
+                            <th>Persentase</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td>Data Ayah</td>
+                            <td>
+                              {parseInt(data?.familyStats?.with_father_info) ||
+                                0}
+                            </td>
+                            <td>
+                              {(
+                                ((parseInt(
+                                  data?.familyStats?.with_father_info
+                                ) || 0) /
+                                  (parseInt(
+                                    data?.studentDemographics?.total_students
+                                  ) || 1)) *
+                                100
+                              ).toFixed(1)}
+                              %
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>Data Ibu</td>
+                            <td>
+                              {parseInt(data?.familyStats?.with_mother_info) ||
+                                0}
+                            </td>
+                            <td>
+                              {(
+                                ((parseInt(
+                                  data?.familyStats?.with_mother_info
+                                ) || 0) /
+                                  (parseInt(
+                                    data?.studentDemographics?.total_students
+                                  ) || 1)) *
+                                100
+                              ).toFixed(1)}
+                              %
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>Pekerjaan Ayah</td>
+                            <td>
+                              {parseInt(data?.familyStats?.with_father_job) ||
+                                0}
+                            </td>
+                            <td>
+                              {(
+                                ((parseInt(
+                                  data?.familyStats?.with_father_job
+                                ) || 0) /
+                                  (parseInt(
+                                    data?.studentDemographics?.total_students
+                                  ) || 1)) *
+                                100
+                              ).toFixed(1)}
+                              %
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>Pekerjaan Ibu</td>
+                            <td>
+                              {parseInt(data?.familyStats?.with_mother_job) ||
+                                0}
+                            </td>
+                            <td>
+                              {(
+                                ((parseInt(
+                                  data?.familyStats?.with_mother_job
+                                ) || 0) /
+                                  (parseInt(
+                                    data?.studentDemographics?.total_students
+                                  ) || 1)) *
+                                100
+                              ).toFixed(1)}
+                              %
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>Kontak Ayah</td>
+                            <td>
+                              {parseInt(data?.familyStats?.with_father_phone) ||
+                                0}
+                            </td>
+                            <td>
+                              {(
+                                ((parseInt(
+                                  data?.familyStats?.with_father_phone
+                                ) || 0) /
+                                  (parseInt(
+                                    data?.studentDemographics?.total_students
+                                  ) || 1)) *
+                                100
+                              ).toFixed(1)}
+                              %
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>Kontak Ibu</td>
+                            <td>
+                              {parseInt(data?.familyStats?.with_mother_phone) ||
+                                0}
+                            </td>
+                            <td>
+                              {(
+                                ((parseInt(
+                                  data?.familyStats?.with_mother_phone
+                                ) || 0) /
+                                  (parseInt(
+                                    data?.studentDemographics?.total_students
+                                  ) || 1)) *
+                                100
+                              ).toFixed(1)}
+                              %
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

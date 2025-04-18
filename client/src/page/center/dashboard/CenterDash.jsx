@@ -2,6 +2,31 @@ import React from "react";
 import Layout from "../../../components/layout/Layout";
 import { useGetCenterDashboardQuery } from "../../../controller/api/dashboard/ApiDashboard";
 import { useSelector } from "react-redux";
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+} from "chart.js";
+import StudentDemographics from "./components/StudentDemographics";
+import GeographicalDistribution from "./components/GeographicalDistribution";
+import EntryYearDistribution from "./components/EntryYearDistribution";
+import FamilyInformation from "./components/FamilyInformation";
+
+// Register ChartJS components
+ChartJS.register(
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title
+);
 
 const CenterDash = () => {
   const {
@@ -48,10 +73,14 @@ const CenterDash = () => {
     recentActivities,
     homebaseStats,
     activityLogs,
+    studentDemographics,
+    geographicalDistribution,
+    familyStats,
+    entryStats,
   } = dashboardData || {};
 
   return (
-    <Layout title={"Admin Dashboard"}>
+    <Layout title={"Admin Dashboard"} levels={["center"]}>
       <div className="container-fluid">
         {/* Overview Cards */}
         <div className="row mb-4">
@@ -89,7 +118,65 @@ const CenterDash = () => {
           </div>
         </div>
 
-        {/* Students Distribution */}
+        {/* Student Demographics */}
+        <StudentDemographics studentDemographics={studentDemographics} />
+
+        {/* Geographical Distribution and Entry Year */}
+        <div className="row mb-4">
+          <GeographicalDistribution
+            geographicalDistribution={geographicalDistribution}
+            studentDemographics={studentDemographics}
+          />
+          <EntryYearDistribution
+            entryStats={entryStats}
+            studentDemographics={studentDemographics}
+          />
+        </div>
+
+        {/* Family Information */}
+        <FamilyInformation
+          familyStats={familyStats}
+          studentDemographics={studentDemographics}
+        />
+
+        {/* Homebase Statistics */}
+        <div className="row mb-4">
+          <div className="col-md-12">
+            <div className="card">
+              <div className="card-header">
+                <h5 className="card-title mb-0">Statistik Homebase</h5>
+              </div>
+              <div className="card-body">
+                <div className="table-responsive">
+                  <table className="table table-striped">
+                    <thead>
+                      <tr>
+                        <th>Homebase</th>
+                        <th>Students</th>
+                        <th>Teachers</th>
+                        <th>Classes</th>
+                        <th>Subjects</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {homebaseStats?.map((homebase) => (
+                        <tr key={homebase.homebase_name}>
+                          <td>{homebase.homebase_name}</td>
+                          <td>{homebase.total_students}</td>
+                          <td>{homebase.total_teachers}</td>
+                          <td>{homebase.total_classes}</td>
+                          <td>{homebase.total_subjects}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Students Distribution by Grade */}
         <div className="row mb-4">
           <div className="col-md-6">
             <div className="card">
@@ -190,43 +277,6 @@ const CenterDash = () => {
                     <h6>Teachers</h6>
                     <p>{examStats?.teacher_count || 0}</p>
                   </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Homebase Statistics */}
-        <div className="row mb-4">
-          <div className="col-md-12">
-            <div className="card">
-              <div className="card-header">
-                <h5 className="card-title mb-0">Homebase Statistics</h5>
-              </div>
-              <div className="card-body">
-                <div className="table-responsive">
-                  <table className="table table-striped">
-                    <thead>
-                      <tr>
-                        <th>Homebase</th>
-                        <th>Students</th>
-                        <th>Teachers</th>
-                        <th>Classes</th>
-                        <th>Subjects</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {homebaseStats?.map((homebase) => (
-                        <tr key={homebase.homebase_name}>
-                          <td>{homebase.homebase_name}</td>
-                          <td>{homebase.total_students}</td>
-                          <td>{homebase.total_teachers}</td>
-                          <td>{homebase.total_classes}</td>
-                          <td>{homebase.total_subjects}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
                 </div>
               </div>
             </div>

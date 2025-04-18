@@ -47,6 +47,10 @@ import routerDash from "./router/dashboard/routerDash.js";
 // Logs
 import routerLogs from "./router/logs/routersLogs.js";
 
+// Database
+import routerArea from "./router/database/routerArea.js";
+import routerDatabase from "./router/database/routerDatabase.js";
+
 app.use(cookieParser());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -83,4 +87,6 @@ app.use("/api/dash", routerDash);
 
 app.use("/api/logs", routerLogs);
 
+app.use("/api/area", routerArea);
+app.use("/api/database", routerDatabase);
 export default app;

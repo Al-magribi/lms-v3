@@ -190,6 +190,68 @@ router.get("/admin-stats", authorize("admin"), async (req, res) => {
       []
     );
 
+    // New queries for db_student data
+    // Student demographic data
+    const studentDemographics = await pool.query(
+      `
+            SELECT 
+                COUNT(*) as total_students,
+                COUNT(CASE WHEN gender = 'L' THEN 1 END) as male_count,
+                COUNT(CASE WHEN gender = 'P' THEN 1 END) as female_count,
+                COUNT(CASE WHEN EXTRACT(YEAR FROM AGE(birth_date)) BETWEEN 11 AND 12 THEN 1 END) as age_11_12,
+                COUNT(CASE WHEN EXTRACT(YEAR FROM AGE(birth_date)) BETWEEN 13 AND 14 THEN 1 END) as age_13_14,
+                COUNT(CASE WHEN EXTRACT(YEAR FROM AGE(birth_date)) BETWEEN 15 AND 16 THEN 1 END) as age_15_16,
+                COUNT(CASE WHEN EXTRACT(YEAR FROM AGE(birth_date)) BETWEEN 17 AND 18 THEN 1 END) as age_17_18,
+                COUNT(CASE WHEN EXTRACT(YEAR FROM AGE(birth_date)) BETWEEN 19 AND 20 THEN 1 END) as age_19_20
+            FROM db_student
+            WHERE homebaseid = $1
+        `,
+      [homebaseId]
+    );
+
+    // Geographical distribution of students
+    const geographicalDistribution = await pool.query(
+      `
+            SELECT 
+                p.name as province_name,
+                COUNT(*) as student_count
+            FROM db_student ds
+            JOIN db_province p ON ds.provinceid = p.id
+            WHERE ds.homebaseid = $1
+            GROUP BY p.id, p.name
+            ORDER BY student_count DESC
+            LIMIT 5
+        `,
+      [homebaseId]
+    );
+
+    // Family information statistics
+    const familyStats = await pool.query(
+      `
+            SELECT 
+                COUNT(CASE WHEN father_name IS NOT NULL THEN 1 END) as with_father_info,
+                COUNT(CASE WHEN mother_name IS NOT NULL THEN 1 END) as with_mother_info,
+                COUNT(CASE WHEN father_job IS NOT NULL THEN 1 END) as with_father_job,
+                COUNT(CASE WHEN mother_job IS NOT NULL THEN 1 END) as with_mother_job,
+                COUNT(CASE WHEN father_phone IS NOT NULL THEN 1 END) as with_father_phone,
+                COUNT(CASE WHEN mother_phone IS NOT NULL THEN 1 END) as with_mother_phone
+            FROM db_student
+            WHERE homebaseid = $1
+        `,
+      [homebaseId]
+    );
+
+    // Student entry statistics
+    const entryStats = await pool.query(`
+      SELECT 
+        e.name as entry_name,
+        COUNT(*) as student_count
+      FROM db_student ds
+      JOIN a_periode e ON ds.entryid = e.id
+      GROUP BY e.name
+      ORDER BY e.name
+    `);
+
     res.json({
       basicStats: basicStats.rows[0],
       studentsPerGrade: studentsPerGrade.rows,
@@ -199,6 +261,11 @@ router.get("/admin-stats", authorize("admin"), async (req, res) => {
       recentActivities: recentActivities.rows,
       examStats: examStats.rows[0],
       learningStats: learningStats.rows[0],
+      // New data from db_student
+      studentDemographics: studentDemographics.rows[0],
+      geographicalDistribution: geographicalDistribution.rows,
+      familyStats: familyStats.rows[0],
+      entryStats: entryStats.rows,
     });
   } catch (error) {
     console.error("Error fetching dashboard stats:", error);
@@ -415,8 +482,7 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
     `);
 
     // Get exam statistics
-    const examStats = await pool.query(
-      `
+    const examStats = await pool.query(`
       SELECT 
         COUNT(*) as total_exams,
         COUNT(CASE WHEN e.isactive = true THEN 1 END) as active_exams,
@@ -427,19 +493,10 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
       LEFT JOIN c_class c ON c.exam = e.id
       LEFT JOIN c_ebank eb ON eb.exam = e.id
       LEFT JOIN c_bank cb ON cb.id = eb.bank
-      WHERE e.createdat >= (
-        SELECT createdat 
-        FROM c_exam 
-        ORDER BY createdat DESC 
-        LIMIT 1 OFFSET 9
-      )
-    `,
-      []
-    );
+    `);
 
     // Get learning material statistics
-    const learningStats = await pool.query(
-      `
+    const learningStats = await pool.query(`
       SELECT 
         COUNT(DISTINCT ch.id) as total_chapters,
         COUNT(DISTINCT co.id) as total_contents,
@@ -448,19 +505,10 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
       FROM l_chapter ch
       LEFT JOIN l_content co ON co.chapter = ch.id
       LEFT JOIN l_file f ON f.content = co.id
-      WHERE ch.createdat >= (
-        SELECT createdat 
-        FROM l_chapter 
-        ORDER BY createdat DESC 
-        LIMIT 1 OFFSET 9
-      )
-    `,
-      []
-    );
+    `);
 
     // Get recent activities
-    const recentActivities = await pool.query(
-      `
+    const recentActivities = await pool.query(`
       SELECT 
         'exam' as type,
         e.name as title,
@@ -468,12 +516,7 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
         e.createdat
       FROM c_exam e
       JOIN u_teachers t ON e.teacher = t.id
-      WHERE e.createdat >= (
-        SELECT createdat 
-        FROM c_exam 
-        ORDER BY createdat DESC 
-        LIMIT 1 OFFSET 9
-      )
+      WHERE e.createdat >= NOW() - INTERVAL '7 days'
       UNION ALL
       SELECT 
         'subject' as type,
@@ -483,12 +526,7 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
       FROM a_subject s
       JOIN at_subject ats ON ats.subject = s.id
       JOIN u_teachers t ON ats.teacher = t.id
-      WHERE s.createdat >= (
-        SELECT createdat 
-        FROM a_subject 
-        ORDER BY createdat DESC 
-        LIMIT 1 OFFSET 9
-      )
+      WHERE s.createdat >= NOW() - INTERVAL '7 days'
       UNION ALL
       SELECT 
         'chapter' as type,
@@ -497,17 +535,10 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
         ch.createdat
       FROM l_chapter ch
       JOIN u_teachers t ON ch.teacher = t.id
-      WHERE ch.createdat >= (
-        SELECT createdat 
-        FROM l_chapter 
-        ORDER BY createdat DESC 
-        LIMIT 1 OFFSET 9
-      )
+      WHERE ch.createdat >= NOW() - INTERVAL '7 days'
       ORDER BY createdat DESC
       LIMIT 10
-    `,
-      []
-    );
+    `);
 
     // Get homebase statistics
     const homebaseStats = await pool.query(`
@@ -554,6 +585,56 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
       LIMIT 10
     `);
 
+    // New queries for db_student data
+    // Student demographic data
+    const studentDemographics = await pool.query(`
+      SELECT 
+        COUNT(*) as total_students,
+        COUNT(CASE WHEN gender = 'L' THEN 1 END) as male_count,
+        COUNT(CASE WHEN gender = 'P' THEN 1 END) as female_count,
+        COUNT(CASE WHEN EXTRACT(YEAR FROM AGE(birth_date)) BETWEEN 11 AND 12 THEN 1 END) as age_11_12,
+        COUNT(CASE WHEN EXTRACT(YEAR FROM AGE(birth_date)) BETWEEN 13 AND 14 THEN 1 END) as age_13_14,
+        COUNT(CASE WHEN EXTRACT(YEAR FROM AGE(birth_date)) BETWEEN 15 AND 16 THEN 1 END) as age_15_16,
+        COUNT(CASE WHEN EXTRACT(YEAR FROM AGE(birth_date)) BETWEEN 17 AND 18 THEN 1 END) as age_17_18,
+        COUNT(CASE WHEN EXTRACT(YEAR FROM AGE(birth_date)) BETWEEN 19 AND 20 THEN 1 END) as age_19_20
+      FROM db_student
+    `);
+
+    // Geographical distribution of students
+    const geographicalDistribution = await pool.query(`
+      SELECT 
+        p.name as province_name,
+        COUNT(*) as student_count
+      FROM db_student ds
+      JOIN db_province p ON ds.provinceid = p.id
+      GROUP BY p.id, p.name
+      ORDER BY student_count DESC
+      LIMIT 5
+    `);
+
+    // Family information statistics
+    const familyStats = await pool.query(`
+      SELECT 
+        COUNT(CASE WHEN father_name IS NOT NULL THEN 1 END) as with_father_info,
+        COUNT(CASE WHEN mother_name IS NOT NULL THEN 1 END) as with_mother_info,
+        COUNT(CASE WHEN father_job IS NOT NULL THEN 1 END) as with_father_job,
+        COUNT(CASE WHEN mother_job IS NOT NULL THEN 1 END) as with_mother_job,
+        COUNT(CASE WHEN father_phone IS NOT NULL THEN 1 END) as with_father_phone,
+        COUNT(CASE WHEN mother_phone IS NOT NULL THEN 1 END) as with_mother_phone
+      FROM db_student
+    `);
+
+    // Student entry statistics
+    const entryStats = await pool.query(`
+      SELECT 
+        e.name as entry_name,
+        COUNT(*) as student_count
+      FROM db_student ds
+      JOIN a_periode e ON ds.entryid = e.id
+      GROUP BY e.name
+      ORDER BY e.name
+    `);
+
     res.json({
       basicStats: basicStats.rows[0],
       studentsPerGrade: studentsPerGrade.rows,
@@ -563,6 +644,11 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
       recentActivities: recentActivities.rows,
       homebaseStats: homebaseStats.rows,
       activityLogs: activityLogs.rows,
+      // New data from db_student
+      studentDemographics: studentDemographics.rows[0],
+      geographicalDistribution: geographicalDistribution.rows,
+      familyStats: familyStats.rows[0],
+      entryStats: entryStats.rows,
     });
   } catch (error) {
     console.error("Error fetching center dashboard stats:", error);

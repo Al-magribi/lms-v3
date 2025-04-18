@@ -75,30 +75,30 @@ const Upload = () => {
   return (
     <form
       onSubmit={uploadData}
-      className='rounded bg-white p-2 border shadow d-flex flex-column gap-2 mt-2'
+      className="rounded bg-white p-2 border shadow d-flex flex-column gap-2 mt-2"
     >
-      <p className='m-0 h6'>Upload Siswa</p>
+      <p className="m-0 h6">Upload Siswa</p>
 
       <input
         ref={inputRef}
-        type='file'
-        name='students'
-        id='student'
-        className='form-control'
+        type="file"
+        name="students"
+        id="student"
+        className="form-control"
         onChange={(e) => setFile(e.target.files[0])}
       />
 
-      <div className='d-flex justify-content-end gap-2'>
+      <div className="d-flex justify-content-end gap-2">
         <button
-          type='button'
-          className='btn btn-sm btn-primary'
+          type="button"
+          className="btn btn-sm btn-primary"
           onClick={download}
         >
           Template
         </button>
         <button
-          type='submit'
-          className='btn btn-sm btn-success'
+          type="submit"
+          className="btn btn-sm btn-success"
           disabled={isLoading}
         >
           Upload Data
