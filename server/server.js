@@ -1,9 +1,27 @@
 import "dotenv/config";
 import app from "./app.js";
 import { connectToDatabase } from "./config/config.js";
+import path from "path";
+import { fileURLToPath } from "url";
+import express from "express";
 
-app.get("/", (req, res) => {
-  res.send("Server is active");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Configure MIME types
+app.use((req, res, next) => {
+  if (req.url.endsWith(".jsx") || req.url.endsWith(".js")) {
+    res.setHeader("Content-Type", "application/javascript");
+  }
+  next();
+});
+
+// Serve static files from the client directory
+app.use(express.static(path.join(__dirname, "../client/dist")));
+
+// Handle all routes - send index.html for client-side routing
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../client/dist/index.html"));
 });
 
 connectToDatabase()
