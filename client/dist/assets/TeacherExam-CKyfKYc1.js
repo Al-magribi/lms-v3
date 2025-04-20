@@ -1,0 +1,1 @@
+import{j as r}from"./index-Bk0R0AbM.js";import{L as t}from"./Layout-DtCUdCMC.js";import{C as a}from"./CbtExam-K0uVVxLR.js";import"./react-select.esm-BA68rDK2.js";import"./Table-ojIeP2TN.js";const p=()=>r.jsx(t,{title:"Guru - Daftar Ujian",levels:["teacher"],children:r.jsx(a,{})});export{p as default};
