@@ -29,24 +29,22 @@ const StudentReport = () => {
   }
 
   return (
-    <Layout
-      title={`Laporan Hafalan ${name.replace(/-/g, " ")}`}
-      levels={["tahfiz", "student", "parent"]}>
-      <div className='d-print-none container mb-2'>
+    <Layout title={`Laporan Hafalan`} levels={["tahfiz", "student", "parent"]}>
+      {/* <div className='d-print-none container mb-2'>
         <button className='btn btn-primary' onClick={handlePrint}>
           <i className='bi bi-printer me-2'></i>
           Cetak Laporan
         </button>
-      </div>
+      </div> */}
 
       <div className='print-section container'>
-        <div className='text-center mb-4'>
+        {/* <div className='text-center mb-4'>
           <h4 className='mb-1'>Laporan Hafalan Al-Qur'an</h4>
           <h5 className='mb-4'>{data?.homebase}</h5>
           <hr className='mb-4' />
-        </div>
+        </div> */}
 
-        <div className='mb-4'>
+        <div className='my-4'>
           <h6 className='mb-3'>
             <i className='bi bi-person-circle me-2'></i>
             Informasi Siswa
@@ -102,16 +100,16 @@ const StudentReport = () => {
 
                   <div>
                     <h6 className='mb-2'>Detail Surah:</h6>
-                    {juz.surah.map((surah, idx) => (
-                      <div
-                        key={idx}
-                        className='d-flex justify-content-between align-items-center mb-1'>
-                        <span>{surah.surah_name}</span>
-                        <span className='badge bg-info'>
-                          {surah.verse} ayat | {surah.line} baris
-                        </span>
-                      </div>
-                    ))}
+                    <div className='d-flex flex-wrap gap-2'>
+                      {juz.surah.map((surah, idx) => (
+                        <p key={idx} className='m-0'>
+                          {surah.surah_name}
+                          <span className='badge bg-info ms-2'>
+                            {surah.verse} ayat | {surah.line} baris
+                          </span>
+                        </p>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>

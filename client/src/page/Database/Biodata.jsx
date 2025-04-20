@@ -1,135 +1,423 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import {
+  useGetProvinceQuery,
+  useGetCityQuery,
+  useGetDistrictQuery,
+  useGetVillageQuery,
+} from "../../controller/api/database/ApiArea";
+import {
+  useAddStudentDataMutation,
+  useGetPeriodeQuery,
+  useGetHomebaseQuery,
+} from "../../controller/api/database/ApiDatabase";
+import toast from "react-hot-toast";
 
-const Biodata = () => {
+const Biodata = ({ studentData, onRefetch }) => {
+  console.log(studentData);
+  const [formData, setFormData] = useState({
+    userid: studentData?.userid || "",
+    entryid: studentData?.entryid || "",
+    entry_name: studentData?.entry_name || "",
+    homebaseid: studentData?.homebaseid || "",
+    homebase_name: studentData?.homebase_name || "",
+    academic_year: studentData?.academic_year || "",
+    gender: studentData?.gender || "",
+    name: studentData?.name || "",
+    nisn: studentData?.nisn || "",
+    nis: studentData?.nis || "",
+    birth_place: studentData?.birth_place || "",
+    birth_date: studentData?.birth_date
+      ? new Date(studentData.birth_date).toISOString().split("T")[0]
+      : "",
+    order_number: studentData?.order_number || "",
+    height: studentData?.height || "",
+    weight: studentData?.weight || "",
+    head: studentData?.head || "",
+    provinceid: studentData?.provinceid || "",
+    province_name: studentData?.province_name || "",
+    cityid: studentData?.cityid || "",
+    city_name: studentData?.city_name || "",
+    districtid: studentData?.districtid || "",
+    district_name: studentData?.district_name || "",
+    villageid: studentData?.villageid?.trim() || "",
+    village_name: studentData?.village_name || "",
+    postal_code: studentData?.postal_code || "",
+    address: studentData?.address || "",
+  });
+
+  // Query hooks
+  const { data: periode } = useGetPeriodeQuery();
+  const { data: homebase } = useGetHomebaseQuery();
+  const { data: provinces } = useGetProvinceQuery();
+  const { data: cities } = useGetCityQuery(formData.provinceid, {
+    skip: !formData.provinceid,
+  });
+  const { data: districts } = useGetDistrictQuery(formData.cityid, {
+    skip: !formData.cityid,
+  });
+  const { data: villages } = useGetVillageQuery(formData.districtid, {
+    skip: !formData.districtid,
+  });
+  const [addStudentData, { isLoading, isSuccess, isError, reset }] =
+    useAddStudentDataMutation();
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => {
+      const newData = { ...prev, [name]: value };
+
+      // Handle entry selection
+      if (name === "entryid") {
+        const selectedPeriode = periode?.find((p) => p.id === parseInt(value));
+        if (selectedPeriode) {
+          newData.entryid = selectedPeriode.id;
+          newData.entry_name = selectedPeriode.name;
+        }
+      }
+      // Handle homebase selection
+      else if (name === "homebaseid") {
+        const selectedHomebase = homebase?.find((h) => h.id === value);
+        if (selectedHomebase) {
+          newData.homebaseid = selectedHomebase.id;
+          newData.homebase_name = selectedHomebase.name;
+        }
+      }
+      // Handle location selections
+      else if (name === "provinceid") {
+        const selectedProvince = provinces?.find((p) => p.id === value);
+        if (selectedProvince) {
+          newData.provinceid = selectedProvince.id;
+          newData.province_name = selectedProvince.name;
+          // Reset dependent fields
+          newData.cityid = "";
+          newData.city_name = "";
+          newData.districtid = "";
+          newData.district_name = "";
+          newData.villageid = "";
+          newData.village_name = "";
+        }
+      } else if (name === "cityid") {
+        const selectedCity = cities?.find((c) => c.id === value);
+        if (selectedCity) {
+          newData.cityid = selectedCity.id;
+          newData.city_name = selectedCity.name;
+          // Reset dependent fields
+          newData.districtid = "";
+          newData.district_name = "";
+          newData.villageid = "";
+          newData.village_name = "";
+        }
+      } else if (name === "districtid") {
+        const selectedDistrict = districts?.find((d) => d.id === value);
+        if (selectedDistrict) {
+          newData.districtid = selectedDistrict.id;
+          newData.district_name = selectedDistrict.name;
+          // Reset dependent fields
+          newData.villageid = "";
+          newData.village_name = "";
+        }
+      } else if (name === "villageid") {
+        const selectedVillage = villages?.find((v) => v.id.trim() === value);
+        if (selectedVillage) {
+          newData.villageid = selectedVillage.id.trim();
+          newData.village_name = selectedVillage.name;
+        }
+      }
+
+      return newData;
+    });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    toast.promise(
+      addStudentData(formData)
+        .unwrap()
+        .then((res) => res.message),
+      {
+        loading: "Memproses data...",
+        success: (message) => message,
+        error: (error) => error.data.message,
+      }
+    );
+  };
+
+  useEffect(() => {
+    if (isSuccess) {
+      reset();
+      onRefetch();
+    }
+
+    if (isError) {
+      reset();
+    }
+  }, [isSuccess, isError, reset, onRefetch]);
+
+  console.log(studentData);
+
   return (
-    <div className="container mt-3">
-      <div className="row">
-        <div className="col-md-6">
-          <div className="mb-3">
-            <select className="form-select" aria-label="Pilih Tahun Pelajaran">
-              <option value="" hidden>
-                Pilih Tahun Pelajaran
-              </option>
-              <option value="2024">2024</option>
-              <option value="2025">2025</option>
-            </select>
+    <div className='container mt-3'>
+      <form onSubmit={handleSubmit}>
+        <div className='row'>
+          <div className='col-md-6'>
+            <div className='mb-3'>
+              <select
+                className='form-select'
+                aria-label='Pilih Tahun Pelajaran'
+                name='entryid'
+                value={formData.entryid}
+                onChange={handleChange}>
+                <option value='' hidden>
+                  Pilih Tahun Pelajaran
+                </option>
+                {periode?.map((periode) => (
+                  <option key={periode.id} value={periode.id}>
+                    {periode.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className='mb-3'>
+              <select
+                className='form-select'
+                aria-label='Pilih Satuan Pendidikan'
+                name='homebaseid'
+                value={formData.homebaseid}
+                onChange={handleChange}>
+                <option value='' hidden>
+                  Pilih Satuan Pendidikan
+                </option>
+                {homebase?.map((homebase) => (
+                  <option key={homebase.id} value={homebase.id}>
+                    {homebase.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className='mb-3'>
+              <select
+                name='gender'
+                id=''
+                className='form-select'
+                value={formData.gender}
+                onChange={handleChange}>
+                <option value='' hidden>
+                  Pilih Jenis Kelamin
+                </option>
+                <option value='L'>Laki-laki</option>
+                <option value='P'>Perempuan</option>
+              </select>
+            </div>
+
+            <div className='mb-3'>
+              <input
+                type='text'
+                className='form-control'
+                placeholder='Nama Lengkap'
+                name='name'
+                value={formData.name}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className='mb-3'>
+              <input
+                type='text'
+                className='form-control'
+                placeholder='NISN'
+                name='nisn'
+                value={formData.nisn}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className='mb-3'>
+              <input
+                type='text'
+                className='form-control'
+                placeholder='NIS'
+                name='nis'
+                value={formData.nis}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className='mb-3'>
+              <input
+                type='text'
+                className='form-control'
+                placeholder='Tempat Lahir'
+                name='birth_place'
+                value={formData.birth_place}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className='mb-3'>
+              <input
+                type='date'
+                className='form-control'
+                name='birth_date'
+                value={formData.birth_date}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className='mb-3'>
+              <input
+                type='text'
+                className='form-control'
+                placeholder='Urutan Kelahiran'
+                name='order_number'
+                value={formData.order_number}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className='mb-3'>
+              <input
+                type='text'
+                className='form-control'
+                placeholder='TB'
+                name='height'
+                value={formData.height}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className='mb-3'>
+              <input
+                type='text'
+                className='form-control'
+                placeholder='BB'
+                name='weight'
+                value={formData.weight}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div>
+              <input
+                type='text'
+                className='form-control'
+                placeholder='Lingkar Kepala'
+                name='head'
+                value={formData.head}
+                onChange={handleChange}
+              />
+            </div>
           </div>
 
-          <div className="mb-3">
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Nama Lengkap"
-            />
-          </div>
+          <div className='col-md-6'>
+            <div className='mb-3'>
+              <select
+                className='form-select'
+                aria-label='Pilih Provinsi'
+                name='provinceid'
+                value={formData.provinceid}
+                onChange={handleChange}>
+                <option value='' hidden>
+                  Pilih Provinsi
+                </option>
+                {provinces?.map((province) => (
+                  <option key={province.id} value={province.id}>
+                    {province.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div className="mb-3">
-            <input type="text" className="form-control" placeholder="NISN" />
-          </div>
+            <div className='mb-3'>
+              <select
+                className='form-select'
+                aria-label='Pilih Kota / Kabupaten'
+                name='cityid'
+                value={formData.cityid}
+                onChange={handleChange}
+                disabled={!formData.provinceid}>
+                <option value='' hidden>
+                  Pilih Kota / Kabupaten
+                </option>
+                {cities?.map((city) => (
+                  <option key={city.id} value={city.id}>
+                    {city.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div className="mb-3">
-            <input type="text" className="form-control" placeholder="NIS" />
-          </div>
+            <div className='mb-3'>
+              <select
+                className='form-select'
+                aria-label='Pilih Kecamatan'
+                name='districtid'
+                value={formData.districtid}
+                onChange={handleChange}
+                disabled={!formData.cityid}>
+                <option value='' hidden>
+                  Pilih Kecamatan
+                </option>
+                {districts?.map((district) => (
+                  <option key={district.id} value={district.id}>
+                    {district.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div className="mb-3">
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Tempat Lahir"
-            />
-          </div>
+            <div className='mb-3'>
+              <select
+                className='form-select'
+                aria-label='Pilih Desa'
+                name='villageid'
+                value={formData.villageid}
+                onChange={handleChange}
+                disabled={!formData.districtid}>
+                <option value='' hidden>
+                  Pilih Desa
+                </option>
+                {villages?.map((village) => (
+                  <option key={village.id} value={village.id.trim()}>
+                    {village.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div className="mb-3">
-            <input type="date" className="form-control" />
-          </div>
+            <div className='mb-3'>
+              <input
+                type='text'
+                className='form-control'
+                placeholder='Kode Pos'
+                name='postal_code'
+                value={formData.postal_code}
+                onChange={handleChange}
+              />
+            </div>
 
-          <div className="mb-3">
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Urutan Kelahiran"
-            />
-          </div>
-
-          <div className="mb-3">
-            <input type="text" className="form-control" placeholder="TB" />
-          </div>
-
-          <div className="mb-3">
-            <input type="text" className="form-control" placeholder="BB" />
-          </div>
-
-          <div>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Lingkar Kepala"
-            />
+            <div className='mb-3'>
+              <textarea
+                className='form-control'
+                rows='4'
+                placeholder='Alamat'
+                name='address'
+                value={formData.address}
+                onChange={handleChange}></textarea>
+            </div>
           </div>
         </div>
 
-        <div className="col-md-6">
-          <div className="mb-3">
-            <select className="form-select" aria-label="Pilih Provinsi">
-              <option value="" hidden>
-                Pilih Provinsi
-              </option>
-              <option value="Jawa Barat">Jawa Barat</option>
-              <option value="Jawa Tengah">Jawa Tengah</option>
-              <option value="Jawa Timur">Jawa Timur</option>
-            </select>
-          </div>
-
-          <div className="mb-3">
-            <select className="form-select" aria-label="Pilih Kota / Kabupaten">
-              <option value="" hidden>
-                Pilih Kota / Kabupaten
-              </option>
-              <option value="Bandung">Bandung</option>
-              <option value="Jakarta">Jakarta</option>
-              <option value="Surabaya">Surabaya</option>
-            </select>
-          </div>
-
-          <div className="mb-3">
-            <select className="form-select" aria-label="Pilih Kecamatan">
-              <option value="" hidden>
-                Pilih Kecamatan
-              </option>
-              <option value="Bandung Barat">Bandung Barat</option>
-              <option value="Bandung Timur">Bandung Timur</option>
-              <option value="Bandung Utara">Bandung Utara</option>
-            </select>
-          </div>
-
-          <div className="mb-3">
-            <select className="form-select" aria-label="Pilih Desa">
-              <option value="" hidden>
-                Pilih Desa
-              </option>
-              <option value="Bandung Barat">Bandung Barat</option>
-              <option value="Bandung Timur">Bandung Timur</option>
-              <option value="Bandung Utara">Bandung Utara</option>
-            </select>
-          </div>
-
-          <div className="mb-3">
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Kode Pos"
-            />
-          </div>
-
-          <div className="mb-3">
-            <textarea
-              className="form-control"
-              rows="4"
-              placeholder="Alamat"
-            ></textarea>
+        <div className='row mt-3'>
+          <div className='col-12 text-end'>
+            <button type='submit' className='btn btn-sm btn-success'>
+              Simpan Data
+            </button>
           </div>
         </div>
-      </div>
+      </form>
     </div>
   );
 };

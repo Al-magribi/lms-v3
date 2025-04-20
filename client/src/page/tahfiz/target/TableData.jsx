@@ -5,7 +5,7 @@ const TableData = () => {
   const { data: targets } = useGetTargetsQuery();
 
   return (
-    <div className='border shadow rounded p-2 table-responsive bg-white'>
+    <div className='table-responsive'>
       <table className='mb-0 table table-bordered table-hover'>
         <thead>
           <tr>
@@ -27,8 +27,7 @@ const TableData = () => {
                     {targetIndex === 0 && (
                       <th
                         rowSpan={item.target.length}
-                        className='text-center align-middle'
-                      >
+                        className='text-center align-middle'>
                         {item.grade}
                       </th>
                     )}
@@ -38,16 +37,14 @@ const TableData = () => {
                     {targetIndex === 0 && (
                       <td
                         rowSpan={item.target.length}
-                        className='text-center align-middle'
-                      >
+                        className='text-center align-middle'>
                         {item.total_ayat}
                       </td>
                     )}
                     {targetIndex === 0 && (
                       <td
                         rowSpan={item.target.length}
-                        className='text-center align-middle'
-                      >
+                        className='text-center align-middle'>
                         {item.total_line}
                       </td>
                     )}

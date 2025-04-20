@@ -331,28 +331,66 @@ router.get("/admin-stats", authorize("admin"), async (req, res) => {
       [homebaseId]
     );
 
-    // Family information statistics
-    const familyStats = await pool.query(`
-      SELECT 
-        COUNT(CASE WHEN father_name IS NOT NULL THEN 1 END) as with_father_info,
-        COUNT(CASE WHEN mother_name IS NOT NULL THEN 1 END) as with_mother_info,
-        COUNT(CASE WHEN father_job IS NOT NULL THEN 1 END) as with_father_job,
-        COUNT(CASE WHEN mother_job IS NOT NULL THEN 1 END) as with_mother_job,
-        COUNT(CASE WHEN father_phone IS NOT NULL THEN 1 END) as with_father_phone,
-        COUNT(CASE WHEN mother_phone IS NOT NULL THEN 1 END) as with_mother_phone
-      FROM db_student
-    `);
+    // Student data completeness by grade
+    const studentCompleteness = await pool.query(
+      `
+      WITH student_data AS (
+        SELECT 
+          g.name as grade_name,
+          COUNT(DISTINCT s.id) as total_students,
+          COUNT(DISTINCT CASE 
+            WHEN ds.id IS NOT NULL THEN
+              CASE 
+                WHEN ds.name IS NOT NULL AND
+                     ds.nis IS NOT NULL AND
+                     ds.nisn IS NOT NULL AND
+                     ds.gender IS NOT NULL AND
+                     ds.birth_place IS NOT NULL AND
+                     ds.birth_date IS NOT NULL AND
+                     ds.height IS NOT NULL AND
+                     ds.weight IS NOT NULL AND
+                     ds.head IS NOT NULL AND
+                     ds.order_number IS NOT NULL AND
+                     ds.siblings IS NOT NULL AND
+                     ds.address IS NOT NULL AND
+                     ds.father_name IS NOT NULL AND
+                     ds.mother_name IS NOT NULL AND
+                     ds.province_name IS NOT NULL AND
+                     ds.city_name IS NOT NULL AND
+                     ds.district_name IS NOT NULL AND
+                     ds.village_name IS NOT NULL AND
+                     EXISTS (SELECT 1 FROM db_family df WHERE df.userid = s.id)
+                THEN s.id END
+            END
+          ) as complete_students
+        FROM u_students s
+        LEFT JOIN db_student ds ON s.id = ds.userid
+        LEFT JOIN cl_students cs ON s.id = cs.student
+        LEFT JOIN a_class c ON cs.classid = c.id
+        LEFT JOIN a_grade g ON c.grade = g.id
+        WHERE s.homebase = $1
+        GROUP BY g.name
+        ORDER BY CAST(g.name AS INTEGER)
+      )
+      SELECT * FROM student_data
+      `,
+      [homebaseId]
+    );
 
     // Student entry statistics
-    const entryStats = await pool.query(`
+    const entryStats = await pool.query(
+      `
       SELECT 
         e.name as entry_name,
         COUNT(*) as student_count
       FROM db_student ds
       JOIN a_periode e ON ds.entryid = e.id
+      WHERE ds.homebaseid = $1
       GROUP BY e.name
       ORDER BY e.name
-    `);
+      `,
+      [homebaseId]
+    );
 
     res.json({
       basicStats: basicStats.rows[0],
@@ -365,7 +403,7 @@ router.get("/admin-stats", authorize("admin"), async (req, res) => {
       learningStats: learningStats.rows[0],
       studentDemographics: studentDemographics.rows[0],
       geographicalDistribution: geographicalDistribution.rows[0],
-      familyStats: familyStats.rows[0],
+      studentCompleteness: studentCompleteness.rows,
       entryStats: entryStats.rows,
     });
   } catch (error) {
@@ -817,17 +855,64 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
         ) as geographical_data
     `);
 
-    // Family information statistics
-    const familyStats = await pool.query(`
-      SELECT 
-        COUNT(CASE WHEN father_name IS NOT NULL THEN 1 END) as with_father_info,
-        COUNT(CASE WHEN mother_name IS NOT NULL THEN 1 END) as with_mother_info,
-        COUNT(CASE WHEN father_job IS NOT NULL THEN 1 END) as with_father_job,
-        COUNT(CASE WHEN mother_job IS NOT NULL THEN 1 END) as with_mother_job,
-        COUNT(CASE WHEN father_phone IS NOT NULL THEN 1 END) as with_father_phone,
-        COUNT(CASE WHEN mother_phone IS NOT NULL THEN 1 END) as with_mother_phone
-      FROM db_student
-    `);
+    // Student data completeness by grade
+    const studentCompleteness = await pool.query(
+      `
+      WITH student_data AS (
+        SELECT 
+          g.name as grade_name,
+          COUNT(DISTINCT s.id) as total_students,
+          COUNT(DISTINCT CASE 
+            WHEN ds.id IS NOT NULL THEN
+              CASE 
+                WHEN ds.name IS NOT NULL AND
+                     ds.homebaseid IS NOT NULL AND
+                     ds.homebase_name IS NOT NULL AND
+                     ds.entryid IS NOT NULL AND
+                     ds.entry_name IS NOT NULL AND
+                     ds.nis IS NOT NULL AND
+                     ds.nisn IS NOT NULL AND
+                     ds.gender IS NOT NULL AND
+                     ds.birth_place IS NOT NULL AND
+                     ds.birth_date IS NOT NULL AND
+                     ds.height IS NOT NULL AND
+                     ds.weight IS NOT NULL AND
+                     ds.head IS NOT NULL AND
+                     ds.order_number IS NOT NULL AND
+                     ds.siblings IS NOT NULL AND
+                     ds.address IS NOT NULL AND
+                     ds.father_nik IS NOT NULL AND
+                     ds.father_name IS NOT NULL AND
+                     ds.father_birth_place IS NOT NULL AND
+                     ds.father_birth_date IS NOT NULL AND
+                     ds.father_job IS NOT NULL AND
+                     ds.father_phone IS NOT NULL AND
+                     ds.mother_nik IS NOT NULL AND
+                     ds.mother_name IS NOT NULL AND
+                     ds.mother_birth_place IS NOT NULL AND
+                     ds.mother_birth_date IS NOT NULL AND
+                     ds.mother_job IS NOT NULL AND
+                     ds.mother_phone IS NOT NULL AND
+                     ds.province_name IS NOT NULL AND
+                     ds.city_name IS NOT NULL AND
+                     ds.district_name IS NOT NULL AND
+                     ds.village_name IS NOT NULL AND
+                     ds.postal_code IS NOT NULL AND
+                     EXISTS (SELECT 1 FROM db_family df WHERE df.userid = s.id)
+                THEN s.id END
+            END
+          ) as complete_students
+        FROM u_students s
+        LEFT JOIN db_student ds ON s.id = ds.userid
+        LEFT JOIN cl_students cs ON s.id = cs.student
+        LEFT JOIN a_class c ON cs.classid = c.id
+        LEFT JOIN a_grade g ON c.grade = g.id
+        GROUP BY g.name
+        ORDER BY CAST(g.name AS INTEGER)
+      )
+      SELECT * FROM student_data
+      `
+    );
 
     // Student entry statistics
     const entryStats = await pool.query(`
@@ -851,7 +936,7 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
       activityLogs: activityLogs.rows,
       studentDemographics: studentDemographics.rows[0],
       geographicalDistribution: geographicalDistribution.rows[0],
-      familyStats: familyStats.rows[0],
+      studentCompleteness: studentCompleteness.rows,
       entryStats: entryStats.rows,
     });
   } catch (error) {

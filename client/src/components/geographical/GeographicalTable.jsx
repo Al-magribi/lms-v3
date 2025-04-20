@@ -10,10 +10,10 @@ const GeographicalTable = ({ data, level }) => {
 
   return (
     <div className='table-responsive'>
-      <table className='table table-striped'>
+      <table className='table table-striped table-hover table-bordered'>
         <thead>
           <tr>
-            <th>
+            <th className='text-center'>
               {level === "province"
                 ? "Provinsi"
                 : level === "city"
@@ -25,19 +25,27 @@ const GeographicalTable = ({ data, level }) => {
             {level !== "province" && <th>Provinsi</th>}
             {level === "district" && <th>Kota</th>}
             {level === "village" && <th>Kecamatan</th>}
-            <th>Jumlah</th>
-            <th>Persentase</th>
+            <th className='text-center'>Jumlah</th>
+            <th className='text-center'>Persentase</th>
           </tr>
         </thead>
         <tbody>
           {data?.map((item, index) => (
             <tr key={index}>
-              <td>{item[`${level}_name`]}</td>
-              {level !== "province" && <td>{item.province_name}</td>}
-              {level === "district" && <td>{item.city_name}</td>}
-              {level === "village" && <td>{item.district_name}</td>}
-              <td>{item.student_count}</td>
-              <td>{calculatePercentage(item.student_count)}%</td>
+              <td className='text-center'>{item[`${level}_name`]}</td>
+              {level !== "province" && (
+                <td className='text-center'>{item.province_name}</td>
+              )}
+              {level === "district" && (
+                <td className='text-center'>{item.city_name}</td>
+              )}
+              {level === "village" && (
+                <td className='text-center'>{item.district_name}</td>
+              )}
+              <td className='text-center'>{item.student_count}</td>
+              <td className='text-center'>
+                {calculatePercentage(item.student_count)}%
+              </td>
             </tr>
           ))}
         </tbody>

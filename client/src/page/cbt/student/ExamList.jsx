@@ -24,8 +24,7 @@ const ExamList = ({ classid }) => {
       setLimit={setLimit}
       totalPages={totalPages}
       setSearch={setSearch}
-      totalData={totalData}
-    >
+      totalData={totalData}>
       <table className='mb-0 table table-hover table-striped table-bordered'>
         <thead>
           <tr>
@@ -38,36 +37,41 @@ const ExamList = ({ classid }) => {
           </tr>
         </thead>
         <tbody>
-          {exams?.map((item, index) => (
-            <tr key={item.id}>
-              <td className='text-center align-middle'>{index + 1}</td>
-              <td className='align-middle'>{item.teacher_name}</td>
-              <td className='align-middle'>{item.name}</td>
-              <td className='text-center align-middle'>
-                <p className='m-0 badge bg-primary'>{`${item.duration} Menit`}</p>
-              </td>
-              <td className='text-center align-middle'>
-                <p className='m-0'>
-                  {item.isactive ? (
-                    <span className='badge bg-success'>Aktif</span>
-                  ) : (
-                    <span className='badge bg-danger'>nonaktif</span>
-                  )}
-                </p>
-              </td>
-              <td className='text-center align-middle'>
-                <button
-                  className='btn btn-sm btn-primary'
-                  data-bs-toggle='modal'
-                  data-bs-target='#token'
-                  disabled={!item.isactive}
-                  onClick={() => setExam(item)}
-                >
-                  <i className='bi bi-eye'></i>
-                </button>
-              </td>
+          {exams?.length > 0 ? (
+            exams?.map((item, index) => (
+              <tr key={item.id}>
+                <td className='text-center align-middle'>{index + 1}</td>
+                <td className='align-middle'>{item.teacher_name}</td>
+                <td className='align-middle'>{item.name}</td>
+                <td className='text-center align-middle'>
+                  <p className='m-0 badge bg-primary'>{`${item.duration} Menit`}</p>
+                </td>
+                <td className='text-center align-middle'>
+                  <p className='m-0'>
+                    {item.isactive ? (
+                      <span className='badge bg-success'>Aktif</span>
+                    ) : (
+                      <span className='badge bg-danger'>nonaktif</span>
+                    )}
+                  </p>
+                </td>
+                <td className='text-center align-middle'>
+                  <button
+                    className='btn btn-sm btn-primary'
+                    data-bs-toggle='modal'
+                    data-bs-target='#token'
+                    disabled={!item.isactive}
+                    onClick={() => setExam(item)}>
+                    <i className='bi bi-eye'></i>
+                  </button>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={6}>Data Belum Tersedia</td>
             </tr>
-          ))}
+          )}
         </tbody>
       </table>
       <Modal exam={exam} setExam={setExam} />

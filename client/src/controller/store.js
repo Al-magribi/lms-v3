@@ -34,6 +34,10 @@ import { ApiReport } from "./api/tahfiz/ApiReport";
 // Dashboard
 import { ApiDashboard } from "./api/dashboard/ApiDashboard";
 
+// Database
+import { ApiDatabase } from "./api/database/ApiDatabase";
+import { ApiArea } from "./api/database/ApiArea";
+
 // Logs
 import { ApiLog } from "./api/log/ApiLog";
 
@@ -68,6 +72,9 @@ const store = configureStore({
     [ApiDashboard.reducerPath]: ApiDashboard.reducer,
 
     [ApiLog.reducerPath]: ApiLog.reducer,
+
+    [ApiDatabase.reducerPath]: ApiDatabase.reducer,
+    [ApiArea.reducerPath]: ApiArea.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat([
@@ -98,6 +105,9 @@ const store = configureStore({
       ApiDashboard.middleware,
 
       ApiLog.middleware,
+
+      ApiDatabase.middleware,
+      ApiArea.middleware,
     ]),
 });
 

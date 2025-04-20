@@ -369,29 +369,35 @@ const AdminDash = () => {
 
     return (
       <div className='table-responsive'>
-        <table className='table table-striped'>
+        <table className='table table-striped table-hover table-bordered'>
           <thead>
             <tr>
-              <th>Informasi</th>
-              <th>Jumlah</th>
-              <th>Persentase</th>
+              <th className='text-center'>Informasi</th>
+              <th className='text-center'>Jumlah</th>
+              <th className='text-center'>Persentase</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td>Total Siswa</td>
-              <td>{totalStudents}</td>
-              <td>100%</td>
+              <td className='text-center'>Total Siswa</td>
+              <td className='text-center'>{totalStudents}</td>
+              <td className='text-center'>100%</td>
             </tr>
             <tr>
-              <td>Laki-laki</td>
-              <td>{parseInt(data?.male_count) || 0}</td>
-              <td>{calculatePercentage(data?.male_count)}%</td>
+              <td className='text-center'>Laki-laki</td>
+              <td className='text-center'>{parseInt(data?.male_count) || 0}</td>
+              <td className='text-center'>
+                {calculatePercentage(data?.male_count)}%
+              </td>
             </tr>
             <tr>
-              <td>Perempuan</td>
-              <td>{parseInt(data?.female_count) || 0}</td>
-              <td>{calculatePercentage(data?.female_count)}%</td>
+              <td className='text-center'>Perempuan</td>
+              <td className='text-center'>
+                {parseInt(data?.female_count) || 0}
+              </td>
+              <td className='text-center'>
+                {calculatePercentage(data?.female_count)}%
+              </td>
             </tr>
           </tbody>
         </table>
@@ -477,20 +483,22 @@ const AdminDash = () => {
 
     return (
       <div className='table-responsive'>
-        <table className='table table-striped'>
+        <table className='table table-striped table-hover table-bordered'>
           <thead>
             <tr>
-              <th>Rentang Usia (Tahun)</th>
-              <th>Jumlah</th>
-              <th>Persentase</th>
+              <th className='text-center'>Rentang Usia</th>
+              <th className='text-center'>Jumlah</th>
+              <th className='text-center'>Persentase</th>
             </tr>
           </thead>
           <tbody>
             {ageDistribution.map((item, index) => (
               <tr key={index}>
-                <td>{item.age_group}</td>
-                <td>{item.count}</td>
-                <td>{calculatePercentage(item.count)}%</td>
+                <td className='text-center'>{item.age_group}</td>
+                <td className='text-center'>{item.count}</td>
+                <td className='text-center'>
+                  {calculatePercentage(item.count)}%
+                </td>
               </tr>
             ))}
           </tbody>
@@ -742,20 +750,22 @@ const AdminDash = () => {
                   <Bar data={entryChartData} options={entryChartOptions} />
                 </div>
                 <div className='table-responsive mt-4'>
-                  <table className='table table-striped'>
+                  <table className='table table-striped table-hover table-bordered'>
                     <thead>
                       <tr>
-                        <th>Tahun Masuk</th>
-                        <th>Jumlah Siswa</th>
-                        <th>Persentase</th>
+                        <th className='text-center'>Tahun Masuk</th>
+                        <th className='text-center'>Jumlah Siswa</th>
+                        <th className='text-center'>Persentase</th>
                       </tr>
                     </thead>
                     <tbody>
                       {(data?.entryStats || []).map((item, index) => (
                         <tr key={index}>
-                          <td>{item.entry_name}</td>
-                          <td>{parseInt(item.student_count) || 0}</td>
-                          <td>
+                          <td className='text-center'>{item.entry_name}</td>
+                          <td className='text-center'>
+                            {parseInt(item.student_count) || 0}
+                          </td>
+                          <td className='text-center'>
                             {(
                               ((parseInt(item.student_count) || 0) /
                                 (parseInt(
@@ -775,152 +785,171 @@ const AdminDash = () => {
           </div>
         </div>
 
-        {/* New Section: Family Information */}
+        {/* Student Data Completeness by Grade */}
         <div className='row g-4 mb-4'>
           <div className='col-12'>
             <div className='card'>
               <div className='card-header'>
-                <h5 className='card-title mb-0'>Informasi Keluarga Siswa</h5>
+                <h5 className='card-title mb-0'>
+                  Kelangkapan Data Siswa per Tingkat
+                </h5>
               </div>
               <div className='card-body'>
                 <div className='row'>
                   <div className='col-md-6'>
                     <div style={{ height: "300px", position: "relative" }}>
                       <Bar
-                        data={familyChartData}
-                        options={familyChartOptions}
+                        data={{
+                          labels:
+                            data?.studentCompleteness?.map(
+                              (grade) => `Grade ${grade.grade_name}`
+                            ) || [],
+                          datasets: [
+                            {
+                              label: "Total Students",
+                              data:
+                                data?.studentCompleteness?.map(
+                                  (grade) => grade.total_students
+                                ) || [],
+                              backgroundColor: "rgba(54, 162, 235, 0.8)",
+                              borderColor: "rgba(54, 162, 235, 1)",
+                              borderWidth: 1,
+                            },
+                            {
+                              label: "Complete Data",
+                              data:
+                                data?.studentCompleteness?.map(
+                                  (grade) => grade.complete_students
+                                ) || [],
+                              backgroundColor: "rgba(75, 192, 192, 0.8)",
+                              borderColor: "rgba(75, 192, 192, 1)",
+                              borderWidth: 1,
+                            },
+                          ],
+                        }}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            legend: {
+                              position: "bottom",
+                            },
+                            title: {
+                              display: true,
+                              text: "Student Data Completeness by Grade",
+                            },
+                          },
+                          scales: {
+                            y: {
+                              beginAtZero: true,
+                              title: {
+                                display: true,
+                                text: "Number of Students",
+                              },
+                            },
+                          },
+                        }}
                       />
                     </div>
                   </div>
                   <div className='col-md-6'>
                     <div className='table-responsive'>
-                      <table className='table table-striped'>
+                      <table className='table table-striped table-hover table-bordered'>
                         <thead>
                           <tr>
-                            <th>Informasi</th>
-                            <th>Jumlah</th>
-                            <th>Persentase</th>
+                            <th className='text-center align-middle'>
+                              Tingkat
+                            </th>
+                            <th className='text-center align-middle'>
+                              Total Siswa
+                            </th>
+                            <th className='text-center align-middle'>
+                              Lengkap
+                            </th>
+                            <th className='text-center align-middle'>
+                              Belum Lengkap
+                            </th>
+                            <th className='text-center align-middle'>%</th>
                           </tr>
                         </thead>
                         <tbody>
-                          <tr>
-                            <td>Data Ayah</td>
-                            <td>
-                              {parseInt(data?.familyStats?.with_father_info) ||
-                                0}
-                            </td>
-                            <td>
-                              {(
-                                ((parseInt(
-                                  data?.familyStats?.with_father_info
-                                ) || 0) /
-                                  (parseInt(
-                                    data?.studentDemographics?.total_students
-                                  ) || 1)) *
-                                100
-                              ).toFixed(1)}
-                              %
-                            </td>
-                          </tr>
-                          <tr>
-                            <td>Data Ibu</td>
-                            <td>
-                              {parseInt(data?.familyStats?.with_mother_info) ||
-                                0}
-                            </td>
-                            <td>
-                              {(
-                                ((parseInt(
-                                  data?.familyStats?.with_mother_info
-                                ) || 0) /
-                                  (parseInt(
-                                    data?.studentDemographics?.total_students
-                                  ) || 1)) *
-                                100
-                              ).toFixed(1)}
-                              %
-                            </td>
-                          </tr>
-                          <tr>
-                            <td>Pekerjaan Ayah</td>
-                            <td>
-                              {parseInt(data?.familyStats?.with_father_job) ||
-                                0}
-                            </td>
-                            <td>
-                              {(
-                                ((parseInt(
-                                  data?.familyStats?.with_father_job
-                                ) || 0) /
-                                  (parseInt(
-                                    data?.studentDemographics?.total_students
-                                  ) || 1)) *
-                                100
-                              ).toFixed(1)}
-                              %
-                            </td>
-                          </tr>
-                          <tr>
-                            <td>Pekerjaan Ibu</td>
-                            <td>
-                              {parseInt(data?.familyStats?.with_mother_job) ||
-                                0}
-                            </td>
-                            <td>
-                              {(
-                                ((parseInt(
-                                  data?.familyStats?.with_mother_job
-                                ) || 0) /
-                                  (parseInt(
-                                    data?.studentDemographics?.total_students
-                                  ) || 1)) *
-                                100
-                              ).toFixed(1)}
-                              %
-                            </td>
-                          </tr>
-                          <tr>
-                            <td>Kontak Ayah</td>
-                            <td>
-                              {parseInt(data?.familyStats?.with_father_phone) ||
-                                0}
-                            </td>
-                            <td>
-                              {(
-                                ((parseInt(
-                                  data?.familyStats?.with_father_phone
-                                ) || 0) /
-                                  (parseInt(
-                                    data?.studentDemographics?.total_students
-                                  ) || 1)) *
-                                100
-                              ).toFixed(1)}
-                              %
-                            </td>
-                          </tr>
-                          <tr>
-                            <td>Kontak Ibu</td>
-                            <td>
-                              {parseInt(data?.familyStats?.with_mother_phone) ||
-                                0}
-                            </td>
-                            <td>
-                              {(
-                                ((parseInt(
-                                  data?.familyStats?.with_mother_phone
-                                ) || 0) /
-                                  (parseInt(
-                                    data?.studentDemographics?.total_students
-                                  ) || 1)) *
-                                100
-                              ).toFixed(1)}
-                              %
-                            </td>
-                          </tr>
+                          {data?.studentCompleteness?.map((grade) => (
+                            <tr key={grade.grade_name}>
+                              <td className='text-center'>
+                                {grade.grade_name}
+                              </td>
+                              <td className='text-center'>
+                                {grade.total_students}
+                              </td>
+                              <td className='text-center'>
+                                {grade.complete_students}
+                              </td>
+                              <td className='text-center'>
+                                {grade.total_students - grade.complete_students}
+                              </td>
+                              <td className='text-center'>
+                                {(
+                                  (grade.complete_students /
+                                    grade.total_students) *
+                                  100
+                                ).toFixed(1)}
+                                %
+                              </td>
+                            </tr>
+                          ))}
                         </tbody>
                       </table>
                     </div>
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Class Distribution Section */}
+        <div className='row g-4 mb-4'>
+          <div className='col-12'>
+            <div className='card'>
+              <div className='card-header'>
+                <h5 className='card-title mb-0'>Distribusi Siswa per Kelas</h5>
+              </div>
+              <div className='card-body'>
+                <div style={{ height: "400px", position: "relative" }}>
+                  <Bar
+                    data={classDistributionData}
+                    options={classDistributionOptions}
+                  />
+                </div>
+                <div className='table-responsive mt-4'>
+                  <table className='table table-striped table-hover table-bordered'>
+                    <thead>
+                      <tr>
+                        <th className='text-center'>Tingkat</th>
+                        <th className='text-center'>Kelas</th>
+                        <th className='text-center'>Total Siswa</th>
+                        <th className='text-center'>Laki-laki</th>
+                        <th className='text-center'>Perempuan</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(data?.studentsPerClass || []).map((cls) => (
+                        <tr key={cls.class_name}>
+                          <td className='text-center'>{cls.grade_name}</td>
+                          <td className='text-center'>{cls.class_name}</td>
+                          <td className='text-center'>
+                            {parseInt(cls.total_students) || 0}
+                          </td>
+                          <td className='text-center'>
+                            {parseInt(cls.male_count) || 0}
+                          </td>
+                          <td className='text-center'>
+                            {parseInt(cls.female_count) || 0}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
@@ -1039,49 +1068,6 @@ const AdminDash = () => {
                           <td>
                             {new Date(activity.createdat).toLocaleDateString()}
                           </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Class Distribution Section */}
-        <div className='row g-4 mb-4'>
-          <div className='col-12'>
-            <div className='card'>
-              <div className='card-header'>
-                <h5 className='card-title mb-0'>Distribusi Siswa per Kelas</h5>
-              </div>
-              <div className='card-body'>
-                <div style={{ height: "400px", position: "relative" }}>
-                  <Bar
-                    data={classDistributionData}
-                    options={classDistributionOptions}
-                  />
-                </div>
-                <div className='table-responsive mt-4'>
-                  <table className='table table-striped'>
-                    <thead>
-                      <tr>
-                        <th>Tingkat</th>
-                        <th>Kelas</th>
-                        <th>Total Siswa</th>
-                        <th>Laki-laki</th>
-                        <th>Perempuan</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(data?.studentsPerClass || []).map((cls) => (
-                        <tr key={cls.class_name}>
-                          <td>{cls.grade_name}</td>
-                          <td>{cls.class_name}</td>
-                          <td>{parseInt(cls.total_students) || 0}</td>
-                          <td>{parseInt(cls.male_count) || 0}</td>
-                          <td>{parseInt(cls.female_count) || 0}</td>
                         </tr>
                       ))}
                     </tbody>
