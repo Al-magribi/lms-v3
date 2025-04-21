@@ -67,7 +67,11 @@ const Parent = ({ studentData, userid, onRefetch }) => {
           <div className='col-md-6'>
             {/* Father's Information */}
             <div className='mb-3'>
+              <label htmlFor='father_nik' className='form-label'>
+                NIK Ayah
+              </label>
               <input
+                id='father_nik'
                 type='text'
                 className='form-control'
                 placeholder='NIK Ayah'
@@ -78,7 +82,11 @@ const Parent = ({ studentData, userid, onRefetch }) => {
             </div>
 
             <div className='mb-3'>
+              <label htmlFor='father_name' className='form-label'>
+                Nama Ayah
+              </label>
               <input
+                id='father_name'
                 type='text'
                 className='form-control'
                 placeholder='Nama Ayah'
@@ -89,7 +97,11 @@ const Parent = ({ studentData, userid, onRefetch }) => {
             </div>
 
             <div className='mb-3'>
+              <label htmlFor='father_birth_place' className='form-label'>
+                Tempat Lahir Ayah
+              </label>
               <input
+                id='father_birth_place'
                 type='text'
                 className='form-control'
                 placeholder='Tempat Lahir Ayah'
@@ -100,7 +112,11 @@ const Parent = ({ studentData, userid, onRefetch }) => {
             </div>
 
             <div className='mb-3'>
+              <label htmlFor='father_birth_date' className='form-label'>
+                Tanggal Lahir Ayah
+              </label>
               <input
+                id='father_birth_date'
                 type='date'
                 className='form-control'
                 name='father_birth_date'
@@ -110,7 +126,11 @@ const Parent = ({ studentData, userid, onRefetch }) => {
             </div>
 
             <div className='mb-3'>
+              <label htmlFor='father_job' className='form-label'>
+                Pekerjaan Ayah
+              </label>
               <input
+                id='father_job'
                 type='text'
                 className='form-control'
                 placeholder='Pekerjaan Ayah'
@@ -121,7 +141,11 @@ const Parent = ({ studentData, userid, onRefetch }) => {
             </div>
 
             <div className='mb-3'>
+              <label htmlFor='father_phone' className='form-label'>
+                Nomor Telepon Ayah
+              </label>
               <input
+                id='father_phone'
                 type='text'
                 className='form-control'
                 placeholder='Tlp Ayah'
@@ -135,7 +159,11 @@ const Parent = ({ studentData, userid, onRefetch }) => {
           <div className='col-md-6'>
             {/* Mother's Information */}
             <div className='mb-3'>
+              <label htmlFor='mother_nik' className='form-label'>
+                NIK Ibu
+              </label>
               <input
+                id='mother_nik'
                 type='text'
                 className='form-control'
                 placeholder='NIK Ibu'
@@ -146,7 +174,11 @@ const Parent = ({ studentData, userid, onRefetch }) => {
             </div>
 
             <div className='mb-3'>
+              <label htmlFor='mother_name' className='form-label'>
+                Nama Ibu
+              </label>
               <input
+                id='mother_name'
                 type='text'
                 className='form-control'
                 placeholder='Nama Ibu'
@@ -157,7 +189,11 @@ const Parent = ({ studentData, userid, onRefetch }) => {
             </div>
 
             <div className='mb-3'>
+              <label htmlFor='mother_birth_place' className='form-label'>
+                Tempat Lahir Ibu
+              </label>
               <input
+                id='mother_birth_place'
                 type='text'
                 className='form-control'
                 placeholder='Tempat Lahir Ibu'
@@ -168,7 +204,11 @@ const Parent = ({ studentData, userid, onRefetch }) => {
             </div>
 
             <div className='mb-3'>
+              <label htmlFor='mother_birth_date' className='form-label'>
+                Tanggal Lahir Ibu
+              </label>
               <input
+                id='mother_birth_date'
                 type='date'
                 className='form-control'
                 name='mother_birth_date'
@@ -178,7 +218,11 @@ const Parent = ({ studentData, userid, onRefetch }) => {
             </div>
 
             <div className='mb-3'>
+              <label htmlFor='mother_job' className='form-label'>
+                Pekerjaan Ibu
+              </label>
               <input
+                id='mother_job'
                 type='text'
                 className='form-control'
                 placeholder='Pekerjaan Ibu'
@@ -189,7 +233,11 @@ const Parent = ({ studentData, userid, onRefetch }) => {
             </div>
 
             <div className='mb-3'>
+              <label htmlFor='mother_phone' className='form-label'>
+                Nomor Telepon Ibu
+              </label>
               <input
+                id='mother_phone'
                 type='text'
                 className='form-control'
                 placeholder='Tlp Ibu'

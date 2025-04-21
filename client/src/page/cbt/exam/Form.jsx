@@ -8,7 +8,7 @@ import { toast } from "react-hot-toast";
 import Select from "react-select";
 import { useSelector } from "react-redux";
 
-const Form = ({ detail, setDetail }) => {
+const Form = ({ detail, setDetail, onSuccess }) => {
   const { user } = useSelector((state) => state.auth);
 
   const initialFormState = {
@@ -137,35 +137,33 @@ const Form = ({ detail, setDetail }) => {
     );
   };
 
-  const cancel = () => {
-    setDetail({});
+  const resetForm = () => {
     setFormData({
       ...initialFormState,
-      teacher: "",
+      teacher: user?.id || "",
     });
+    setDetail(null);
+  };
+
+  const cancel = () => {
+    resetForm();
+    onSuccess?.();
   };
 
   useEffect(() => {
     if (isSuccess) {
-      setDetail({});
-      setFormData({
-        ...initialFormState,
-        teacher: "",
-      });
+      resetForm();
       reset();
+      onSuccess?.();
     }
 
     if (isError) {
       reset();
     }
-  }, [isSuccess, isError]);
+  }, [isSuccess, isError, onSuccess]);
 
   return (
-    <form
-      onSubmit={addHandler}
-      className='rounded p-2 border bg-white d-flex flex-column gap-2'>
-      <p className='m-0 h6'>{detail?.id ? "Edit Ujian" : "Tambah Ujian"}</p>
-
+    <form onSubmit={addHandler} className='d-flex flex-column gap-2'>
       <Select
         isClearable
         isSearchable
@@ -284,6 +282,7 @@ const Form = ({ detail, setDetail }) => {
         <button
           type='button'
           className='btn btn-sm btn-warning'
+          data-bs-dismiss='modal'
           onClick={cancel}>
           Batal
         </button>

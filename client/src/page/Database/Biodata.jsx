@@ -30,6 +30,7 @@ const Biodata = ({ studentData, onRefetch }) => {
       ? new Date(studentData.birth_date).toISOString().split("T")[0]
       : "",
     order_number: studentData?.order_number || "",
+    siblings: studentData?.siblings || "",
     height: studentData?.height || "",
     weight: studentData?.weight || "",
     head: studentData?.head || "",
@@ -154,15 +155,17 @@ const Biodata = ({ studentData, onRefetch }) => {
     }
   }, [isSuccess, isError, reset, onRefetch]);
 
-  console.log(studentData);
-
   return (
     <div className='container mt-3'>
       <form onSubmit={handleSubmit}>
         <div className='row'>
           <div className='col-md-6'>
             <div className='mb-3'>
+              <label htmlFor='entryid' className='form-label'>
+                Tahun Pelajaran
+              </label>
               <select
+                id='entryid'
                 className='form-select'
                 aria-label='Pilih Tahun Pelajaran'
                 name='entryid'
@@ -180,7 +183,11 @@ const Biodata = ({ studentData, onRefetch }) => {
             </div>
 
             <div className='mb-3'>
+              <label htmlFor='homebaseid' className='form-label'>
+                Satuan Pendidikan
+              </label>
               <select
+                id='homebaseid'
                 className='form-select'
                 aria-label='Pilih Satuan Pendidikan'
                 name='homebaseid'
@@ -198,9 +205,57 @@ const Biodata = ({ studentData, onRefetch }) => {
             </div>
 
             <div className='mb-3'>
+              <label htmlFor='name' className='form-label'>
+                Nama Lengkap
+              </label>
+              <input
+                id='name'
+                type='text'
+                className='form-control'
+                placeholder='Nama Lengkap'
+                name='name'
+                value={formData.name}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className='mb-3'>
+              <label htmlFor='nisn' className='form-label'>
+                NISN
+              </label>
+              <input
+                id='nisn'
+                type='text'
+                className='form-control'
+                placeholder='NISN'
+                name='nisn'
+                value={formData.nisn}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className='mb-3'>
+              <label htmlFor='nis' className='form-label'>
+                NIS
+              </label>
+              <input
+                id='nis'
+                type='text'
+                className='form-control'
+                placeholder='NIS'
+                name='nis'
+                value={formData.nis}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className='mb-3'>
+              <label htmlFor='gender' className='form-label'>
+                Jenis Kelamin
+              </label>
               <select
+                id='gender'
                 name='gender'
-                id=''
                 className='form-select'
                 value={formData.gender}
                 onChange={handleChange}>
@@ -213,40 +268,11 @@ const Biodata = ({ studentData, onRefetch }) => {
             </div>
 
             <div className='mb-3'>
+              <label htmlFor='birth_place' className='form-label'>
+                Tempat Lahir
+              </label>
               <input
-                type='text'
-                className='form-control'
-                placeholder='Nama Lengkap'
-                name='name'
-                value={formData.name}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className='mb-3'>
-              <input
-                type='text'
-                className='form-control'
-                placeholder='NISN'
-                name='nisn'
-                value={formData.nisn}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className='mb-3'>
-              <input
-                type='text'
-                className='form-control'
-                placeholder='NIS'
-                name='nis'
-                value={formData.nis}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className='mb-3'>
-              <input
+                id='birth_place'
                 type='text'
                 className='form-control'
                 placeholder='Tempat Lahir'
@@ -257,7 +283,11 @@ const Biodata = ({ studentData, onRefetch }) => {
             </div>
 
             <div className='mb-3'>
+              <label htmlFor='birth_date' className='form-label'>
+                Tanggal Lahir
+              </label>
               <input
+                id='birth_date'
                 type='date'
                 className='form-control'
                 name='birth_date'
@@ -267,7 +297,29 @@ const Biodata = ({ studentData, onRefetch }) => {
             </div>
 
             <div className='mb-3'>
+              <label htmlFor='siblings' className='form-label'>
+                Jumlah Keluarga
+              </label>
               <input
+                id='siblings'
+                type='number'
+                className='form-control'
+                placeholder='Jumlah Keluarga'
+                name='siblings'
+                value={formData.siblings}
+                onChange={handleChange}
+                min='0'
+              />
+            </div>
+          </div>
+
+          <div className='col-md-6'>
+            <div className='mb-3'>
+              <label htmlFor='order_number' className='form-label'>
+                Urutan Kelahiran
+              </label>
+              <input
+                id='order_number'
                 type='text'
                 className='form-control'
                 placeholder='Urutan Kelahiran'
@@ -278,7 +330,11 @@ const Biodata = ({ studentData, onRefetch }) => {
             </div>
 
             <div className='mb-3'>
+              <label htmlFor='height' className='form-label'>
+                Tinggi Badan (cm)
+              </label>
               <input
+                id='height'
                 type='text'
                 className='form-control'
                 placeholder='TB'
@@ -289,7 +345,11 @@ const Biodata = ({ studentData, onRefetch }) => {
             </div>
 
             <div className='mb-3'>
+              <label htmlFor='weight' className='form-label'>
+                Berat Badan (kg)
+              </label>
               <input
+                id='weight'
                 type='text'
                 className='form-control'
                 placeholder='BB'
@@ -299,8 +359,12 @@ const Biodata = ({ studentData, onRefetch }) => {
               />
             </div>
 
-            <div>
+            <div className='mb-3'>
+              <label htmlFor='head' className='form-label'>
+                Lingkar Kepala (cm)
+              </label>
               <input
+                id='head'
                 type='text'
                 className='form-control'
                 placeholder='Lingkar Kepala'
@@ -309,11 +373,13 @@ const Biodata = ({ studentData, onRefetch }) => {
                 onChange={handleChange}
               />
             </div>
-          </div>
 
-          <div className='col-md-6'>
             <div className='mb-3'>
+              <label htmlFor='provinceid' className='form-label'>
+                Provinsi
+              </label>
               <select
+                id='provinceid'
                 className='form-select'
                 aria-label='Pilih Provinsi'
                 name='provinceid'
@@ -331,7 +397,11 @@ const Biodata = ({ studentData, onRefetch }) => {
             </div>
 
             <div className='mb-3'>
+              <label htmlFor='cityid' className='form-label'>
+                Kota/Kabupaten
+              </label>
               <select
+                id='cityid'
                 className='form-select'
                 aria-label='Pilih Kota / Kabupaten'
                 name='cityid'
@@ -350,7 +420,11 @@ const Biodata = ({ studentData, onRefetch }) => {
             </div>
 
             <div className='mb-3'>
+              <label htmlFor='districtid' className='form-label'>
+                Kecamatan
+              </label>
               <select
+                id='districtid'
                 className='form-select'
                 aria-label='Pilih Kecamatan'
                 name='districtid'
@@ -369,7 +443,11 @@ const Biodata = ({ studentData, onRefetch }) => {
             </div>
 
             <div className='mb-3'>
+              <label htmlFor='villageid' className='form-label'>
+                Desa/Kelurahan
+              </label>
               <select
+                id='villageid'
                 className='form-select'
                 aria-label='Pilih Desa'
                 name='villageid'
@@ -388,7 +466,11 @@ const Biodata = ({ studentData, onRefetch }) => {
             </div>
 
             <div className='mb-3'>
+              <label htmlFor='postal_code' className='form-label'>
+                Kode Pos
+              </label>
               <input
+                id='postal_code'
                 type='text'
                 className='form-control'
                 placeholder='Kode Pos'
@@ -399,7 +481,11 @@ const Biodata = ({ studentData, onRefetch }) => {
             </div>
 
             <div className='mb-3'>
+              <label htmlFor='address' className='form-label'>
+                Alamat Lengkap
+              </label>
               <textarea
+                id='address'
                 className='form-control'
                 rows='4'
                 placeholder='Alamat'

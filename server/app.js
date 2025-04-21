@@ -16,6 +16,7 @@ import routerAuth from "./router/auth/routerAuth.js";
 // Admin Pusat
 import routerHomebase from "./router/center/routerHomebase.js";
 import routerAdmin from "./router/center/routerAdmin.js";
+import routerCenterData from "./router/center/routerCenterData.js";
 
 // Admin Satuan
 import routerPeriode from "./router/admin/routerPeriode.js";
@@ -62,6 +63,7 @@ app.use("/assets", express.static(path.join(__dirname, "assets")));
 app.use("/api/auth", routerAuth);
 app.use("/api/center/homebase", routerHomebase);
 app.use("/api/center/admin", routerAdmin);
+app.use("/api/center/data", routerCenterData);
 
 app.use("/api/admin/periode", routerPeriode);
 app.use("/api/admin/major", routerMajor);

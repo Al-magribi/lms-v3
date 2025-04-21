@@ -14,11 +14,11 @@ export const CenterMenus = [
   { label: "Admin", link: "/center-admin", icon: <Gr.GrUserAdmin /> },
   { label: "Guru", link: "/center-guru", icon: <Fa.FaChalkboardTeacher /> },
   { label: "Siswa", link: "/center-siswa", icon: <Pi.PiStudentFill /> },
-  { label: "Demografi", link: "/center-demografi", icon: <Fa.FaRegMap /> },
+  { label: "Market", link: "/center-market", icon: <Pi.PiTarget /> },
   {
-    label: "Statistik",
-    link: "/center-statistik",
-    icon: <Lu.LuChartNoAxesCombined />,
+    label: "Pengaturan",
+    link: "/center-setting",
+    icon: <Lu.LuSettings />,
   },
 ];
 

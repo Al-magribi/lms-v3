@@ -82,8 +82,7 @@ const TableExam = ({ setDetail }) => {
       setSearch={setSearch}
       totalData={totalData}
       totalPages={totalPages}
-      isLoading={loading}
-    >
+      isLoading={loading}>
       <table className='table table-striped table-bordered table-hover mb-0'>
         <thead>
           <tr>
@@ -124,12 +123,11 @@ const TableExam = ({ setDetail }) => {
                 <td className='text-center align-middle'>
                   <div
                     style={{ width: 100 }}
-                    className='d-flex align-items-center justify-content-center flex-wrap gap-2'
-                  >
+                    className='d-flex align-items-center justify-content-center flex-wrap gap-2'>
                     {exam.classes?.map((item) => (
-                      <p key={item.id} className='m-0 badge bg-primary'>
+                      <span key={item.id} className='badge bg-primary'>
                         {item.name}
-                      </p>
+                      </span>
                     ))}
                   </div>
                 </td>
@@ -146,8 +144,7 @@ const TableExam = ({ setDetail }) => {
                 <td className='text-center align-middle'>
                   <div
                     className='form-check form-switch pointer d-flex justify-content-center'
-                    onClick={() => changeStatusHandler(exam.id)}
-                  >
+                    onClick={() => changeStatusHandler(exam.id)}>
                     <input
                       className='form-check-input bg-success'
                       type='checkbox'
@@ -163,8 +160,7 @@ const TableExam = ({ setDetail }) => {
                     data-toggle='tooltip'
                     data-placement='top'
                     title='Copy Token'
-                    onClick={() => copyTokenHandler(exam.token)}
-                  >
+                    onClick={() => copyTokenHandler(exam.token)}>
                     {exam.token}
                   </p>
                 </td>
@@ -172,21 +168,22 @@ const TableExam = ({ setDetail }) => {
                   <div className='d-flex justify-content-center gap-2'>
                     <button
                       className='btn btn-sm btn-primary'
-                      onClick={() => openNewTab(exam.name, exam.id, exam.token)}
-                    >
+                      onClick={() =>
+                        openNewTab(exam.name, exam.id, exam.token)
+                      }>
                       <i className='bi bi-people'></i>
                     </button>
                     <button
                       className='btn btn-sm btn-warning'
-                      onClick={() => setDetail(exam)}
-                    >
+                      data-bs-toggle='modal'
+                      data-bs-target='#addexam'
+                      onClick={() => setDetail(exam)}>
                       <i className='bi bi-pencil-square'></i>
                     </button>
                     <button
                       className='btn btn-sm btn-danger'
                       disabled={isLoading}
-                      onClick={() => deleteHandler(exam.id)}
-                    >
+                      onClick={() => deleteHandler(exam.id)}>
                       <i className='bi bi-folder-x'></i>
                     </button>
                   </div>
