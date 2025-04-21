@@ -66,31 +66,42 @@ const Index = () => {
         : { email: accountValue }),
     };
 
-    await toast.promise(signin(credentials).unwrap(), {
-      loading: "Sedang masuk...",
-      success: async (response) => {
-        // First dispatch the initial user data from signin
-        dispatch(setLogin(response.user));
+    try {
+      // First sign in the user
+      const signinResult = await signin(credentials).unwrap();
 
-        try {
-          // Then load the complete user data
-          const userData = await loadUser().unwrap();
-          dispatch(setLogin(userData));
+      // Show loading toast
+      toast.loading("Memuat data pengguna...");
 
-          // Redirect after loading complete user data
-          window.location.href = routes[userData.level] || "/";
-        } catch (error) {
-          console.error("Error loading user data:", error);
-          // Still redirect even if loadUser fails
-          window.location.href = routes[response.user.level] || "/";
-        }
+      // Dispatch initial user data
+      dispatch(setLogin(signinResult.user));
 
-        return response.message;
-      },
-      error: (error) => {
-        return error.data?.message;
-      },
-    });
+      try {
+        // Then load the complete user data
+        const userData = await loadUser().unwrap();
+
+        // Update with complete user data
+        dispatch(setLogin(userData));
+
+        // Dismiss loading toast
+        toast.dismiss();
+
+        // Show success message
+        toast.success(signinResult.message);
+
+        // Redirect after loading complete user data
+        window.location.href = routes[userData.level] || "/";
+      } catch (error) {
+        console.error("Error loading user data:", error);
+        toast.dismiss();
+        toast.error("Gagal memuat data lengkap pengguna");
+
+        // Still redirect even if loadUser fails
+        window.location.href = routes[signinResult.user.level] || "/";
+      }
+    } catch (error) {
+      toast.error(error.data?.message || "Gagal masuk");
+    }
   };
 
   // useEffect(() => {

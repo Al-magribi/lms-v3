@@ -78,7 +78,9 @@ const Layout = ({ children, title, desc, levels }) => {
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (!user || !levels.includes(user?.level) || !isSignin) {
-        window.location.href = "/";
+        if (user === null || (user && Object.keys(user).length === 0)) {
+          window.location.href = "/";
+        }
       }
     }, 3000);
 
