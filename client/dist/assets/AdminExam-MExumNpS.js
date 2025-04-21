@@ -1,1 +1,0 @@
-import{j as t}from"./index-_V-Hszfs.js";import{L as r}from"./Layout-BOPYSC9s.js";import{C as m}from"./CbtExam-BqVWlCSj.js";import"./react-select.esm-BK9OElNt.js";import"./Table-pFA1e1UJ.js";const n=()=>t.jsx(r,{title:"Daftar Ujian",levels:["admin"],children:t.jsx(m,{})});export{n as default};
