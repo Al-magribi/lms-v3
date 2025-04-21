@@ -93,11 +93,11 @@ const Index = () => {
     });
   };
 
-  useEffect(() => {
-    if (user.level && isSignin) {
-      window.location.href = routes[user.level];
-    }
-  }, [user, isSignin]);
+  // useEffect(() => {
+  //   if (user.level && isSignin) {
+  //     window.location.href = routes[user.level];
+  //   }
+  // }, [user, isSignin]);
 
   return (
     <div>

@@ -80,7 +80,7 @@ const Layout = ({ children, title, desc, levels }) => {
       if (!user || !levels.includes(user?.level) || !isSignin) {
         navigate("/");
       }
-    }, 1000);
+    }, 3000);
 
     return () => clearTimeout(timeout);
   }, [user, isSignin, levels]);
@@ -102,12 +102,12 @@ const Layout = ({ children, title, desc, levels }) => {
   };
 
   return (
-    <div className='min-vh-100 d-flex bg-light flex-column'>
+    <div className="min-vh-100 d-flex bg-light flex-column">
       {/* Navbar */}
-      <nav className='navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm'>
-        <div className='container-fluid px-4'>
+      <nav className="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm">
+        <div className="container-fluid px-4">
           <a
-            className='navbar-brand fw-bold d-flex align-items-center'
+            className="navbar-brand fw-bold d-flex align-items-center"
             href={
               level === "center"
                 ? center
@@ -120,24 +120,27 @@ const Layout = ({ children, title, desc, levels }) => {
                 : level === "parent"
                 ? parent
                 : tahfiz
-            }>
-            <span className='d-none d-md-inline'>
-              <i className='bi bi-person-circle me-2'></i>
+            }
+          >
+            <span className="d-none d-md-inline">
+              <i className="bi bi-person-circle me-2"></i>
               {user?.name}
             </span>
           </a>
           <button
-            className='navbar-toggler'
-            type='button'
+            className="navbar-toggler"
+            type="button"
             onClick={toggleMenu}
-            aria-label='Toggle navigation'>
+            aria-label="Toggle navigation"
+          >
             <i className={`bi bi-${isMenuOpen ? "x-lg" : "list"}`}></i>
           </button>
           <div
             className={`collapse navbar-collapse ${isMenuOpen ? "show" : ""}`}
-            id='navbarNav'>
-            <div className='navbar-nav ms-auto'>
-              <div className='d-flex flex-wrap gap-2'>
+            id="navbarNav"
+          >
+            <div className="navbar-nav ms-auto">
+              <div className="d-flex flex-wrap gap-2">
                 {(level === "center"
                   ? CenterMenus
                   : level === "admin"
@@ -159,17 +162,19 @@ const Layout = ({ children, title, desc, levels }) => {
                         ? "btn-light"
                         : "btn-outline-light"
                     }`}
-                    onClick={() => goToLink(menu.link)}>
+                    onClick={() => goToLink(menu.link)}
+                  >
                     {menu.icon}
-                    <span className='d-none d-md-inline'>{menu.label}</span>
+                    <span className="d-none d-md-inline">{menu.label}</span>
                   </button>
                 ))}
                 <button
-                  className='btn btn-outline-light d-flex align-items-center gap-2'
+                  className="btn btn-outline-light d-flex align-items-center gap-2"
                   disabled={isLoading}
-                  onClick={logoutHandler}>
-                  <i className='bi bi-box-arrow-right'></i>
-                  <span className='d-none d-md-inline'>Logout</span>
+                  onClick={logoutHandler}
+                >
+                  <i className="bi bi-box-arrow-right"></i>
+                  <span className="d-none d-md-inline">Logout</span>
                 </button>
               </div>
             </div>
@@ -179,35 +184,37 @@ const Layout = ({ children, title, desc, levels }) => {
 
       {/* Main Content */}
       <main
-        className='flex-grow-1 transition-all'
+        className="flex-grow-1 transition-all"
         style={{
           marginTop: "50px",
           padding: "20px",
           minHeight: dynamicHeight,
           transition: "all 0.3s ease",
-        }}>
-        <div className='container-fluid'>
+        }}
+      >
+        <div className="container-fluid">
           <Meta title={title} desc={desc} />
-          <div className='content-wrapper'>
-            <div className='d-flex align-items-center justify-content-between mb-2'>
-              <div className='d-flex gap-2'>
-                <i className='bi bi-house-door-fill me-2 text-primary'></i>
-                <h4 className='mb-0'>{title}</h4>
+          <div className="content-wrapper">
+            <div className="d-flex align-items-center justify-content-between mb-2">
+              <div className="d-flex gap-2">
+                <i className="bi bi-house-door-fill me-2 text-primary"></i>
+                <h4 className="mb-0">{title}</h4>
               </div>
               {title === "Siswa" && (
                 <div>
                   <button
-                    className='btn btn-sm btn-info'
-                    onClick={goToDatabase}>
-                    <i className='bi bi-database'></i> Database
+                    className="btn btn-sm btn-info"
+                    onClick={goToDatabase}
+                  >
+                    <i className="bi bi-database"></i> Database
                   </button>
                 </div>
               )}
 
               {title === "Database" && (
-                <button className='btn btn-sm btn-info' onClick={goToStudent}>
+                <button className="btn btn-sm btn-info" onClick={goToStudent}>
                   <Pi.PiStudentFill />
-                  <span className='ms-2'>Siswa</span>
+                  <span className="ms-2">Siswa</span>
                 </button>
               )}
             </div>
@@ -218,10 +225,10 @@ const Layout = ({ children, title, desc, levels }) => {
       </main>
 
       {/* Footer */}
-      <footer className='bg-primary text-white py-2'>
-        <div className='container-fluid text-center'>
-          <div className='d-flex align-items-center justify-content-center gap-2'>
-            <i className='bi bi-c-circle'></i>
+      <footer className="bg-primary text-white py-2">
+        <div className="container-fluid text-center">
+          <div className="d-flex align-items-center justify-content-center gap-2">
+            <i className="bi bi-c-circle"></i>
             <small>LMS {new Date().getFullYear()} | NIBS </small>
           </div>
         </div>

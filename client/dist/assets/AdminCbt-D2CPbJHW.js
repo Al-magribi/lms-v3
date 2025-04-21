@@ -1,0 +1,1 @@
+import{j as t}from"./index-_V-Hszfs.js";import{L as r}from"./Layout-BOPYSC9s.js";import{C as o}from"./CbtBank-hjAE6Z28.js";import"./react-select.esm-BK9OElNt.js";import"./Table-pFA1e1UJ.js";const n=()=>t.jsx(r,{title:"Daftar Bank Soal",levels:["admin"],children:t.jsx(o,{})});export{n as default};
