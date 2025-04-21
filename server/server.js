@@ -8,14 +8,6 @@ import express from "express";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Configure MIME types
-app.use((req, res, next) => {
-  if (req.url.endsWith(".jsx") || req.url.endsWith(".js")) {
-    res.setHeader("Content-Type", "application/javascript");
-  }
-  next();
-});
-
 // Serve static files from the client directory
 app.use(express.static(path.join(__dirname, "../client/dist")));
 
@@ -27,8 +19,11 @@ app.get("*", (req, res) => {
 connectToDatabase()
   .then(() => {
     const PORT = process.env.PORT;
-    app.listen(PORT, "0.0.0.0", () => {
-      console.log(`Server berjalan di http://0.0.0.0:${PORT}`);
+    const DOMAIN = process.env.DOMAIN || "localhost";
+    const PROTOCOL = process.env.NODE_ENV === "production" ? "https" : "http";
+
+    app.listen(PORT, () => {
+      console.log(`Server berjalan di ${PROTOCOL}://${DOMAIN}:${PORT}`);
     });
   })
   .catch((error) => {
