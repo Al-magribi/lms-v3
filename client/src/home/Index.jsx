@@ -19,7 +19,7 @@ const Index = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [signin, { isLoading, data }] = useSigninMutation();
-  const [loadUser] = useLoadUserMutation();
+  const [loadUser, { isLoading: isLoadingUser }] = useLoadUserMutation();
   const { user, isSignin } = useSelector((state) => state.auth);
 
   const handlePasswordToggle = () => {
@@ -306,9 +306,9 @@ const Index = () => {
               <button
                 type="submit"
                 className="btn btn-success d-flex align-items-center gap-2"
-                disabled={isLoading}
+                disabled={isLoading || isLoadingUser}
               >
-                {isLoading ? (
+                {isLoading || isLoadingUser ? (
                   <>
                     <span
                       className="spinner-border spinner-border-sm"
