@@ -92,7 +92,7 @@ class Editor extends Component {
         formData.append("file", file);
 
         try {
-          const response = await fetch(`/api/cbt/upload/audio`, {
+          const response = await fetch(`/api/bank/upload/audio`, {
             method: "POST",
             body: formData,
           });
