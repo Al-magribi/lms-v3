@@ -78,11 +78,11 @@ const Index = () => {
           dispatch(setLogin(userData));
 
           // Redirect after loading complete user data
-          navigate(routes[userData.level] || "/");
+          window.location.href = routes[userData.level] || "/";
         } catch (error) {
           console.error("Error loading user data:", error);
           // Still redirect even if loadUser fails
-          navigate(routes[response.user.level] || "/");
+          window.location.href = routes[response.user.level] || "/";
         }
 
         return response.message;
