@@ -48,7 +48,7 @@ const Layout = ({ children, title, desc, levels }) => {
     if (isSuccess) {
       reset();
       dispatch(setLogout());
-      navigate("/");
+      window.location.href = "/";
     }
 
     if (error) {
@@ -78,7 +78,7 @@ const Layout = ({ children, title, desc, levels }) => {
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (!user || !levels.includes(user?.level) || !isSignin) {
-        navigate("/");
+        window.location.href = "/";
       }
     }, 3000);
 
