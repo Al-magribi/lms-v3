@@ -1,1 +1,0 @@
-import{j as t}from"./index-Bkq01jzn.js";import{L as r}from"./Layout-uGiKgFPI.js";import{C as o}from"./CbtBank-DApYQ8rQ.js";import"./react-select.esm-DldCcTPv.js";import"./Table-BJdfPgdp.js";const p=()=>t.jsx(r,{title:"Guru Bank Soal",levels:["teacher"],children:t.jsx(o,{})});export{p as default};
