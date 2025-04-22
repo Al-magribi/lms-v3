@@ -14,13 +14,13 @@ const DbList = () => {
   const { data, isLoading } = useGetDatabaseQuery({ page, limit, search });
   const { students = [], totalPages, totalData } = data || {};
 
-  const gotoDatabase = (userid, name, nis, period) => {
+  const gotoDatabase = (userid, name) => {
     const formattedName = name.replace(/\s+/g, "-");
-    navigate(`/database/${userid}/${formattedName}/${nis}/${period}`);
+    navigate(`/database/${userid}/${formattedName}`);
   };
 
   return (
-    <Layout title='Database' levels={["admin", "teacher"]}>
+    <Layout title="Database" levels={["admin"]}>
       <Table
         isLoading={isLoading}
         page={page}
@@ -29,45 +29,46 @@ const DbList = () => {
         setLimit={setLimit}
         setSearch={setSearch}
         totalData={totalData}
-        totalPages={totalPages}>
-        <table className='mb-0 table table-striped table-hover table-bordered'>
+        totalPages={totalPages}
+      >
+        <table className="mb-0 table table-striped table-hover table-bordered">
           <thead>
             <tr>
-              <th className='text-center'>No</th>
-              <th className='text-center'>NIS</th>
-              <th className='text-center'>Nama</th>
-              <th className='text-center'>P/L</th>
-              <th className='text-center'>Tahun Masuk</th>
-              <th className='text-center'>Tingkat</th>
-              <th className='text-center'>Kelas</th>
-              <th className='text-center'>Kelengkapan Data</th>
-              <th className='text-center'>Aksi</th>
+              <th className="text-center">No</th>
+              <th className="text-center">NIS</th>
+              <th className="text-center">Nama</th>
+              <th className="text-center">P/L</th>
+              <th className="text-center">Tahun Masuk</th>
+              <th className="text-center">Tingkat</th>
+              <th className="text-center">Kelas</th>
+              <th className="text-center">Kelengkapan Data</th>
+              <th className="text-center">Aksi</th>
             </tr>
           </thead>
           <tbody>
             {students.map((student, index) => (
               <tr key={student.student_id}>
-                <td className='text-center align-middle'>
+                <td className="text-center align-middle">
                   {index + 1 + (page - 1) * limit}
                 </td>
-                <td className='text-center align-middle'>
+                <td className="text-center align-middle">
                   {student.student_nis}
                 </td>
-                <td className='align-middle'>{student.student_name}</td>
-                <td className='text-center align-middle'>
+                <td className="align-middle">{student.student_name}</td>
+                <td className="text-center align-middle">
                   {student.student_gender || "-"}
                 </td>
-                <td className='text-center align-middle'>
+                <td className="text-center align-middle">
                   {student.student_entry || "-"}
                 </td>
-                <td className='text-center align-middle'>
+                <td className="text-center align-middle">
                   {student.student_grade || "-"}
                 </td>
-                <td className='text-center align-middle'>
+                <td className="text-center align-middle">
                   {student.student_class || "-"}
                 </td>
-                <td className='text-center align-middle '>
-                  <div className='progress' style={{ height: "20px" }}>
+                <td className="text-center align-middle ">
+                  <div className="progress" style={{ height: "20px" }}>
                     <div
                       className={`progress-bar ${
                         parseInt(student.completeness) === 100
@@ -76,27 +77,24 @@ const DbList = () => {
                           ? "bg-warning"
                           : "bg-danger"
                       }`}
-                      role='progressbar'
+                      role="progressbar"
                       style={{ width: `${student.completeness}%` }}
                       aria-valuenow={student.completeness}
-                      aria-valuemin='0'
-                      aria-valuemax='100'>
+                      aria-valuemin="0"
+                      aria-valuemax="100"
+                    >
                       {student.completeness}%
                     </div>
                   </div>
                 </td>
-                <td className='text-center align-middle'>
+                <td className="text-center align-middle">
                   <button
-                    className='btn btn-sm btn-info'
+                    className="btn btn-sm btn-info"
                     onClick={() =>
-                      gotoDatabase(
-                        student.student_id,
-                        student.student_name,
-                        student.student_nis,
-                        student.student_entry_id
-                      )
-                    }>
-                    <i className='bi bi-database'></i>
+                      gotoDatabase(student.student_id, student.student_name)
+                    }
+                  >
+                    <i className="bi bi-database"></i>
                   </button>
                 </td>
               </tr>

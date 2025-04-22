@@ -15,22 +15,23 @@ const GeographicalDistribution = ({ data }) => {
 
   return (
     <div>
-      <div className='col-12'>
-        <div className='card'>
-          <div className='card-header d-flex justify-content-between align-items-center'>
-            <h5 className='card-title mb-0'>Distribusi Geografis Siswa</h5>
+      <div className="col-12">
+        <div className="card">
+          <div className="card-header d-flex justify-content-between align-items-center">
+            <h5 className="card-title mb-0">Distribusi Geografis Siswa</h5>
           </div>
-          <div className='card-body'>
+          <div className="card-body">
             {/* Navigation Tabs */}
-            <ul className='nav nav-tabs mb-4' role='tablist'>
-              {tabs.map((tab) => (
-                <li className='nav-item' role='presentation' key={tab.id}>
+            <ul className="nav nav-tabs mb-4" role="tablist">
+              {tabs.map((tab, index) => (
+                <li className="nav-item" role="presentation" key={index}>
                   <button
                     className={`nav-link ${
                       activeTab === tab.id ? "active" : ""
                     }`}
                     onClick={() => setActiveTab(tab.id)}
-                    role='tab'>
+                    role="tab"
+                  >
                     {tab.title}
                   </button>
                 </li>
@@ -38,26 +39,26 @@ const GeographicalDistribution = ({ data }) => {
             </ul>
 
             {/* Tab Content */}
-            <div className='tab-content'>
+            <div className="tab-content">
               {activeTab === "province" && (
-                <div className='row g-4'>
-                  <div className='col-md-6'>
-                    <div className='card h-100 border-0 shadow-sm'>
-                      <div className='card-body'>
+                <div className="row g-4">
+                  <div className="col-md-6">
+                    <div className="card h-100 border-0 shadow-sm">
+                      <div className="card-body">
                         <GeographicalChart
                           data={geographicalData.provinces}
-                          title='Distribusi Siswa per Provinsi'
-                          level='province'
+                          title="Distribusi Siswa per Provinsi"
+                          level="province"
                         />
                       </div>
                     </div>
                   </div>
-                  <div className='col-md-6'>
-                    <div className='card h-100 border-0 shadow-sm'>
-                      <div className='card-body'>
+                  <div className="col-md-6">
+                    <div className="card h-100 border-0 shadow-sm">
+                      <div className="card-body">
                         <GeographicalTable
                           data={geographicalData.provinces}
-                          level='province'
+                          level="province"
                         />
                       </div>
                     </div>
@@ -66,24 +67,24 @@ const GeographicalDistribution = ({ data }) => {
               )}
 
               {activeTab === "city" && (
-                <div className='row g-4'>
-                  <div className='col-md-6'>
-                    <div className='card h-100 border-0 shadow-sm'>
-                      <div className='card-body'>
+                <div className="row g-4">
+                  <div className="col-md-6">
+                    <div className="card h-100 border-0 shadow-sm">
+                      <div className="card-body">
                         <GeographicalChart
                           data={geographicalData.cities}
-                          title='Distribusi Siswa per Kota'
-                          level='city'
+                          title="Distribusi Siswa per Kota"
+                          level="city"
                         />
                       </div>
                     </div>
                   </div>
-                  <div className='col-md-6'>
-                    <div className='card h-100 border-0 shadow-sm'>
-                      <div className='card-body'>
+                  <div className="col-md-6">
+                    <div className="card h-100 border-0 shadow-sm">
+                      <div className="card-body">
                         <GeographicalTable
                           data={geographicalData.cities}
-                          level='city'
+                          level="city"
                         />
                       </div>
                     </div>
@@ -92,24 +93,24 @@ const GeographicalDistribution = ({ data }) => {
               )}
 
               {activeTab === "district" && (
-                <div className='row g-4'>
-                  <div className='col-md-6'>
-                    <div className='card h-100 border-0 shadow-sm'>
-                      <div className='card-body'>
+                <div className="row g-4">
+                  <div className="col-md-6">
+                    <div className="card h-100 border-0 shadow-sm">
+                      <div className="card-body">
                         <GeographicalChart
                           data={geographicalData.districts}
-                          title='Distribusi Siswa per Kecamatan'
-                          level='district'
+                          title="Distribusi Siswa per Kecamatan"
+                          level="district"
                         />
                       </div>
                     </div>
                   </div>
-                  <div className='col-md-6'>
-                    <div className='card h-100 border-0 shadow-sm'>
-                      <div className='card-body'>
+                  <div className="col-md-6">
+                    <div className="card h-100 border-0 shadow-sm">
+                      <div className="card-body">
                         <GeographicalTable
                           data={geographicalData.districts}
-                          level='district'
+                          level="district"
                         />
                       </div>
                     </div>
@@ -118,24 +119,24 @@ const GeographicalDistribution = ({ data }) => {
               )}
 
               {activeTab === "village" && (
-                <div className='row g-4'>
-                  <div className='col-md-6'>
-                    <div className='card h-100 border-0 shadow-sm'>
-                      <div className='card-body'>
+                <div className="row g-4">
+                  <div className="col-md-6">
+                    <div className="card h-100 border-0 shadow-sm">
+                      <div className="card-body">
                         <GeographicalChart
                           data={geographicalData.villages}
-                          title='Distribusi Siswa per Desa'
-                          level='village'
+                          title="Distribusi Siswa per Desa"
+                          level="village"
                         />
                       </div>
                     </div>
                   </div>
-                  <div className='col-md-6'>
-                    <div className='card h-100 border-0 shadow-sm'>
-                      <div className='card-body'>
+                  <div className="col-md-6">
+                    <div className="card h-100 border-0 shadow-sm">
+                      <div className="card-body">
                         <GeographicalTable
                           data={geographicalData.villages}
-                          level='village'
+                          level="village"
                         />
                       </div>
                     </div>
@@ -147,7 +148,7 @@ const GeographicalDistribution = ({ data }) => {
         </div>
       </div>
 
-      <style jsx>{`
+      <style jsx="true">{`
         .nav-tabs {
           border-bottom: 1px solid #dee2e6;
         }

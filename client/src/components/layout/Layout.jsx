@@ -28,6 +28,7 @@ const Layout = ({ children, title, desc, levels }) => {
   const location = useLocation();
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   const { user, isSignin } = useSelector((state) => state.auth);
   const [logout, { isSuccess, isLoading, error, reset }] = useLogoutMutation();
 
@@ -77,12 +78,14 @@ const Layout = ({ children, title, desc, levels }) => {
 
   useEffect(() => {
     const timeout = setTimeout(() => {
-      if (!user || !levels.includes(user?.level) || !isSignin) {
+      if (!user || !isSignin || !levels.includes(user?.level)) {
         if (user === null || (user && Object.keys(user).length === 0)) {
+          window.location.href = "/";
+        } else {
           window.location.href = "/";
         }
       }
-    }, 3000);
+    }, 500);
 
     return () => clearTimeout(timeout);
   }, [user, isSignin, levels]);
@@ -97,6 +100,12 @@ const Layout = ({ children, title, desc, levels }) => {
 
   const goToDatabase = () => {
     navigate("/database");
+  };
+
+  const goToHomeroom = () => {
+    navigate(
+      `/guru-wali-kelas/${user?.class.replace(/\s+/g, "-")}/${user?.class_id}`
+    );
   };
 
   const goToStudent = () => {
@@ -170,6 +179,17 @@ const Layout = ({ children, title, desc, levels }) => {
                     <span className="d-none d-md-inline">{menu.label}</span>
                   </button>
                 ))}
+
+                {user?.homeroom && (
+                  <button
+                    className="btn btn-outline-light d-flex align-items-center gap-2"
+                    onClick={goToHomeroom}
+                  >
+                    <i className="bi bi-database"></i>
+                    <span className="d-none d-md-inline">Database</span>
+                  </button>
+                )}
+
                 <button
                   className="btn btn-outline-light d-flex align-items-center gap-2"
                   disabled={isLoading}
@@ -202,6 +222,7 @@ const Layout = ({ children, title, desc, levels }) => {
                 <i className="bi bi-house-door-fill me-2 text-primary"></i>
                 <h4 className="mb-0">{title}</h4>
               </div>
+
               {title === "Siswa" && (
                 <div>
                   <button
@@ -217,6 +238,17 @@ const Layout = ({ children, title, desc, levels }) => {
                 <button className="btn btn-sm btn-info" onClick={goToStudent}>
                   <Pi.PiStudentFill />
                   <span className="ms-2">Siswa</span>
+                </button>
+              )}
+
+              {title === "Daftar Ujian" && (
+                <button
+                  className="btn btn-sm btn-info"
+                  data-bs-toggle="modal"
+                  data-bs-target="#addexam"
+                >
+                  <i className="bi bi-plus-lg me-2"></i>
+                  Tambah Ujian
                 </button>
               )}
             </div>

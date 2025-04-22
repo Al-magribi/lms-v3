@@ -15,7 +15,8 @@ const AuthSlice = createSlice({
       state.isLoading = false;
     },
     setLogout: (state) => {
-      (state.user = {}), (state.isSignin = false);
+      state.user = {};
+      state.isSignin = false;
     },
     setLoading: (state) => {
       state.isLoading = true;

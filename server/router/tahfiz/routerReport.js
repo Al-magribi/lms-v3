@@ -416,15 +416,15 @@ router.get("/get-report-target", async (req, res) => {
   try {
     // Query untuk mendapatkan periode aktif
     const activePeriodeQuery = `
-			SELECT 
-				p.id as periode_id,
-				p.name as periode,
-				h.id as homebase_id,
-				h.name as homebase
-			FROM a_periode p
-			INNER JOIN a_homebase h ON p.homebase = h.id
-			WHERE p.isactive = true
-		`;
+      SELECT 
+        p.id as periode_id,
+        p.name as periode,
+        h.id as homebase_id,
+        h.name as homebase
+      FROM a_periode p
+      INNER JOIN a_homebase h ON p.homebase = h.id
+      WHERE p.isactive = true
+    `;
 
     const activePeriodes = await fetchQueryResults(activePeriodeQuery);
 
@@ -437,20 +437,20 @@ router.get("/get-report-target", async (req, res) => {
     for (const periode of activePeriodes) {
       // Query untuk mendapatkan target per grade dengan total ayat dan baris yang harus dicapai
       const gradeTargetQuery = `
-				SELECT 
-					g.id as grade_id,
-					g.name as grade_name,
-					ARRAY_AGG(DISTINCT tj.id) as juz_ids,
-					ARRAY_AGG(DISTINCT tj.name) as juz_names,
-					SUM(tji.lines) as total_target_lines
-				FROM a_grade g
-				LEFT JOIN t_target t ON g.id = t.grade_id
-				LEFT JOIN t_juz tj ON t.juz_id = tj.id
-				LEFT JOIN t_juzitems tji ON tj.id = tji.juz_id
-				WHERE g.homebase = $1
-				GROUP BY g.id, g.name
-				ORDER BY g.id
-			`;
+        SELECT 
+          g.id as grade_id,
+          g.name as grade_name,
+          ARRAY_AGG(DISTINCT tj.id) as juz_ids,
+          ARRAY_AGG(DISTINCT tj.name) as juz_names,
+          SUM(tji.lines) as total_target_lines
+        FROM a_grade g
+        LEFT JOIN t_target t ON g.id = t.grade_id
+        LEFT JOIN t_juz tj ON t.juz_id = tj.id
+        LEFT JOIN t_juzitems tji ON tj.id = tji.juz_id
+        WHERE g.homebase = $1
+        GROUP BY g.id, g.name
+        ORDER BY g.id
+      `;
 
       const gradeTargets = await fetchQueryResults(gradeTargetQuery, [
         periode.homebase_id,
@@ -526,9 +526,103 @@ router.get("/get-report-target", async (req, res) => {
         periode.homebase_id,
       ]);
 
+      // Get exceed data for each student
+      const studentExceedData = await Promise.all(
+        studentProgress.map(async (student) => {
+          // Get juz that exceed the target
+          const exceedQuery = `
+            WITH target_juz AS (
+              SELECT tt.juz_id
+              FROM t_target tt
+              WHERE tt.grade_id = $1
+            ),
+            student_process AS (
+              SELECT DISTINCT juz_id
+              FROM t_process
+              WHERE userid = $2 AND type_id = 6
+            )
+            SELECT 
+              tj.id as juz_id,
+              tj.name as juz,
+              COALESCE(SUM(tji.lines), 0) as total_lines,
+              COALESCE(SUM(tji.to_ayat - tji.from_ayat + 1), 0) as total_verses
+            FROM t_juz tj
+            LEFT JOIN t_juzitems tji ON tj.id = tji.juz_id
+            WHERE tj.id NOT IN (SELECT juz_id FROM target_juz)
+              AND tj.id IN (SELECT juz_id FROM student_process)
+            GROUP BY tj.id, tj.name
+            ORDER BY tj.id ASC
+          `;
+
+          const exceedTargets = await fetchQueryResults(exceedQuery, [
+            student.grade_id,
+            student.userid,
+          ]);
+
+          // Get student's progress for each exceed juz
+          const exceed = await Promise.all(
+            exceedTargets.map(async (target) => {
+              // Get completed verses and lines for this juz
+              const progressQuery = `
+                SELECT 
+                  COALESCE(SUM(tp.to_count - tp.from_count + 1), 0) as completed_verses,
+                  COALESCE(SUM(tp.to_line - tp.from_line + 1), 0) as completed_lines
+                FROM t_process tp
+                WHERE tp.userid = $1 AND tp.juz_id = $2 AND tp.type_id = 6
+              `;
+
+              const progress = await fetchQueryResults(progressQuery, [
+                student.userid,
+                target.juz_id,
+              ]);
+
+              const completedVerses = parseInt(
+                progress[0]?.completed_verses || 0
+              );
+              const completedLines = parseInt(
+                progress[0]?.completed_lines || 0
+              );
+              const totalVerses = parseInt(target.total_verses);
+              const totalLines = parseInt(target.total_lines);
+
+              return {
+                juz: target.juz,
+                lines: {
+                  completed: completedLines,
+                  target: totalLines,
+                  percentage:
+                    totalLines > 0
+                      ? Number(((completedLines / totalLines) * 100).toFixed(2))
+                      : 0,
+                },
+                verses: {
+                  completed: completedVerses,
+                  target: totalVerses,
+                  percentage:
+                    totalVerses > 0
+                      ? Number(
+                          ((completedVerses / totalVerses) * 100).toFixed(2)
+                        )
+                      : 0,
+                },
+                persentase:
+                  totalVerses > 0
+                    ? Number(((completedVerses / totalVerses) * 100).toFixed(2))
+                    : 0,
+              };
+            })
+          );
+
+          return {
+            ...student,
+            exceed,
+          };
+        })
+      );
+
       // Mengelompokkan data per grade
       const gradeData = gradeTargets.map((grade) => {
-        const students = studentProgress.filter(
+        const students = studentExceedData.filter(
           (s) => s.grade_id === grade.grade_id
         );
 
@@ -537,10 +631,26 @@ router.get("/get-report-target", async (req, res) => {
           student.progress_percentages.every((percentage) => percentage >= 100)
         ).length;
 
+        // Menghitung siswa yang memiliki exceed progress
+        const studentsWithExceed = students.filter(
+          (student) => student.exceed && student.exceed.length > 0
+        );
+
+        const exceedCompletedStudents = studentsWithExceed.filter((student) =>
+          student.exceed.some((item) => item.persentase >= 100)
+        ).length;
+
         const totalStudents = students.length;
         const achievement =
           totalStudents > 0
             ? Number(((completedStudents / totalStudents) * 100).toFixed(2))
+            : 0;
+
+        const exceed_achievement =
+          totalStudents > 0
+            ? Number(
+                ((exceedCompletedStudents / totalStudents) * 100).toFixed(2)
+              )
             : 0;
 
         return {
@@ -553,6 +663,9 @@ router.get("/get-report-target", async (req, res) => {
           achievement,
           completed: completedStudents,
           uncompleted: totalStudents - completedStudents,
+          exceed_achievement,
+          exceed_completed: exceedCompletedStudents,
+          exceed_uncompleted: totalStudents - exceedCompletedStudents,
           students: students.map((student) => ({
             userid: student.userid,
             nis: student.nis,
@@ -591,6 +704,7 @@ router.get("/get-report-target", async (req, res) => {
               },
               persentase: student.progress_percentages[idx],
             })),
+            exceed: student.exceed,
           })),
         };
       });
@@ -717,6 +831,93 @@ router.get("/get-student-report", async (req, res) => {
       })
     );
 
+    // Get juz that exceed the target
+    const exceedQuery = `
+      WITH target_juz AS (
+        SELECT tt.juz_id
+        FROM t_target tt
+        WHERE tt.grade_id = (
+          SELECT c.grade 
+          FROM cl_students cs
+          INNER JOIN a_class c ON cs.classid = c.id
+          WHERE cs.student = $1
+        )
+      ),
+      student_process AS (
+        SELECT DISTINCT juz_id
+        FROM t_process
+        WHERE userid = $1 AND type_id = 6
+      )
+      SELECT 
+        tj.id as juz_id,
+        tj.name as juz,
+        COALESCE(SUM(tji.lines), 0) as total_lines,
+        COALESCE(SUM(tji.to_ayat - tji.from_ayat + 1), 0) as total_verses
+      FROM t_juz tj
+      LEFT JOIN t_juzitems tji ON tj.id = tji.juz_id
+      WHERE tj.id NOT IN (SELECT juz_id FROM target_juz)
+        AND tj.id IN (SELECT juz_id FROM student_process)
+      GROUP BY tj.id, tj.name
+      ORDER BY tj.id ASC
+    `;
+
+    const exceedTargets = await fetchQueryResults(exceedQuery, [userid]);
+
+    // Get student's progress for each exceed juz
+    const exceed = await Promise.all(
+      exceedTargets.map(async (target) => {
+        // Get completed verses and lines for this juz
+        const progressQuery = `
+          SELECT 
+            COALESCE(SUM(tp.to_count - tp.from_count + 1), 0) as completed_verses,
+            COALESCE(SUM(tp.to_line - tp.from_line + 1), 0) as completed_lines
+          FROM t_process tp
+          WHERE tp.userid = $1 AND tp.juz_id = $2 AND tp.type_id = 6
+        `;
+
+        const progress = await fetchQueryResults(progressQuery, [
+          userid,
+          target.juz_id,
+        ]);
+
+        // Get surah details for this juz
+        const surahQuery = `
+          SELECT 
+            ts.id as surah_id,
+            ts.name as surah_name,
+            tp.to_count as verse,
+            tp.to_line as line
+          FROM t_process tp
+          INNER JOIN t_surah ts ON tp.surah_id = ts.id
+          WHERE tp.userid = $1 AND tp.juz_id = $2 AND tp.type_id = 6
+          ORDER BY tp.createdat DESC
+        `;
+
+        const surahs = await fetchQueryResults(surahQuery, [
+          userid,
+          target.juz_id,
+        ]);
+
+        const completedVerses = parseInt(progress[0]?.completed_verses || 0);
+        const completedLines = parseInt(progress[0]?.completed_lines || 0);
+        const totalVerses = parseInt(target.total_verses);
+        const totalLines = parseInt(target.total_lines);
+
+        return {
+          juz: target.juz,
+          lines: totalLines,
+          verses: totalVerses,
+          completed: completedVerses,
+          uncompleted: totalVerses - completedVerses,
+          progress:
+            totalVerses > 0
+              ? Number(((completedVerses / totalVerses) * 100).toFixed(2))
+              : 0,
+          surah: surahs,
+        };
+      })
+    );
+
     const result = {
       student_id: studentInfo[0].student_id,
       student_nis: studentInfo[0].student_nis,
@@ -725,6 +926,7 @@ router.get("/get-student-report", async (req, res) => {
       class: studentInfo[0].class,
       homebase: studentInfo[0].homebase,
       memorization,
+      exceed,
     };
 
     res.status(200).json(result);
@@ -740,128 +942,47 @@ export default router;
 
 const result = [
   {
-    periode: "2024 - 2025",
-    periode_id: 14,
-    homebase: "SMA Nuraida",
-    homebase_id: 6,
-    grade: [
+    student_id: "id siswa diambil dari u_students",
+    student_nis: "id siswa diambil dari u_students",
+    student_name: "nama siswa diambil dari u_students",
+    grade: "kelas siswa diambil dari cl_students",
+    class: "kelas siswa diambil dari cl_students",
+    homebase: "homebase siswa diambil dari cl_students",
+    memorization: [
       {
-        id: 17,
-        name: "12",
-        target: [
+        juz: "juz diambil dari t_target berdasarkan garde",
+        lines: "total baris yang harus dibaca berdasarkan juz",
+        verses: "total ayat yang harus dibaca berdasarkan juz",
+        completed: "total ayat yang sudah dibaca berdasarkan juz",
+        uncompleted: "total ayat yang belum dibaca berdasarkan juz",
+        progress: "persentase ketuntasan siswa berdasarkan juz",
+        surah: [
           {
-            juz: "Juz 2",
-            lines: "1792",
-          },
-          {
-            juz: "Juz 3",
-            lines: "1792",
-          },
-          {
-            juz: "Juz 4",
-            lines: "1792",
-          },
-          {
-            juz: "Juz 5",
-            lines: "1792",
-          },
-          {
-            juz: "Juz 6",
-            lines: "1792",
-          },
-          {
-            juz: "Juz 7",
-            lines: "1792",
+            surah_id: "id surah diambil dari t_process",
+            surah_name: "nama surah diambil dari t_process",
+            verse: "ayat akhir diambil dari t_process",
+            line: "baris akhir diambil dari t_process",
           },
         ],
-        achievement: 0,
-        completed:
-          "total siswa yang sudah tuntas membaca semua lines pada masing-masing juz",
-        uncompleted:
-          "total siswa yang belum tuntas membaca semua lines pada masing-masing juz",
-        students: [
+      },
+    ],
+    exceed: [
+      {
+        juz: "juz yang melebihi target yang sudah ditentukan, detail juz dapat dilihat di t_juz dan t_juizitems ",
+        lines: "total baris dari juz ini",
+        verses: "total ayat dari juz ini",
+        completed: "total ayat yang sudah dibaca dari juz ini",
+        uncompleted: "total ayat yang belum dibaca dari juz ini",
+        progress: "persentase ketuntasan siswa berdasarkan juz ini",
+        surah: [
           {
-            userid: 2327,
-            nis: "222310274",
-            name: "Adinda Shafa Phalosa",
-            grade: "12",
-            class: "12 DI",
-            progress: [
-              {
-                juz: "Juz 5",
-                lines:
-                  "total baris dari yang sudah dibaca dari surah yang termasuk dalam juz 5",
-                persentase:
-                  "persentase dari total baris yang sudah dibaca dari total baris yang harus dibaca yang sesuai dengan juz di target",
-              },
-              {
-                juz: "Juz 7",
-                lines:
-                  "total baris dari yang sudah dibaca dari surah yang termasuk dalam juz 7",
-                persentase:
-                  "persentase dari total baris yang sudah dibaca dari total baris yang harus dibaca yang sesuai dengan juz di target",
-              },
-              {
-                juz: "Juz 2",
-                lines:
-                  "total baris dari yang sudah dibaca dari surah yang termasuk dalam juz 2",
-                persentase:
-                  "persentase dari total baris yang sudah dibaca dari total baris yang harus dibaca yang sesuai dengan juz di target",
-              },
-              {
-                juz: "Juz 4",
-                lines:
-                  "total baris dari yang sudah dibaca dari surah yang termasuk dalam juz 4",
-                persentase:
-                  "persentase dari total baris yang sudah dibaca dari total baris yang harus dibaca yang sesuai dengan juz di target",
-              },
-              {
-                juz: "Juz 3",
-                lines:
-                  "total baris dari yang sudah dibaca dari surah yang termasuk dalam juz 3",
-                persentase:
-                  "persentase dari total baris yang sudah dibaca dari total baris yang harus dibaca yang sesuai dengan juz di target",
-              },
-              {
-                juz: "Juz 6",
-                lines:
-                  "total baris dari yang sudah dibaca dari surah yang termasuk dalam juz 6",
-                persentase:
-                  "persentase dari total baris yang sudah dibaca dari total baris yang harus dibaca yang sesuai dengan juz di target",
-              },
-            ],
+            surah_id: "id surah diambil dari t_process",
+            surah_name: "nama surah diambil dari t_process",
+            verse: "ayat akhir diambil dari t_process",
+            line: "baris akhir diambil dari t_process",
           },
         ],
       },
     ],
   },
 ];
-
-// const result = [
-//   {
-//     student_id: "id siswa diambil dari u_students",
-//     student_nis: "id siswa diambil dari u_students",
-//     student_name: "nama siswa diambil dari u_students",
-//     grade: "kelas siswa diambil dari cl_students",
-//     class: "kelas siswa diambil dari cl_students",
-//     homebase: "homebase siswa diambil dari cl_students",
-//     memorization: [
-//       {
-//         juz: "juz diambil dari t_target berdasarkan garde",
-//         lines: "total baris yang harus dibaca berdasarkan juz",
-//         verses: "total ayat yang harus dibaca berdasarkan juz",
-//         completed: "total ayat yang sudah dibaca berdasarkan juz",
-//         uncompleted: "total ayat yang belum dibaca berdasarkan juz",
-//         progress: "persentase ketuntasan siswa berdasarkan juz",
-//         surah: [
-//           {
-//             surah_id: "id surah diambil dari t_process",
-//             surah_name: "nama surah diambil dari t_process",
-//             verse: "ayat akhir diambil dari t_process",
-//             line: "baris akhir diambil dari t_process",
-//           },
-//         ],
-//       },
-//     ],
-//   },
-// ];

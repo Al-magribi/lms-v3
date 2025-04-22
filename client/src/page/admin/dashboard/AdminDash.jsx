@@ -28,14 +28,12 @@ ChartJS.register(
 const AdminDash = () => {
   const { data, isLoading } = useGetAdminDashboardQuery();
 
-  console.log(data);
-
   if (isLoading) {
     return (
       <Layout title={"Dashboard"} levels={["admin"]}>
-        <div className='d-flex justify-content-center align-items-center min-vh-100'>
-          <div className='spinner-border text-primary' role='status'>
-            <span className='visually-hidden'>Loading...</span>
+        <div className="d-flex justify-content-center align-items-center min-vh-100">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
           </div>
         </div>
       </Layout>
@@ -180,100 +178,6 @@ const AdminDash = () => {
     },
   };
 
-  // Geographical Distribution Components
-  const GeographicalChart = ({ data, title, level }) => {
-    const chartData = {
-      labels: data?.map((item) => item[`${level}_name`]) || [],
-      datasets: [
-        {
-          label: "Jumlah Siswa",
-          data: data?.map((item) => item.student_count) || [],
-          backgroundColor: [
-            "rgba(54, 162, 235, 0.8)",
-            "rgba(255, 99, 132, 0.8)",
-            "rgba(75, 192, 192, 0.8)",
-            "rgba(255, 206, 86, 0.8)",
-            "rgba(153, 102, 255, 0.8)",
-          ],
-          borderColor: [
-            "rgba(54, 162, 235, 1)",
-            "rgba(255, 99, 132, 1)",
-            "rgba(75, 192, 192, 1)",
-            "rgba(255, 206, 86, 1)",
-            "rgba(153, 102, 255, 1)",
-          ],
-          borderWidth: 1,
-        },
-      ],
-    };
-
-    const options = {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          position: "bottom",
-        },
-        title: {
-          display: true,
-          text: title,
-        },
-      },
-    };
-
-    return (
-      <div style={{ height: "300px", position: "relative" }}>
-        <Bar data={chartData} options={options} />
-      </div>
-    );
-  };
-
-  const GeographicalTable = ({ data, level }) => {
-    const totalStudents =
-      data?.reduce((sum, item) => sum + item.student_count, 0) || 0;
-
-    const calculatePercentage = (value) => {
-      return ((value / totalStudents) * 100).toFixed(1);
-    };
-
-    return (
-      <div className='table-responsive'>
-        <table className='table table-striped'>
-          <thead>
-            <tr>
-              <th>
-                {level === "province"
-                  ? "Provinsi"
-                  : level === "city"
-                  ? "Kota"
-                  : level === "district"
-                  ? "Kecamatan"
-                  : "Desa"}
-              </th>
-              {level !== "province" && <th>Provinsi</th>}
-              {level === "district" && <th>Kota</th>}
-              {level === "village" && <th>Kecamatan</th>}
-              <th>Jumlah</th>
-              <th>Persentase</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data?.map((item, index) => (
-              <tr key={index}>
-                <td>{item[`${level}_name`]}</td>
-                {level !== "province" && <td>{item.province_name}</td>}
-                {level === "district" && <td>{item.city_name}</td>}
-                {level === "village" && <td>{item.district_name}</td>}
-                <td>{item.student_count}</td>
-                <td>{calculatePercentage(item.student_count)}%</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
-  };
-
   // New chart data for db_student information
   // Geographical Distribution Chart
 
@@ -340,25 +244,6 @@ const AdminDash = () => {
     ],
   };
 
-  const familyChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: "bottom",
-      },
-      title: {
-        display: true,
-        text: "Informasi Keluarga Siswa",
-      },
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-      },
-    },
-  };
-
   // Demographic Components
   const DemographicTable = ({ data }) => {
     const totalStudents = parseInt(data?.total_students) || 0;
@@ -368,34 +253,34 @@ const AdminDash = () => {
     };
 
     return (
-      <div className='table-responsive'>
-        <table className='table table-striped table-hover table-bordered'>
+      <div className="table-responsive">
+        <table className="table table-striped table-hover table-bordered">
           <thead>
             <tr>
-              <th className='text-center'>Informasi</th>
-              <th className='text-center'>Jumlah</th>
-              <th className='text-center'>Persentase</th>
+              <th className="text-center">Informasi</th>
+              <th className="text-center">Jumlah</th>
+              <th className="text-center">Persentase</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td className='text-center'>Total Siswa</td>
-              <td className='text-center'>{totalStudents}</td>
-              <td className='text-center'>100%</td>
+              <td className="text-center">Total Siswa</td>
+              <td className="text-center">{totalStudents}</td>
+              <td className="text-center">100%</td>
             </tr>
             <tr>
-              <td className='text-center'>Laki-laki</td>
-              <td className='text-center'>{parseInt(data?.male_count) || 0}</td>
-              <td className='text-center'>
+              <td className="text-center">Laki-laki</td>
+              <td className="text-center">{parseInt(data?.male_count) || 0}</td>
+              <td className="text-center">
                 {calculatePercentage(data?.male_count)}%
               </td>
             </tr>
             <tr>
-              <td className='text-center'>Perempuan</td>
-              <td className='text-center'>
+              <td className="text-center">Perempuan</td>
+              <td className="text-center">
                 {parseInt(data?.female_count) || 0}
               </td>
-              <td className='text-center'>
+              <td className="text-center">
                 {calculatePercentage(data?.female_count)}%
               </td>
             </tr>
@@ -482,21 +367,21 @@ const AdminDash = () => {
     };
 
     return (
-      <div className='table-responsive'>
-        <table className='table table-striped table-hover table-bordered'>
+      <div className="table-responsive">
+        <table className="table table-striped table-hover table-bordered">
           <thead>
             <tr>
-              <th className='text-center'>Rentang Usia</th>
-              <th className='text-center'>Jumlah</th>
-              <th className='text-center'>Persentase</th>
+              <th className="text-center">Rentang Usia</th>
+              <th className="text-center">Jumlah</th>
+              <th className="text-center">Persentase</th>
             </tr>
           </thead>
           <tbody>
             {ageDistribution.map((item, index) => (
               <tr key={index}>
-                <td className='text-center'>{item.age_group}</td>
-                <td className='text-center'>{item.count}</td>
-                <td className='text-center'>
+                <td className="text-center">{item.age_group}</td>
+                <td className="text-center">{item.count}</td>
+                <td className="text-center">
                   {calculatePercentage(item.count)}%
                 </td>
               </tr>
@@ -509,57 +394,57 @@ const AdminDash = () => {
 
   return (
     <Layout title={"Dashboard"} levels={["admin"]}>
-      <div className='container-fluid p-4'>
+      <div className="container-fluid p-4">
         {/* Basic Statistics Cards */}
-        <div className='row g-4 mb-4'>
-          <div className='col-12 col-sm-6 col-md-3'>
-            <div className='card h-100'>
-              <div className='card-body'>
-                <h6 className='card-subtitle mb-2 text-muted'>Total Siswa</h6>
-                <div className='d-flex align-items-center'>
-                  <i className='bi bi-people fs-2 me-2 text-primary'></i>
-                  <h2 className='card-title mb-0'>
+        <div className="row g-4 mb-4">
+          <div className="col-12 col-sm-6 col-md-3">
+            <div className="card h-100">
+              <div className="card-body">
+                <h6 className="card-subtitle mb-2 text-muted">Total Siswa</h6>
+                <div className="d-flex align-items-center">
+                  <i className="bi bi-people fs-2 me-2 text-primary"></i>
+                  <h2 className="card-title mb-0">
                     {parseInt(data?.basicStats?.total_students) || 0}
                   </h2>
                 </div>
               </div>
             </div>
           </div>
-          <div className='col-12 col-sm-6 col-md-3'>
-            <div className='card h-100'>
-              <div className='card-body'>
-                <h6 className='card-subtitle mb-2 text-muted'>Total Guru</h6>
-                <div className='d-flex align-items-center'>
-                  <i className='bi bi-person-video3 fs-2 me-2 text-success'></i>
-                  <h2 className='card-title mb-0'>
+          <div className="col-12 col-sm-6 col-md-3">
+            <div className="card h-100">
+              <div className="card-body">
+                <h6 className="card-subtitle mb-2 text-muted">Total Guru</h6>
+                <div className="d-flex align-items-center">
+                  <i className="bi bi-person-video3 fs-2 me-2 text-success"></i>
+                  <h2 className="card-title mb-0">
                     {parseInt(data?.basicStats?.total_teachers) || 0}
                   </h2>
                 </div>
               </div>
             </div>
           </div>
-          <div className='col-12 col-sm-6 col-md-3'>
-            <div className='card h-100'>
-              <div className='card-body'>
-                <h6 className='card-subtitle mb-2 text-muted'>Total Kelas</h6>
-                <div className='d-flex align-items-center'>
-                  <i className='bi bi-book fs-2 me-2 text-info'></i>
-                  <h2 className='card-title mb-0'>
+          <div className="col-12 col-sm-6 col-md-3">
+            <div className="card h-100">
+              <div className="card-body">
+                <h6 className="card-subtitle mb-2 text-muted">Total Kelas</h6>
+                <div className="d-flex align-items-center">
+                  <i className="bi bi-book fs-2 me-2 text-info"></i>
+                  <h2 className="card-title mb-0">
                     {parseInt(data?.basicStats?.total_classes) || 0}
                   </h2>
                 </div>
               </div>
             </div>
           </div>
-          <div className='col-12 col-sm-6 col-md-3'>
-            <div className='card h-100'>
-              <div className='card-body'>
-                <h6 className='card-subtitle mb-2 text-muted'>
+          <div className="col-12 col-sm-6 col-md-3">
+            <div className="card h-100">
+              <div className="card-body">
+                <h6 className="card-subtitle mb-2 text-muted">
                   Total Mata Pelajaran
                 </h6>
-                <div className='d-flex align-items-center'>
-                  <i className='bi bi-journal-text fs-2 me-2 text-warning'></i>
-                  <h2 className='card-title mb-0'>
+                <div className="d-flex align-items-center">
+                  <i className="bi bi-journal-text fs-2 me-2 text-warning"></i>
+                  <h2 className="card-title mb-0">
                     {parseInt(data?.basicStats?.total_subjects) || 0}
                   </h2>
                 </div>
@@ -569,57 +454,57 @@ const AdminDash = () => {
         </div>
 
         {/* Additional Statistics Cards */}
-        <div className='row g-4 mb-4'>
-          <div className='col-12 col-sm-6 col-md-3'>
-            <div className='card h-100'>
-              <div className='card-body'>
-                <h6 className='card-subtitle mb-2 text-muted'>Total Ujian</h6>
-                <div className='d-flex align-items-center'>
-                  <i className='bi bi-file-earmark-text fs-2 me-2 text-danger'></i>
-                  <h2 className='card-title mb-0'>
+        <div className="row g-4 mb-4">
+          <div className="col-12 col-sm-6 col-md-3">
+            <div className="card h-100">
+              <div className="card-body">
+                <h6 className="card-subtitle mb-2 text-muted">Total Ujian</h6>
+                <div className="d-flex align-items-center">
+                  <i className="bi bi-file-earmark-text fs-2 me-2 text-danger"></i>
+                  <h2 className="card-title mb-0">
                     {parseInt(data?.basicStats?.total_exams) || 0}
                   </h2>
                 </div>
               </div>
             </div>
           </div>
-          <div className='col-12 col-sm-6 col-md-3'>
-            <div className='card h-100'>
-              <div className='card-body'>
-                <h6 className='card-subtitle mb-2 text-muted'>
+          <div className="col-12 col-sm-6 col-md-3">
+            <div className="card h-100">
+              <div className="card-body">
+                <h6 className="card-subtitle mb-2 text-muted">
                   Total Bank Soal
                 </h6>
-                <div className='d-flex align-items-center'>
-                  <i className='bi bi-collection fs-2 me-2 text-secondary'></i>
-                  <h2 className='card-title mb-0'>
+                <div className="d-flex align-items-center">
+                  <i className="bi bi-collection fs-2 me-2 text-secondary"></i>
+                  <h2 className="card-title mb-0">
                     {parseInt(data?.basicStats?.total_banks) || 0}
                   </h2>
                 </div>
               </div>
             </div>
           </div>
-          <div className='col-12 col-sm-6 col-md-3'>
-            <div className='card h-100'>
-              <div className='card-body'>
-                <h6 className='card-subtitle mb-2 text-muted'>Total Bab</h6>
-                <div className='d-flex align-items-center'>
-                  <i className='bi bi-bookmark fs-2 me-2 text-primary'></i>
-                  <h2 className='card-title mb-0'>
+          <div className="col-12 col-sm-6 col-md-3">
+            <div className="card h-100">
+              <div className="card-body">
+                <h6 className="card-subtitle mb-2 text-muted">Total Bab</h6>
+                <div className="d-flex align-items-center">
+                  <i className="bi bi-bookmark fs-2 me-2 text-primary"></i>
+                  <h2 className="card-title mb-0">
                     {parseInt(data?.basicStats?.total_chapters) || 0}
                   </h2>
                 </div>
               </div>
             </div>
           </div>
-          <div className='col-12 col-sm-6 col-md-3'>
-            <div className='card h-100'>
-              <div className='card-body'>
-                <h6 className='card-subtitle mb-2 text-muted'>
+          <div className="col-12 col-sm-6 col-md-3">
+            <div className="card h-100">
+              <div className="card-body">
+                <h6 className="card-subtitle mb-2 text-muted">
                   Total Materi Pembelajaran
                 </h6>
-                <div className='d-flex align-items-center'>
-                  <i className='bi bi-file-earmark-richtext fs-2 me-2 text-success'></i>
-                  <h2 className='card-title mb-0'>
+                <div className="d-flex align-items-center">
+                  <i className="bi bi-file-earmark-richtext fs-2 me-2 text-success"></i>
+                  <h2 className="card-title mb-0">
                     {parseInt(data?.basicStats?.total_learning_materials) || 0}
                   </h2>
                 </div>
@@ -629,16 +514,16 @@ const AdminDash = () => {
         </div>
 
         {/* Charts Section */}
-        <div className='row g-4 mb-4'>
+        <div className="row g-4 mb-4">
           {/* Students per Grade Chart */}
-          <div className='col-12 col-lg-6'>
-            <div className='card h-100'>
-              <div className='card-header'>
-                <h5 className='card-title mb-0'>
+          <div className="col-12 col-lg-6">
+            <div className="card h-100">
+              <div className="card-header">
+                <h5 className="card-title mb-0">
                   Distribusi Siswa per Tingkat
                 </h5>
               </div>
-              <div className='card-body'>
+              <div className="card-body">
                 <div style={{ height: "300px", position: "relative" }}>
                   <Doughnut data={gradeChartData} options={chartOptions} />
                 </div>
@@ -647,20 +532,20 @@ const AdminDash = () => {
           </div>
 
           {/* Teacher Gender Distribution */}
-          <div className='col-12 col-lg-6'>
-            <div className='card h-100'>
-              <div className='card-header'>
-                <h5 className='card-title mb-0'>Komposisi Guru</h5>
+          <div className="col-12 col-lg-6">
+            <div className="card h-100">
+              <div className="card-header">
+                <h5 className="card-title mb-0">Komposisi Guru</h5>
               </div>
-              <div className='card-body'>
+              <div className="card-body">
                 <div style={{ height: "300px", position: "relative" }}>
                   <Doughnut data={teacherChartData} options={chartOptions} />
                 </div>
-                <div className='mt-3'>
-                  <p className='mb-1'>
+                <div className="mt-3">
+                  <p className="mb-1">
                     Total Guru: {data?.teacherComposition?.total_teachers || 0}
                   </p>
-                  <p className='mb-1'>
+                  <p className="mb-1">
                     Guru Wali Kelas:{" "}
                     {data?.teacherComposition?.homeroom_count || 0}
                   </p>
@@ -671,20 +556,20 @@ const AdminDash = () => {
         </div>
 
         {/* Student Demographics Section */}
-        <div className='row g-4 mb-4'>
-          <div className='col-12'>
-            <div className='card'>
-              <div className='card-header'>
-                <h5 className='card-title mb-0'>Data Demografis Siswa</h5>
+        <div className="row g-4 mb-4">
+          <div className="col-12">
+            <div className="card">
+              <div className="card-header">
+                <h5 className="card-title mb-0">Data Demografis Siswa</h5>
               </div>
-              <div className='card-body'>
-                <div className='row'>
-                  <div className='col-md-6'>
-                    <h6 className='mb-3'>Informasi Dasar</h6>
+              <div className="card-body">
+                <div className="row">
+                  <div className="col-md-6">
+                    <h6 className="mb-3">Informasi Dasar</h6>
                     <DemographicTable data={data?.studentDemographics} />
                   </div>
-                  <div className='col-md-6'>
-                    <h6 className='mb-3'>Distribusi Gender</h6>
+                  <div className="col-md-6">
+                    <h6 className="mb-3">Distribusi Gender</h6>
                     <div style={{ height: "300px", position: "relative" }}>
                       <Pie
                         data={{
@@ -716,13 +601,13 @@ const AdminDash = () => {
                     </div>
                   </div>
                 </div>
-                <div className='row mt-4'>
-                  <div className='col-md-6'>
-                    <h6 className='mb-3'>Distribusi Usia</h6>
+                <div className="row mt-4">
+                  <div className="col-md-6">
+                    <h6 className="mb-3">Distribusi Usia</h6>
                     <AgeDistributionChart data={data?.studentDemographics} />
                   </div>
-                  <div className='col-md-6'>
-                    <h6 className='mb-3'>Detail Distribusi Usia</h6>
+                  <div className="col-md-6">
+                    <h6 className="mb-3">Detail Distribusi Usia</h6>
                     <AgeDistributionTable data={data?.studentDemographics} />
                   </div>
                 </div>
@@ -732,40 +617,40 @@ const AdminDash = () => {
         </div>
 
         {/* Geographical Distribution Section */}
-        <div className='row g-4 mb-4'>
+        <div className="row g-4 mb-4">
           <GeographicalDistribution data={data?.geographicalDistribution} />
         </div>
 
         {/* Entry Year Distribution */}
-        <div className='row g-4 mb-4'>
-          <div className='col-12 col-lg-6'>
-            <div className='card h-100'>
-              <div className='card-header'>
-                <h5 className='card-title mb-0'>
+        <div className="row g-4 mb-4">
+          <div className="col-12 col-lg-6">
+            <div className="card h-100">
+              <div className="card-header">
+                <h5 className="card-title mb-0">
                   Distribusi Siswa per Tahun Masuk
                 </h5>
               </div>
-              <div className='card-body'>
+              <div className="card-body">
                 <div style={{ height: "300px", position: "relative" }}>
                   <Bar data={entryChartData} options={entryChartOptions} />
                 </div>
-                <div className='table-responsive mt-4'>
-                  <table className='table table-striped table-hover table-bordered'>
+                <div className="table-responsive mt-4">
+                  <table className="table table-striped table-hover table-bordered">
                     <thead>
                       <tr>
-                        <th className='text-center'>Tahun Masuk</th>
-                        <th className='text-center'>Jumlah Siswa</th>
-                        <th className='text-center'>Persentase</th>
+                        <th className="text-center">Tahun Masuk</th>
+                        <th className="text-center">Jumlah Siswa</th>
+                        <th className="text-center">Persentase</th>
                       </tr>
                     </thead>
                     <tbody>
                       {(data?.entryStats || []).map((item, index) => (
                         <tr key={index}>
-                          <td className='text-center'>{item.entry_name}</td>
-                          <td className='text-center'>
+                          <td className="text-center">{item.entry_name}</td>
+                          <td className="text-center">
                             {parseInt(item.student_count) || 0}
                           </td>
-                          <td className='text-center'>
+                          <td className="text-center">
                             {(
                               ((parseInt(item.student_count) || 0) /
                                 (parseInt(
@@ -786,17 +671,17 @@ const AdminDash = () => {
         </div>
 
         {/* Student Data Completeness by Grade */}
-        <div className='row g-4 mb-4'>
-          <div className='col-12'>
-            <div className='card'>
-              <div className='card-header'>
-                <h5 className='card-title mb-0'>
+        <div className="row g-4 mb-4">
+          <div className="col-12">
+            <div className="card">
+              <div className="card-header">
+                <h5 className="card-title mb-0">
                   Kelangkapan Data Siswa per Tingkat
                 </h5>
               </div>
-              <div className='card-body'>
-                <div className='row'>
-                  <div className='col-md-6'>
+              <div className="card-body">
+                <div className="row">
+                  <div className="col-md-6">
                     <div style={{ height: "300px", position: "relative" }}>
                       <Bar
                         data={{
@@ -852,42 +737,42 @@ const AdminDash = () => {
                       />
                     </div>
                   </div>
-                  <div className='col-md-6'>
-                    <div className='table-responsive'>
-                      <table className='table table-striped table-hover table-bordered'>
+                  <div className="col-md-6">
+                    <div className="table-responsive">
+                      <table className="table table-striped table-hover table-bordered">
                         <thead>
                           <tr>
-                            <th className='text-center align-middle'>
+                            <th className="text-center align-middle">
                               Tingkat
                             </th>
-                            <th className='text-center align-middle'>
+                            <th className="text-center align-middle">
                               Total Siswa
                             </th>
-                            <th className='text-center align-middle'>
+                            <th className="text-center align-middle">
                               Lengkap
                             </th>
-                            <th className='text-center align-middle'>
+                            <th className="text-center align-middle">
                               Belum Lengkap
                             </th>
-                            <th className='text-center align-middle'>%</th>
+                            <th className="text-center align-middle">%</th>
                           </tr>
                         </thead>
                         <tbody>
                           {data?.studentCompleteness?.map((grade) => (
                             <tr key={grade.grade_name}>
-                              <td className='text-center'>
+                              <td className="text-center">
                                 {grade.grade_name}
                               </td>
-                              <td className='text-center'>
+                              <td className="text-center">
                                 {grade.total_students}
                               </td>
-                              <td className='text-center'>
+                              <td className="text-center">
                                 {grade.complete_students}
                               </td>
-                              <td className='text-center'>
+                              <td className="text-center">
                                 {grade.total_students - grade.complete_students}
                               </td>
-                              <td className='text-center'>
+                              <td className="text-center">
                                 {(
                                   (grade.complete_students /
                                     grade.total_students) *
@@ -908,42 +793,42 @@ const AdminDash = () => {
         </div>
 
         {/* Class Distribution Section */}
-        <div className='row g-4 mb-4'>
-          <div className='col-12'>
-            <div className='card'>
-              <div className='card-header'>
-                <h5 className='card-title mb-0'>Distribusi Siswa per Kelas</h5>
+        <div className="row g-4 mb-4">
+          <div className="col-12">
+            <div className="card">
+              <div className="card-header">
+                <h5 className="card-title mb-0">Distribusi Siswa per Kelas</h5>
               </div>
-              <div className='card-body'>
+              <div className="card-body">
                 <div style={{ height: "400px", position: "relative" }}>
                   <Bar
                     data={classDistributionData}
                     options={classDistributionOptions}
                   />
                 </div>
-                <div className='table-responsive mt-4'>
-                  <table className='table table-striped table-hover table-bordered'>
+                <div className="table-responsive mt-4">
+                  <table className="table table-striped table-hover table-bordered">
                     <thead>
                       <tr>
-                        <th className='text-center'>Tingkat</th>
-                        <th className='text-center'>Kelas</th>
-                        <th className='text-center'>Total Siswa</th>
-                        <th className='text-center'>Laki-laki</th>
-                        <th className='text-center'>Perempuan</th>
+                        <th className="text-center">Tingkat</th>
+                        <th className="text-center">Kelas</th>
+                        <th className="text-center">Total Siswa</th>
+                        <th className="text-center">Laki-laki</th>
+                        <th className="text-center">Perempuan</th>
                       </tr>
                     </thead>
                     <tbody>
                       {(data?.studentsPerClass || []).map((cls) => (
                         <tr key={cls.class_name}>
-                          <td className='text-center'>{cls.grade_name}</td>
-                          <td className='text-center'>{cls.class_name}</td>
-                          <td className='text-center'>
+                          <td className="text-center">{cls.grade_name}</td>
+                          <td className="text-center">{cls.class_name}</td>
+                          <td className="text-center">
                             {parseInt(cls.total_students) || 0}
                           </td>
-                          <td className='text-center'>
+                          <td className="text-center">
                             {parseInt(cls.male_count) || 0}
                           </td>
-                          <td className='text-center'>
+                          <td className="text-center">
                             {parseInt(cls.female_count) || 0}
                           </td>
                         </tr>
@@ -957,18 +842,18 @@ const AdminDash = () => {
         </div>
 
         {/* Activity Logs and Recent Activities */}
-        <div className='row g-4 mb-4'>
+        <div className="row g-4 mb-4">
           {/* Activity Logs */}
-          <div className='col-12 col-lg-7'>
-            <div className='card h-100'>
-              <div className='card-header d-flex justify-content-between align-items-center'>
-                <h5 className='card-title mb-0'>Log Aktivitas</h5>
-                <small className='text-muted'>10 aktivitas terbaru</small>
+          <div className="col-12 col-lg-7">
+            <div className="card h-100">
+              <div className="card-header d-flex justify-content-between align-items-center">
+                <h5 className="card-title mb-0">Log Aktivitas</h5>
+                <small className="text-muted">10 aktivitas terbaru</small>
               </div>
-              <div className='card-body p-0'>
-                <div className='table-responsive'>
-                  <table className='table table-striped table-hover mb-0'>
-                    <thead className='table-light'>
+              <div className="card-body p-0">
+                <div className="table-responsive">
+                  <table className="table table-striped table-hover mb-0">
+                    <thead className="table-light">
                       <tr>
                         <th style={{ width: "15%" }}>Waktu</th>
                         <th style={{ width: "15%" }}>Pengguna</th>
@@ -986,32 +871,32 @@ const AdminDash = () => {
                           <td>{log.user_name}</td>
                           <td>
                             {log.user_type === "Siswa" && (
-                              <span className='badge bg-primary'>Siswa</span>
+                              <span className="badge bg-primary">Siswa</span>
                             )}
                             {log.user_type === "Guru" && (
-                              <span className='badge bg-success'>Guru</span>
+                              <span className="badge bg-success">Guru</span>
                             )}
                             {log.user_type === "Admin" && (
-                              <span className='badge bg-danger'>Admin</span>
+                              <span className="badge bg-danger">Admin</span>
                             )}
                           </td>
                           <td>{log.action}</td>
                           <td>
                             {log.islogin && (
-                              <span className='badge bg-info me-1'>Login</span>
+                              <span className="badge bg-info me-1">Login</span>
                             )}
                             {log.ispenalty && (
-                              <span className='badge bg-warning me-1'>
+                              <span className="badge bg-warning me-1">
                                 Penalty
                               </span>
                             )}
                             {log.isactive && (
-                              <span className='badge bg-success me-1'>
+                              <span className="badge bg-success me-1">
                                 Aktif
                               </span>
                             )}
                             {log.isdone && (
-                              <span className='badge bg-secondary me-1'>
+                              <span className="badge bg-secondary me-1">
                                 Selesai
                               </span>
                             )}
@@ -1030,16 +915,16 @@ const AdminDash = () => {
           </div>
 
           {/* Recent Activities */}
-          <div className='col-12 col-lg-5'>
-            <div className='card h-100'>
-              <div className='card-header d-flex justify-content-between align-items-center'>
-                <h5 className='card-title mb-0'>Aktivitas Terbaru</h5>
-                <small className='text-muted'>10 aktivitas terbaru</small>
+          <div className="col-12 col-lg-5">
+            <div className="card h-100">
+              <div className="card-header d-flex justify-content-between align-items-center">
+                <h5 className="card-title mb-0">Aktivitas Terbaru</h5>
+                <small className="text-muted">10 aktivitas terbaru</small>
               </div>
-              <div className='card-body p-0'>
-                <div className='table-responsive'>
-                  <table className='table table-striped table-hover mb-0'>
-                    <thead className='table-light'>
+              <div className="card-body p-0">
+                <div className="table-responsive">
+                  <table className="table table-striped table-hover mb-0">
+                    <thead className="table-light">
                       <tr>
                         <th style={{ width: "20%" }}>Jenis</th>
                         <th style={{ width: "40%" }}>Judul</th>
@@ -1052,15 +937,15 @@ const AdminDash = () => {
                         <tr key={index}>
                           <td>
                             {activity.type === "exam" && (
-                              <span className='badge bg-danger'>Ujian</span>
+                              <span className="badge bg-danger">Ujian</span>
                             )}
                             {activity.type === "subject" && (
-                              <span className='badge bg-primary'>
+                              <span className="badge bg-primary">
                                 Mata Pelajaran
                               </span>
                             )}
                             {activity.type === "chapter" && (
-                              <span className='badge bg-success'>Bab</span>
+                              <span className="badge bg-success">Bab</span>
                             )}
                           </td>
                           <td>{activity.title}</td>

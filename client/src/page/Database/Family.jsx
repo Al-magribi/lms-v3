@@ -11,7 +11,7 @@ const Family = ({ families, onRefetch, userid }) => {
     userid: userid,
     name: "",
     gender: "",
-    birth_date: "",
+    birth_date: new Date().toISOString().split("T")[0],
   };
 
   const [formData, setFormData] = useState(initialFormState);
@@ -157,82 +157,86 @@ const Family = ({ families, onRefetch, userid }) => {
     }
   }, [delSuccess, delReset, onRefetch, delError]);
   return (
-    <div className='container mt-3'>
-      <div className='row'>
-        <div className='col-md-4'>
+    <div className="container mt-3">
+      <div className="row">
+        <div className="col-md-4">
           {/* Input Form */}
-          <div className='card shadow-sm'>
-            <div className='card-body'>
+          <div className="card shadow-sm">
+            <div className="card-body">
               <form onSubmit={handleSubmit}>
-                <div className='mb-3'>
+                <div className="mb-3">
                   <input
-                    type='text'
+                    type="text"
                     className={`form-control ${
                       formErrors.name ? "is-invalid" : ""
                     }`}
-                    placeholder='Nama Keluarga'
-                    name='name'
+                    placeholder="Nama Keluarga"
+                    name="name"
                     value={formData.name}
                     onChange={handleChange}
                   />
                   {formErrors.name && (
-                    <div className='invalid-feedback'>{formErrors.name}</div>
+                    <div className="invalid-feedback">{formErrors.name}</div>
                   )}
                 </div>
 
-                <div className='mb-3'>
+                <div className="mb-3">
                   <select
                     className={`form-select ${
                       formErrors.gender ? "is-invalid" : ""
                     }`}
-                    name='gender'
+                    name="gender"
                     value={formData.gender}
-                    onChange={handleChange}>
-                    <option value='' hidden>
+                    onChange={handleChange}
+                  >
+                    <option value="" hidden>
                       Pilih Jenis Kelamin
                     </option>
-                    <option value='L'>Laki Laki</option>
-                    <option value='P'>Perempuan</option>
+                    <option value="L">Laki Laki</option>
+                    <option value="P">Perempuan</option>
                   </select>
                   {formErrors.gender && (
-                    <div className='invalid-feedback'>{formErrors.gender}</div>
+                    <div className="invalid-feedback">{formErrors.gender}</div>
                   )}
                 </div>
 
-                <div className='mb-3'>
+                <div className="mb-3">
                   <input
-                    type='date'
+                    type="date"
                     className={`form-control ${
                       formErrors.birth_date ? "is-invalid" : ""
                     }`}
-                    name='birth_date'
+                    name="birth_date"
                     value={formData.birth_date}
                     onChange={handleChange}
                   />
                   {formErrors.birth_date && (
-                    <div className='invalid-feedback'>
+                    <div className="invalid-feedback">
                       {formErrors.birth_date}
                     </div>
                   )}
                 </div>
 
-                <div className='d-flex justify-content-end gap-2'>
+                <div className="d-flex justify-content-end gap-2">
                   <button
-                    type='button'
-                    className='btn btn-sm btn-warning'
+                    type="button"
+                    className="btn btn-sm btn-warning"
                     onClick={handleCancel}
-                    disabled={isLoading}>
+                    disabled={isLoading}
+                  >
                     Batal
                   </button>
                   <button
-                    type='submit'
-                    className='btn btn-sm btn-success'
-                    disabled={isLoading}>
+                    type="submit"
+                    className="btn btn-sm btn-success"
+                    disabled={isLoading}
+                  >
                     {isLoading ? (
                       <span
-                        className='spinner-border spinner-border-sm me-1'
-                        role='status'
-                        aria-hidden='true'></span>
+                        className="spinner-border spinner-border-sm me-1"
+                        role="status"
+                        aria-hidden="true"
+                      ></span>
                     ) : null}
                     {editingId ? "Update" : "Simpan"}
                   </button>
@@ -242,12 +246,12 @@ const Family = ({ families, onRefetch, userid }) => {
           </div>
         </div>
 
-        <div className='col-md-8'>
+        <div className="col-md-8">
           {/* Table */}
-          <div className='card shadow-sm'>
-            <div className='card-body'>
-              <div className='table-responsive'>
-                <table className='table table-hover'>
+          <div className="card shadow-sm">
+            <div className="card-body">
+              <div className="table-responsive">
+                <table className="table table-hover">
                   <thead>
                     <tr>
                       <th>No</th>
@@ -273,19 +277,21 @@ const Family = ({ families, onRefetch, userid }) => {
                         </td>
                         <td>{calculateAge(family.birth_date)} Tahun</td>
                         <td>
-                          <div className='d-flex gap-1'>
+                          <div className="d-flex gap-1">
                             <button
-                              className='btn btn-sm btn-warning'
+                              className="btn btn-sm btn-warning"
                               onClick={() => handleEdit(family)}
-                              title='Edit'>
-                              <i className='bi bi-pencil-square'></i>
+                              title="Edit"
+                            >
+                              <i className="bi bi-pencil-square"></i>
                             </button>
                             <button
-                              className='btn btn-sm btn-danger'
+                              className="btn btn-sm btn-danger"
                               onClick={() => handleDelete(family.id)}
-                              title='Hapus'
-                              disabled={delLoading}>
-                              <i className='bi bi-trash'></i>
+                              title="Hapus"
+                              disabled={delLoading}
+                            >
+                              <i className="bi bi-trash"></i>
                             </button>
                           </div>
                         </td>

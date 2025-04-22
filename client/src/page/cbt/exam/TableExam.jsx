@@ -82,109 +82,114 @@ const TableExam = ({ setDetail }) => {
       setSearch={setSearch}
       totalData={totalData}
       totalPages={totalPages}
-      isLoading={loading}>
-      <table className='table table-striped table-bordered table-hover mb-0'>
+      isLoading={loading}
+    >
+      <table className="table table-striped table-bordered table-hover mb-0">
         <thead>
           <tr>
-            <th className='text-center'>Guru</th>
-            <th className='text-center'>Bank Soal</th>
-            <th className='text-center'>Nama Ujian</th>
-            <th className='text-center'>PG</th>
-            <th className='text-center'>Essay</th>
-            <th className='text-center'>Kelas</th>
-            <th className='text-center'>Acak Soal</th>
-            <th className='text-center'>Durasi</th>
-            <th className='text-center'>Status</th>
-            <th className='text-center'>Token</th>
-            <th className='text-center'>Aksi</th>
+            <th className="text-center">Guru</th>
+            <th className="text-center">Bank Soal</th>
+            <th className="text-center">Nama Ujian</th>
+            <th className="text-center">PG</th>
+            <th className="text-center">Essay</th>
+            <th className="text-center">Kelas</th>
+            <th className="text-center">Acak Soal</th>
+            <th className="text-center">Durasi</th>
+            <th className="text-center">Status</th>
+            <th className="text-center">Token</th>
+            <th className="text-center">Aksi</th>
           </tr>
         </thead>
         <tbody>
           {exams?.length > 0 ? (
             exams?.map((exam, i) => (
               <tr key={i}>
-                <td className='align-middle'>{exam.teacher_name}</td>
-                <td className='align-middle'>
-                  {exam.banks.map((bank) => (
-                    <p key={bank.id} className='m-0'>
+                <td className="align-middle">{exam.teacher_name}</td>
+                <td className="align-middle">
+                  {exam.banks.map((bank, i) => (
+                    <p key={i} className="m-0">
                       {bank.type !== "paket"
                         ? `${bank.name} - PG ${bank.pg} - Essay ${bank.essay}`
                         : `${bank.name}`}
                     </p>
                   ))}
                 </td>
-                <td className='align-middle'>{exam.name}</td>
-                <td className='text-center align-middle'>
-                  <p className='m-0 badge bg-success'>{`${exam.mc_score}%`}</p>
+                <td className="align-middle">{exam.name}</td>
+                <td className="text-center align-middle">
+                  <p className="m-0 badge bg-success">{`${exam.mc_score}%`}</p>
                 </td>
-                <td className='text-center align-middle'>
-                  <p className='m-0 badge bg-success'>{`${exam.essay_score}%`}</p>
+                <td className="text-center align-middle">
+                  <p className="m-0 badge bg-success">{`${exam.essay_score}%`}</p>
                 </td>
-                <td className='text-center align-middle'>
+                <td className="d-flex align-items-center justify-content-center">
                   <div
                     style={{ width: 100 }}
-                    className='d-flex align-items-center justify-content-center flex-wrap gap-2'>
-                    {exam.classes?.map((item) => (
-                      <span key={item.id} className='badge bg-primary'>
+                    className="d-flex align-items-center justify-content-center flex-wrap gap-2"
+                  >
+                    {exam.classes?.map((item, index) => (
+                      <span key={index} className="badge bg-primary">
                         {item.name}
                       </span>
                     ))}
                   </div>
                 </td>
-                <td className='text-center align-middle'>
+                <td className="text-center align-middle">
                   {exam.isshuffle ? (
-                    <p className='m-0 badge bg-success'>Ya</p>
+                    <p className="m-0 badge bg-success">Ya</p>
                   ) : (
-                    <p className='m-0 badge bg-danger'>Tidak</p>
+                    <p className="m-0 badge bg-danger">Tidak</p>
                   )}
                 </td>
-                <td className='text-center align-middle'>
-                  <p className='m-0 badge bg-primary'>{`${exam.duration} Menit`}</p>
+                <td className="text-center align-middle">
+                  <p className="m-0 badge bg-primary">{`${exam.duration} Menit`}</p>
                 </td>
-                <td className='text-center align-middle'>
+                <td className="text-center align-middle">
                   <div
-                    className='form-check form-switch pointer d-flex justify-content-center'
-                    onClick={() => changeStatusHandler(exam.id)}>
+                    className="form-check form-switch pointer d-flex justify-content-center"
+                    onClick={() => changeStatusHandler(exam.id)}
+                  >
                     <input
-                      className='form-check-input bg-success'
-                      type='checkbox'
-                      id='flexSwitchCheckChecked'
+                      className="form-check-input bg-success"
+                      type="checkbox"
+                      id="flexSwitchCheckChecked"
                       checked={exam.isactive}
                       readOnly
                     />
                   </div>
                 </td>
-                <td className='text-center align-middle'>
+                <td className="text-center align-middle">
                   <p
-                    className='m-0 badge bg-secondary pointer'
-                    data-toggle='tooltip'
-                    data-placement='top'
-                    title='Copy Token'
-                    onClick={() => copyTokenHandler(exam.token)}>
+                    className="m-0 badge bg-secondary pointer"
+                    data-toggle="tooltip"
+                    data-placement="top"
+                    title="Copy Token"
+                    onClick={() => copyTokenHandler(exam.token)}
+                  >
                     {exam.token}
                   </p>
                 </td>
-                <td className='text-center align-middle'>
-                  <div className='d-flex justify-content-center gap-2'>
+                <td className="text-center align-middle">
+                  <div className="d-flex justify-content-center gap-2">
                     <button
-                      className='btn btn-sm btn-primary'
-                      onClick={() =>
-                        openNewTab(exam.name, exam.id, exam.token)
-                      }>
-                      <i className='bi bi-people'></i>
+                      className="btn btn-sm btn-primary"
+                      onClick={() => openNewTab(exam.name, exam.id, exam.token)}
+                    >
+                      <i className="bi bi-people"></i>
                     </button>
                     <button
-                      className='btn btn-sm btn-warning'
-                      data-bs-toggle='modal'
-                      data-bs-target='#addexam'
-                      onClick={() => setDetail(exam)}>
-                      <i className='bi bi-pencil-square'></i>
+                      className="btn btn-sm btn-warning"
+                      data-bs-toggle="modal"
+                      data-bs-target="#addexam"
+                      onClick={() => setDetail(exam)}
+                    >
+                      <i className="bi bi-pencil-square"></i>
                     </button>
                     <button
-                      className='btn btn-sm btn-danger'
+                      className="btn btn-sm btn-danger"
                       disabled={isLoading}
-                      onClick={() => deleteHandler(exam.id)}>
-                      <i className='bi bi-folder-x'></i>
+                      onClick={() => deleteHandler(exam.id)}
+                    >
+                      <i className="bi bi-folder-x"></i>
                     </button>
                   </div>
                 </td>

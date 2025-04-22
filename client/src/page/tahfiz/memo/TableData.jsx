@@ -23,11 +23,9 @@ const TableData = ({ homebaseId, gradeId, classId }) => {
     navigate(`/tahfiz-hafalan-siswa/${periodeId}/${formattedName}/${userid}`);
   };
 
-  const goToReport = (userid, name, grade, classname) => {
+  const goToReport = (userid, name) => {
     const formattedName = name.replace(/\s+/g, "-");
-    navigate(
-      `/tahfiz-laporan-siswa/${userid}/${formattedName}/${grade}/${classname}`
-    );
+    navigate(`/tahfiz-laporan-siswa/${userid}/${formattedName}`);
   };
 
   return (
@@ -42,34 +40,34 @@ const TableData = ({ homebaseId, gradeId, classId }) => {
       totalData={totalData}
       totalPages={totalPages}
     >
-      <table className='mb-0 table table-bordered table-striped table-hover'>
+      <table className="mb-0 table table-bordered table-striped table-hover">
         <thead>
           <tr>
-            <th className='text-center'>No</th>
-            <th className='text-center'>Satuan</th>
-            <th className='text-center'>NIS</th>
-            <th className='text-center'>Nama</th>
-            <th className='text-center'>Tingkat</th>
-            <th className='text-center'>Kelas</th>
-            <th className='text-center'>Aksi</th>
+            <th className="text-center">No</th>
+            <th className="text-center">Satuan</th>
+            <th className="text-center">NIS</th>
+            <th className="text-center">Nama</th>
+            <th className="text-center">Tingkat</th>
+            <th className="text-center">Kelas</th>
+            <th className="text-center">Aksi</th>
           </tr>
         </thead>
         <tbody>
           {students?.length > 0 ? (
             students.map((student, index) => (
               <tr key={index}>
-                <td className='text-center'>
+                <td className="text-center">
                   {(page - 1) * limit + index + 1}
                 </td>
-                <td className='text-center align-middle'>{student.homebase}</td>
-                <td className='text-center align-middle'>{student.nis}</td>
-                <td className='align-middle'>{student.name}</td>
-                <td className='text-center align-middle'>{student.grade}</td>
-                <td className='text-center align-middle'>{student.class}</td>
-                <td className='text-center'>
-                  <div className='d-flex justify-content-center gap-2'>
+                <td className="text-center align-middle">{student.homebase}</td>
+                <td className="text-center align-middle">{student.nis}</td>
+                <td className="align-middle">{student.name}</td>
+                <td className="text-center align-middle">{student.grade}</td>
+                <td className="text-center align-middle">{student.class}</td>
+                <td className="text-center">
+                  <div className="d-flex justify-content-center gap-2">
                     <button
-                      className='btn btn-sm btn-success'
+                      className="btn btn-sm btn-success"
                       onClick={() =>
                         goToReport(
                           student.userid,
@@ -79,20 +77,14 @@ const TableData = ({ homebaseId, gradeId, classId }) => {
                         )
                       }
                     >
-                      <i className='bi bi-journal'></i>
+                      <i className="bi bi-journal"></i>
                     </button>
 
                     <button
-                      className='btn btn-sm btn-primary'
-                      onClick={() =>
-                        goToLink(
-                          student.name,
-                          student.userid,
-                          student.periode_id
-                        )
-                      }
+                      className="btn btn-sm btn-primary"
+                      onClick={() => goToLink(student.name, student.userid)}
                     >
-                      <i className='bi bi-journal-check'></i>
+                      <i className="bi bi-journal-check"></i>
                     </button>
                   </div>
                 </td>

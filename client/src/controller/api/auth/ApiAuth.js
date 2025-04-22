@@ -5,7 +5,13 @@ export const ApiAuth = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: `/api/auth`,
     credentials: "include",
+    prepareHeaders: (headers) => {
+      headers.set("Cache-Control", "no-cache");
+      return headers;
+    },
+    timeout: 10000,
   }),
+  tagTypes: ["User"],
   endpoints: (builder) => ({
     signin: builder.mutation({
       query: (body) => ({
@@ -13,6 +19,7 @@ export const ApiAuth = createApi({
         method: "POST",
         body,
       }),
+      invalidatesTags: ["User"],
     }),
     signup: builder.mutation({
       query: (body) => ({
@@ -26,12 +33,14 @@ export const ApiAuth = createApi({
         url: "/load-user",
         method: "GET",
       }),
+      providesTags: ["User"],
     }),
     logout: builder.mutation({
       query: () => ({
         url: "/logout",
         method: "POST",
       }),
+      invalidatesTags: ["User"],
     }),
   }),
 });

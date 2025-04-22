@@ -10,7 +10,7 @@ const Parent = ({ studentData, userid, onRefetch }) => {
     father_birth_place: studentData?.father_birth_place || "",
     father_birth_date: studentData?.father_birth_date
       ? new Date(studentData.father_birth_date).toISOString().split("T")[0]
-      : "",
+      : new Date().toISOString().split("T")[0],
     father_job: studentData?.father_job || "",
     father_phone: studentData?.father_phone || "",
     mother_nik: studentData?.mother_nik || "",
@@ -18,7 +18,7 @@ const Parent = ({ studentData, userid, onRefetch }) => {
     mother_birth_place: studentData?.mother_birth_place || "",
     mother_birth_date: studentData?.mother_birth_date
       ? new Date(studentData.mother_birth_date).toISOString().split("T")[0]
-      : "",
+      : new Date().toISOString().split("T")[0],
     mother_job: studentData?.mother_job || "",
     mother_phone: studentData?.mother_phone || "",
   });
@@ -61,187 +61,187 @@ const Parent = ({ studentData, userid, onRefetch }) => {
   }, [isSuccess, isError, reset, onRefetch]);
 
   return (
-    <div className='container mt-3'>
+    <div className="container mt-3">
       <form onSubmit={handleSubmit}>
-        <div className='row'>
-          <div className='col-md-6'>
+        <div className="row">
+          <div className="col-md-6">
             {/* Father's Information */}
-            <div className='mb-3'>
-              <label htmlFor='father_nik' className='form-label'>
+            <div className="mb-3">
+              <label htmlFor="father_nik" className="form-label">
                 NIK Ayah
               </label>
               <input
-                id='father_nik'
-                type='text'
-                className='form-control'
-                placeholder='NIK Ayah'
-                name='father_nik'
+                id="father_nik"
+                type="text"
+                className="form-control"
+                placeholder="NIK Ayah"
+                name="father_nik"
                 value={formData.father_nik}
                 onChange={handleChange}
               />
             </div>
 
-            <div className='mb-3'>
-              <label htmlFor='father_name' className='form-label'>
+            <div className="mb-3">
+              <label htmlFor="father_name" className="form-label">
                 Nama Ayah
               </label>
               <input
-                id='father_name'
-                type='text'
-                className='form-control'
-                placeholder='Nama Ayah'
-                name='father_name'
+                id="father_name"
+                type="text"
+                className="form-control"
+                placeholder="Nama Ayah"
+                name="father_name"
                 value={formData.father_name}
                 onChange={handleChange}
               />
             </div>
 
-            <div className='mb-3'>
-              <label htmlFor='father_birth_place' className='form-label'>
+            <div className="mb-3">
+              <label htmlFor="father_birth_place" className="form-label">
                 Tempat Lahir Ayah
               </label>
               <input
-                id='father_birth_place'
-                type='text'
-                className='form-control'
-                placeholder='Tempat Lahir Ayah'
-                name='father_birth_place'
+                id="father_birth_place"
+                type="text"
+                className="form-control"
+                placeholder="Tempat Lahir Ayah"
+                name="father_birth_place"
                 value={formData.father_birth_place}
                 onChange={handleChange}
               />
             </div>
 
-            <div className='mb-3'>
-              <label htmlFor='father_birth_date' className='form-label'>
+            <div className="mb-3">
+              <label htmlFor="father_birth_date" className="form-label">
                 Tanggal Lahir Ayah
               </label>
               <input
-                id='father_birth_date'
-                type='date'
-                className='form-control'
-                name='father_birth_date'
+                id="father_birth_date"
+                type="date"
+                className="form-control"
+                name="father_birth_date"
                 value={formData.father_birth_date}
                 onChange={handleChange}
               />
             </div>
 
-            <div className='mb-3'>
-              <label htmlFor='father_job' className='form-label'>
+            <div className="mb-3">
+              <label htmlFor="father_job" className="form-label">
                 Pekerjaan Ayah
               </label>
               <input
-                id='father_job'
-                type='text'
-                className='form-control'
-                placeholder='Pekerjaan Ayah'
-                name='father_job'
+                id="father_job"
+                type="text"
+                className="form-control"
+                placeholder="Pekerjaan Ayah"
+                name="father_job"
                 value={formData.father_job}
                 onChange={handleChange}
               />
             </div>
 
-            <div className='mb-3'>
-              <label htmlFor='father_phone' className='form-label'>
+            <div className="mb-3">
+              <label htmlFor="father_phone" className="form-label">
                 Nomor Telepon Ayah
               </label>
               <input
-                id='father_phone'
-                type='text'
-                className='form-control'
-                placeholder='Tlp Ayah'
-                name='father_phone'
+                id="father_phone"
+                type="text"
+                className="form-control"
+                placeholder="Tlp Ayah"
+                name="father_phone"
                 value={formData.father_phone}
                 onChange={handleChange}
               />
             </div>
           </div>
 
-          <div className='col-md-6'>
+          <div className="col-md-6">
             {/* Mother's Information */}
-            <div className='mb-3'>
-              <label htmlFor='mother_nik' className='form-label'>
+            <div className="mb-3">
+              <label htmlFor="mother_nik" className="form-label">
                 NIK Ibu
               </label>
               <input
-                id='mother_nik'
-                type='text'
-                className='form-control'
-                placeholder='NIK Ibu'
-                name='mother_nik'
+                id="mother_nik"
+                type="text"
+                className="form-control"
+                placeholder="NIK Ibu"
+                name="mother_nik"
                 value={formData.mother_nik}
                 onChange={handleChange}
               />
             </div>
 
-            <div className='mb-3'>
-              <label htmlFor='mother_name' className='form-label'>
+            <div className="mb-3">
+              <label htmlFor="mother_name" className="form-label">
                 Nama Ibu
               </label>
               <input
-                id='mother_name'
-                type='text'
-                className='form-control'
-                placeholder='Nama Ibu'
-                name='mother_name'
+                id="mother_name"
+                type="text"
+                className="form-control"
+                placeholder="Nama Ibu"
+                name="mother_name"
                 value={formData.mother_name}
                 onChange={handleChange}
               />
             </div>
 
-            <div className='mb-3'>
-              <label htmlFor='mother_birth_place' className='form-label'>
+            <div className="mb-3">
+              <label htmlFor="mother_birth_place" className="form-label">
                 Tempat Lahir Ibu
               </label>
               <input
-                id='mother_birth_place'
-                type='text'
-                className='form-control'
-                placeholder='Tempat Lahir Ibu'
-                name='mother_birth_place'
+                id="mother_birth_place"
+                type="text"
+                className="form-control"
+                placeholder="Tempat Lahir Ibu"
+                name="mother_birth_place"
                 value={formData.mother_birth_place}
                 onChange={handleChange}
               />
             </div>
 
-            <div className='mb-3'>
-              <label htmlFor='mother_birth_date' className='form-label'>
+            <div className="mb-3">
+              <label htmlFor="mother_birth_date" className="form-label">
                 Tanggal Lahir Ibu
               </label>
               <input
-                id='mother_birth_date'
-                type='date'
-                className='form-control'
-                name='mother_birth_date'
+                id="mother_birth_date"
+                type="date"
+                className="form-control"
+                name="mother_birth_date"
                 value={formData.mother_birth_date}
                 onChange={handleChange}
               />
             </div>
 
-            <div className='mb-3'>
-              <label htmlFor='mother_job' className='form-label'>
+            <div className="mb-3">
+              <label htmlFor="mother_job" className="form-label">
                 Pekerjaan Ibu
               </label>
               <input
-                id='mother_job'
-                type='text'
-                className='form-control'
-                placeholder='Pekerjaan Ibu'
-                name='mother_job'
+                id="mother_job"
+                type="text"
+                className="form-control"
+                placeholder="Pekerjaan Ibu"
+                name="mother_job"
                 value={formData.mother_job}
                 onChange={handleChange}
               />
             </div>
 
-            <div className='mb-3'>
-              <label htmlFor='mother_phone' className='form-label'>
+            <div className="mb-3">
+              <label htmlFor="mother_phone" className="form-label">
                 Nomor Telepon Ibu
               </label>
               <input
-                id='mother_phone'
-                type='text'
-                className='form-control'
-                placeholder='Tlp Ibu'
-                name='mother_phone'
+                id="mother_phone"
+                type="text"
+                className="form-control"
+                placeholder="Tlp Ibu"
+                name="mother_phone"
                 value={formData.mother_phone}
                 onChange={handleChange}
               />
@@ -249,12 +249,13 @@ const Parent = ({ studentData, userid, onRefetch }) => {
           </div>
         </div>
 
-        <div className='row mt-3'>
-          <div className='col-12 text-end'>
+        <div className="row mt-3">
+          <div className="col-12 text-end">
             <button
-              type='submit'
-              className='btn btn-sm btn-success'
-              disabled={isLoading}>
+              type="submit"
+              className="btn btn-sm btn-success"
+              disabled={isLoading}
+            >
               Simpan Data
             </button>
           </div>

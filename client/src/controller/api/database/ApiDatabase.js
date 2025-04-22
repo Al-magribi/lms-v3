@@ -22,6 +22,12 @@ export const ApiDatabase = createApi({
       }),
       providesTags: ["Database"],
     }),
+    getDatabaseByClass: builder.query({
+      query: ({ page, limit, search, classid }) => ({
+        url: "/get-database-by-class",
+        params: { page, limit, search, classid },
+      }),
+    }),
     getStudentData: builder.query({
       query: (userid) => ({
         url: "/get-student-data",
@@ -67,6 +73,7 @@ export const {
   useGetPeriodeQuery,
   useGetHomebaseQuery,
   useGetDatabaseQuery,
+  useGetDatabaseByClassQuery,
   useGetStudentDataQuery,
   useAddStudentDataMutation,
   useAddParentsDataMutation,

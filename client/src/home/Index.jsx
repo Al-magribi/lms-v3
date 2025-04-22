@@ -12,36 +12,7 @@ import "./Index.css";
 const Index = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
-  const [role, setRole] = useState("none");
-  const [isSignup, setSignup] = useState(false);
-  const [accountValue, setAccountValue] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [signin, { isLoading, data }] = useSigninMutation();
-  const [loadUser, { isLoading: isLoadingUser }] = useLoadUserMutation();
   const { user, isSignin } = useSelector((state) => state.auth);
-
-  const handlePasswordToggle = () => {
-    setShowPassword((prev) => !prev);
-  };
-
-  const handleRoleChange = (value) => {
-    setRole(value);
-    setAccountValue(""); // Reset account value when role changes
-  };
-
-  const handleSignup = () => {
-    setRole("");
-    setSignup(true);
-    setAccountValue("");
-  };
-
-  const back = () => {
-    setRole("none");
-    setSignup(false);
-    setAccountValue("");
-  };
 
   const routes = {
     center: "/center-dashboard",
@@ -52,8 +23,69 @@ const Index = () => {
     tahfiz: "/tahfiz-dashboard",
   };
 
+  // Add useEffect for initial auth check
+  useEffect(() => {
+    // If user is already authenticated, redirect to appropriate dashboard
+    if (isSignin && user?.level) {
+      navigate(routes[user.level]);
+    }
+  }, [isSignin, user, navigate]);
+
+  const [role, setRole] = useState("none");
+  const [isSignup, setSignup] = useState(false);
+  const [accountValue, setAccountValue] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [signin, { isLoading, data }] = useSigninMutation();
+
+  // Add form validation state
+  const [formErrors, setFormErrors] = useState({});
+
+  const validateForm = () => {
+    const errors = {};
+    if (!accountValue.trim()) {
+      errors.account = "Field ini wajib diisi";
+    }
+    if (!password) {
+      errors.password = "Password wajib diisi";
+    }
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handlePasswordToggle = () => {
+    setShowPassword((prev) => !prev);
+  };
+
+  const handleRoleChange = (value) => {
+    setRole(value);
+    setAccountValue(""); // Reset account value when role changes
+    setFormErrors({}); // Clear any existing errors
+  };
+
+  const handleSignup = () => {
+    setRole("");
+    setSignup(true);
+    setAccountValue("");
+    setFormErrors({}); // Clear any existing errors
+  };
+
+  const back = () => {
+    setRole("none");
+    setSignup(false);
+    setAccountValue("");
+    setFormErrors({}); // Clear any existing errors
+  };
+
   const loginHandler = async (e) => {
     e.preventDefault();
+
+    // Validate form before proceeding
+    if (!validateForm()) {
+      return;
+    }
+
+    const toastId = toast.loading("Memproses login...");
 
     const credentials = {
       password,
@@ -67,53 +99,49 @@ const Index = () => {
     };
 
     try {
-      // First sign in the user
+      // Sign in the user and get complete user data in one request
       const signinResult = await signin(credentials).unwrap();
 
-      // Show loading toast
-      toast.loading("Memuat data pengguna...");
-
-      // Dispatch initial user data
+      // Update with complete user data
       dispatch(setLogin(signinResult.user));
 
-      try {
-        // Then load the complete user data
-        const userData = await loadUser().unwrap();
+      // Show success message
+      toast.success("Login berhasil", { id: toastId });
 
-        // Update with complete user data
-        dispatch(setLogin(userData));
-
-        // Dismiss loading toast
-        toast.dismiss();
-
-        // Show success message
-        toast.success(signinResult.message);
-
-        // Redirect after loading complete user data
-        window.location.href = routes[userData.level] || "/";
-      } catch (error) {
-        console.error("Error loading user data:", error);
-        toast.dismiss();
-        toast.error("Gagal memuat data lengkap pengguna");
-
-        // Still redirect even if loadUser fails
-        window.location.href = routes[signinResult.user.level] || "/";
-      }
+      // Navigate to appropriate dashboard
+      navigate(routes[signinResult.user.level] || "/");
     } catch (error) {
-      toast.error(error.data?.message || "Gagal masuk");
+      // Handle different types of errors
+      const errorMessage =
+        error.data?.message || "Gagal masuk. Silakan coba lagi.";
+      toast.error(errorMessage, { id: toastId });
+
+      // Clear sensitive data on error
+      setPassword("");
     }
   };
 
-  useEffect(() => {
-    if (user.level && isSignin) {
-      window.location.href = routes[user.level];
-    }
-  }, [user, isSignin]);
+  // If user is authenticated, show loading state instead of null
+  if (isSignin && user?.level) {
+    return (
+      <div
+        className="d-flex align-items-center justify-content-center"
+        style={{ height: "100vh" }}
+      >
+        <div className="text-center">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <p className="mt-2">Mengalihkan ke dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
-      <div className='area'>
-        <ul className='circles'>
+      <div className="area">
+        <ul className="circles">
           <li></li>
           <li></li>
           <li></li>
@@ -128,18 +156,19 @@ const Index = () => {
       </div>
 
       <div
-        className='d-flex align-items-center justify-content-center flex-column gap-3'
-        style={{ height: "100vh" }}>
+        className="d-flex align-items-center justify-content-center flex-column gap-3"
+        style={{ height: "100vh" }}
+      >
         <img
-          src='/logo.png'
-          alt='logo'
+          src="/logo.png"
+          alt="logo"
           style={{ height: 120, width: 120, marginBottom: "1rem" }}
         />
 
         {role === "none" && (
-          <div className='d-flex flex-wrap justify-content-center gap-3'>
+          <div className="d-flex flex-wrap justify-content-center gap-3">
             <div
-              className='card bg-info text-white transition-card'
+              className="card bg-info text-white transition-card"
               style={{
                 width: "150px",
                 height: "150px",
@@ -147,17 +176,19 @@ const Index = () => {
                 transition: "all 0.3s ease",
                 boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
               }}
-              onClick={() => handleRoleChange("admin")}>
-              <div className='card-body d-flex flex-column align-items-center justify-content-center gap-2'>
+              onClick={() => handleRoleChange("admin")}
+            >
+              <div className="card-body d-flex flex-column align-items-center justify-content-center gap-2">
                 <i
-                  className='bi bi-person-badge-fill transition-icon'
-                  style={{ fontSize: "2rem" }}></i>
-                <h5 className='card-title mb-0'>Admin</h5>
+                  className="bi bi-person-badge-fill transition-icon"
+                  style={{ fontSize: "2rem" }}
+                ></i>
+                <h5 className="card-title mb-0">Admin</h5>
               </div>
             </div>
 
             <div
-              className='card bg-info text-white transition-card'
+              className="card bg-info text-white transition-card"
               style={{
                 width: "150px",
                 height: "150px",
@@ -165,17 +196,19 @@ const Index = () => {
                 transition: "all 0.3s ease",
                 boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
               }}
-              onClick={() => handleRoleChange("teacher")}>
-              <div className='card-body d-flex flex-column align-items-center justify-content-center gap-2'>
+              onClick={() => handleRoleChange("teacher")}
+            >
+              <div className="card-body d-flex flex-column align-items-center justify-content-center gap-2">
                 <i
-                  className='bi bi-person-workspace transition-icon'
-                  style={{ fontSize: "2rem" }}></i>
-                <h5 className='card-title mb-0'>Guru</h5>
+                  className="bi bi-person-workspace transition-icon"
+                  style={{ fontSize: "2rem" }}
+                ></i>
+                <h5 className="card-title mb-0">Guru</h5>
               </div>
             </div>
 
             <div
-              className='card bg-info text-white transition-card'
+              className="card bg-info text-white transition-card"
               style={{
                 width: "150px",
                 height: "150px",
@@ -183,17 +216,19 @@ const Index = () => {
                 transition: "all 0.3s ease",
                 boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
               }}
-              onClick={() => handleRoleChange("student")}>
-              <div className='card-body d-flex flex-column align-items-center justify-content-center gap-2'>
+              onClick={() => handleRoleChange("student")}
+            >
+              <div className="card-body d-flex flex-column align-items-center justify-content-center gap-2">
                 <i
-                  className='bi bi-mortarboard-fill transition-icon'
-                  style={{ fontSize: "2rem" }}></i>
-                <h5 className='card-title mb-0'>Siswa</h5>
+                  className="bi bi-mortarboard-fill transition-icon"
+                  style={{ fontSize: "2rem" }}
+                ></i>
+                <h5 className="card-title mb-0">Siswa</h5>
               </div>
             </div>
 
             <div
-              className='card bg-info text-white transition-card'
+              className="card bg-info text-white transition-card"
               style={{
                 width: "150px",
                 height: "150px",
@@ -201,17 +236,19 @@ const Index = () => {
                 transition: "all 0.3s ease",
                 boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
               }}
-              onClick={() => handleRoleChange("parent")}>
-              <div className='card-body d-flex flex-column align-items-center justify-content-center gap-2'>
+              onClick={() => handleRoleChange("parent")}
+            >
+              <div className="card-body d-flex flex-column align-items-center justify-content-center gap-2">
                 <i
-                  className='bi bi-people-fill transition-icon'
-                  style={{ fontSize: "2rem" }}></i>
-                <h5 className='card-title mb-0'>Wali Murid</h5>
+                  className="bi bi-people-fill transition-icon"
+                  style={{ fontSize: "2rem" }}
+                ></i>
+                <h5 className="card-title mb-0">Wali Murid</h5>
               </div>
             </div>
 
             <div
-              className='card bg-info text-white transition-card'
+              className="card bg-info text-white transition-card"
               style={{
                 width: "150px",
                 height: "150px",
@@ -219,12 +256,14 @@ const Index = () => {
                 transition: "all 0.3s ease",
                 boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
               }}
-              onClick={handleSignup}>
-              <div className='card-body d-flex flex-column align-items-center justify-content-center gap-2'>
+              onClick={handleSignup}
+            >
+              <div className="card-body d-flex flex-column align-items-center justify-content-center gap-2">
                 <i
-                  className='bi bi-person-plus-fill transition-icon'
-                  style={{ fontSize: "2rem" }}></i>
-                <h5 className='card-title mb-0'>Pendaftaran</h5>
+                  className="bi bi-person-plus-fill transition-icon"
+                  style={{ fontSize: "2rem" }}
+                ></i>
+                <h5 className="card-title mb-0">Pendaftaran</h5>
               </div>
             </div>
           </div>
@@ -233,10 +272,11 @@ const Index = () => {
         {role !== "none" && !isSignup && (
           <form
             style={{ width: 300 }}
-            className='d-flex flex-column gap-3'
-            onSubmit={loginHandler}>
-            <div className='input-group'>
-              <span className='input-group-text'>
+            className="d-flex flex-column gap-3"
+            onSubmit={loginHandler}
+          >
+            <div className="input-group">
+              <span className="input-group-text">
                 <i
                   className={`bi ${
                     role === "student"
@@ -244,7 +284,8 @@ const Index = () => {
                       : role === "teacher"
                       ? "bi-person-workspace"
                       : "bi-envelope"
-                  }`}></i>
+                  }`}
+                ></i>
               </span>
               <input
                 type={role === "admin" || role === "parent" ? "email" : "text"}
@@ -256,63 +297,83 @@ const Index = () => {
                     : "EMAIL"
                 }
                 value={accountValue}
-                onChange={(e) => setAccountValue(e.target.value)}
+                onChange={(e) => {
+                  setAccountValue(e.target.value);
+                  setFormErrors({ ...formErrors, account: "" });
+                }}
                 required
-                className='form-control'
+                className={`form-control ${
+                  formErrors.account ? "is-invalid" : ""
+                }`}
               />
+              {formErrors.account && (
+                <div className="invalid-feedback">{formErrors.account}</div>
+              )}
             </div>
 
-            <div className='input-group'>
-              <span className='input-group-text'>
-                <i className='bi bi-lock-fill'></i>
+            <div className="input-group">
+              <span className="input-group-text">
+                <i className="bi bi-lock-fill"></i>
               </span>
               <input
                 type={showPassword ? "text" : "password"}
-                placeholder='Password'
-                className='form-control'
+                placeholder="Password"
+                className={`form-control ${
+                  formErrors.password ? "is-invalid" : ""
+                }`}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setFormErrors({ ...formErrors, password: "" });
+                }}
                 required
               />
+              {formErrors.password && (
+                <div className="invalid-feedback">{formErrors.password}</div>
+              )}
             </div>
 
-            <div className='form-check'>
+            <div className="form-check">
               <input
-                className='form-check-input'
-                type='checkbox'
-                id='flexCheckDefault'
+                className="form-check-input"
+                type="checkbox"
+                id="flexCheckDefault"
                 checked={showPassword}
                 onChange={handlePasswordToggle}
               />
               <label
-                className='form-check-label text-white'
-                htmlFor='flexCheckDefault'>
+                className="form-check-label text-white"
+                htmlFor="flexCheckDefault"
+              >
                 Tampilkan Password
               </label>
             </div>
 
-            <div className='d-flex justify-content-between'>
+            <div className="d-flex justify-content-between">
               <button
-                type='button'
-                className='btn btn-danger d-flex align-items-center gap-2'
-                onClick={() => setRole("none")}>
-                <i className='bi bi-arrow-left'></i>
+                type="button"
+                className="btn btn-danger d-flex align-items-center gap-2"
+                onClick={() => setRole("none")}
+              >
+                <i className="bi bi-arrow-left"></i>
                 Kembali
               </button>
               <button
-                type='submit'
-                className='btn btn-success d-flex align-items-center gap-2'
-                disabled={isLoading || isLoadingUser}>
-                {isLoading || isLoadingUser ? (
+                type="submit"
+                className="btn btn-success d-flex align-items-center gap-2"
+                disabled={isLoading}
+              >
+                {isLoading ? (
                   <>
                     <span
-                      className='spinner-border spinner-border-sm'
-                      aria-hidden='true'></span>
-                    <span role='status'>Loading...</span>
+                      className="spinner-border spinner-border-sm"
+                      aria-hidden="true"
+                    ></span>
+                    <span role="status">Loading...</span>
                   </>
                 ) : (
                   <>
-                    <i className='bi bi-box-arrow-in-right'></i>
+                    <i className="bi bi-box-arrow-in-right"></i>
                     Masuk
                   </>
                 )}

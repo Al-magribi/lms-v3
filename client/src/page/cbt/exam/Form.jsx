@@ -155,6 +155,11 @@ const Form = ({ detail, setDetail, onSuccess }) => {
       resetForm();
       reset();
       onSuccess?.();
+      // Close modal using data-bs-dismiss
+      const closeButton = document.querySelector('[data-bs-dismiss="modal"]');
+      if (closeButton) {
+        closeButton.click();
+      }
     }
 
     if (isError) {
@@ -162,138 +167,184 @@ const Form = ({ detail, setDetail, onSuccess }) => {
     }
   }, [isSuccess, isError, onSuccess]);
 
+  useEffect(() => {
+    // Cleanup function to reset body overflow when component unmounts
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, []);
+
   return (
-    <form onSubmit={addHandler} className='d-flex flex-column gap-2'>
-      <Select
-        isClearable
-        isSearchable
-        placeholder='Cari Guru'
-        value={
-          teacherOptions?.find((opt) => opt.value === formData.teacher) || null
-        }
-        options={teacherOptions}
-        onChange={handleTeacherChange}
-        isDisabled={!!detail?.id}
-      />
-
-      <Select
-        isClearable
-        isSearchable
-        isMulti
-        placeholder='Pilih Bank Soal'
-        value={bankOptions?.filter((opt) =>
-          formData.bank.some((b) => b.bankid === opt.value)
-        )}
-        options={bankOptions}
-        onChange={handleBankChange}
-        isDisabled={!formData.teacher || !!detail?.id}
-      />
-
-      {formData.bank
-        .filter((bank) => bank.type === "bank")
-        .map((bank) => (
-          <div key={bank.bankid} className='border p-2 rounded'>
-            <p className='m-0'>
-              {bankOptions?.find((b) => b.value === bank.bankid)?.label ||
-                detail?.banks?.find((b) => b.id === bank.bankid)?.name}
-            </p>
-            <input
-              type='number'
-              className='form-control mt-1'
-              placeholder={`Tampil Soal PG `}
-              value={bank.pg}
-              onChange={(e) => handleInput(e, bank.bankid, "pg")}
-            />
-            <input
-              type='number'
-              className='form-control mt-1'
-              placeholder={`Tampil Soal Essay `}
-              value={bank.essay}
-              onChange={(e) => handleInput(e, bank.bankid, "essay")}
-            />
+    <div
+      className="modal fade"
+      id="addexam"
+      data-bs-backdrop="static"
+      data-bs-keyboard="false"
+      tabIndex="-1"
+      aria-labelledby="staticBackdropLabel"
+      aria-hidden="true"
+    >
+      <div className="modal-dialog">
+        <form onSubmit={addHandler} className="modal-content">
+          <div className="modal-header">
+            <h1 className="modal-title fs-5" id="staticBackdropLabel">
+              {detail?.id ? "Edit Ujian" : "Tambah Ujian"}
+            </h1>
+            <button
+              type="button"
+              className="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
           </div>
-        ))}
+          <div className="modal-body">
+            <div className="d-flex flex-column gap-2">
+              <Select
+                isClearable
+                isSearchable
+                placeholder="Cari Guru"
+                value={
+                  teacherOptions?.find(
+                    (opt) => opt.value === formData.teacher
+                  ) || null
+                }
+                options={teacherOptions}
+                onChange={handleTeacherChange}
+                isDisabled={!!detail?.id}
+              />
 
-      <Select
-        isClearable
-        isSearchable
-        isMulti
-        placeholder='Untuk Kelas'
-        value={formData.classes}
-        options={classOptions}
-        onChange={handleClass}
-      />
+              <Select
+                isClearable
+                isSearchable
+                isMulti
+                placeholder="Pilih Bank Soal"
+                value={bankOptions?.filter((opt) =>
+                  formData.bank.some((b) => b.bankid === opt.value)
+                )}
+                options={bankOptions}
+                onChange={handleBankChange}
+                isDisabled={!formData.teacher || !!detail?.id}
+              />
 
-      <input
-        type='text'
-        name='name'
-        className='form-control'
-        placeholder='Nama Ujian'
-        value={formData.name || ""}
-        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-      />
+              {formData.bank
+                .filter((bank) => bank.type === "bank")
+                .map((bank) => (
+                  <div key={bank.bankid} className="border p-2 rounded">
+                    <p className="m-0">
+                      {bankOptions?.find((b) => b.value === bank.bankid)
+                        ?.label ||
+                        detail?.banks?.find((b) => b.id === bank.bankid)?.name}
+                    </p>
+                    <input
+                      type="number"
+                      className="form-control mt-1"
+                      placeholder={`Tampil Soal PG `}
+                      value={bank.pg}
+                      onChange={(e) => handleInput(e, bank.bankid, "pg")}
+                    />
+                    <input
+                      type="number"
+                      className="form-control mt-1"
+                      placeholder={`Tampil Soal Essay `}
+                      value={bank.essay}
+                      onChange={(e) => handleInput(e, bank.bankid, "essay")}
+                    />
+                  </div>
+                ))}
 
-      <input
-        type='number'
-        name='duration'
-        className='form-control'
-        placeholder='Durasi'
-        value={formData.duration || ""}
-        onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-      />
+              <Select
+                isClearable
+                isSearchable
+                isMulti
+                placeholder="Untuk Kelas"
+                value={formData.classes}
+                options={classOptions}
+                onChange={handleClass}
+              />
 
-      <input
-        type='number'
-        name='mc_score'
-        id='mc_score'
-        className='form-control'
-        placeholder='Persentase Nilai PG'
-        value={formData.mc_score}
-        onChange={(e) => setFormData({ ...formData, mc_score: e.target.value })}
-      />
+              <input
+                type="text"
+                name="name"
+                className="form-control"
+                placeholder="Nama Ujian"
+                value={formData.name || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+              />
 
-      <input
-        type='number'
-        name='essay_score'
-        id='essay_score'
-        className='form-control'
-        placeholder='Persentase Nilai Essay'
-        value={formData.essay_score}
-        onChange={(e) =>
-          setFormData({ ...formData, essay_score: e.target.value })
-        }
-      />
+              <input
+                type="number"
+                name="duration"
+                className="form-control"
+                placeholder="Durasi"
+                value={formData.duration || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, duration: e.target.value })
+                }
+              />
 
-      <select
-        name='isshuffle'
-        className='form-control'
-        value={formData.isshuffle}
-        onChange={(e) =>
-          setFormData({ ...formData, isshuffle: e.target.value })
-        }>
-        <option value='' hidden>
-          Acak Soal
-        </option>
-        <option value={true}>Ya</option>
-        <option value={false}>Tidak</option>
-      </select>
+              <input
+                type="number"
+                name="mc_score"
+                id="mc_score"
+                className="form-control"
+                placeholder="Persentase Nilai PG"
+                value={formData.mc_score}
+                onChange={(e) =>
+                  setFormData({ ...formData, mc_score: e.target.value })
+                }
+              />
 
-      <div className='d-flex justify-content-end gap-2'>
-        <button
-          type='button'
-          className='btn btn-sm btn-warning'
-          data-bs-dismiss='modal'
-          onClick={cancel}>
-          Batal
-        </button>
-        <button
-          type='submit'
-          className='btn btn-sm btn-success'
-          disabled={isLoading}>
-          {detail?.id ? "Update" : "Simpan"}
-        </button>
+              <input
+                type="number"
+                name="essay_score"
+                id="essay_score"
+                className="form-control"
+                placeholder="Persentase Nilai Essay"
+                value={formData.essay_score}
+                onChange={(e) =>
+                  setFormData({ ...formData, essay_score: e.target.value })
+                }
+              />
+
+              <select
+                name="isshuffle"
+                className="form-control"
+                value={formData.isshuffle}
+                onChange={(e) =>
+                  setFormData({ ...formData, isshuffle: e.target.value })
+                }
+              >
+                <option value="" hidden>
+                  Acak Soal
+                </option>
+                <option value={true}>Ya</option>
+                <option value={false}>Tidak</option>
+              </select>
+            </div>
+          </div>
+          <div className="modal-footer">
+            <button
+              type="button"
+              className="btn btn-sm btn-warning"
+              data-bs-dismiss="modal"
+              onClick={cancel}
+            >
+              Batal
+            </button>
+
+            <button
+              type="submit"
+              className="btn btn-sm btn-success"
+              disabled={isLoading}
+            >
+              {detail?.id ? "Update" : "Simpan"}
+            </button>
+          </div>
+        </form>
       </div>
-    </form>
+    </div>
   );
 };
 

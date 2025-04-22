@@ -517,6 +517,78 @@ router.get("/get-database", authorize("admin", "center"), async (req, res) => {
   }
 });
 
+router.get("/get-database-by-class", authorize("teacher"), async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    const { page, limit, search, classid } = req.query;
+    const offset = (page - 1) * limit;
+
+    const count = await client.query(
+      `SELECT COUNT(*) FROM cl_students 
+        WHERE classid = $1 AND student_name ILIKE $2`,
+      [classid, `%${search}%`]
+    );
+
+    const data = await client.query(
+      `SELECT cl_students.*,
+          a_periode.name as periode_name, 
+          a_homebase.name as homebase_name,
+          a_class.name as class_name,
+           CASE 
+            WHEN ds.id IS NOT NULL THEN
+              ROUND(
+                (
+                  CASE WHEN ds.name IS NOT NULL THEN 1 ELSE 0 END +
+                  CASE WHEN ds.nis IS NOT NULL THEN 1 ELSE 0 END +
+                  CASE WHEN ds.nisn IS NOT NULL THEN 1 ELSE 0 END +
+                  CASE WHEN ds.gender IS NOT NULL THEN 1 ELSE 0 END +
+                  CASE WHEN ds.birth_place IS NOT NULL THEN 1 ELSE 0 END +
+                  CASE WHEN ds.birth_date IS NOT NULL THEN 1 ELSE 0 END +
+                  CASE WHEN ds.height IS NOT NULL THEN 1 ELSE 0 END +
+                  CASE WHEN ds.weight IS NOT NULL THEN 1 ELSE 0 END +
+                  CASE WHEN ds.head IS NOT NULL THEN 1 ELSE 0 END +
+                  CASE WHEN ds.order_number IS NOT NULL THEN 1 ELSE 0 END +
+                  CASE WHEN ds.siblings IS NOT NULL THEN 1 ELSE 0 END +
+                  CASE WHEN ds.address IS NOT NULL THEN 1 ELSE 0 END +
+                  CASE WHEN ds.father_name IS NOT NULL THEN 1 ELSE 0 END +
+                  CASE WHEN ds.mother_name IS NOT NULL THEN 1 ELSE 0 END +
+                  CASE WHEN ds.province_name IS NOT NULL THEN 1 ELSE 0 END +
+                  CASE WHEN ds.city_name IS NOT NULL THEN 1 ELSE 0 END +
+                  CASE WHEN ds.district_name IS NOT NULL THEN 1 ELSE 0 END +
+                  CASE WHEN ds.village_name IS NOT NULL THEN 1 ELSE 0 END +
+                  CASE WHEN EXISTS (SELECT 1 FROM db_family df WHERE df.userid = cl_students.student) THEN 1 ELSE 0 END
+                ) * 100.0 / 19
+              )
+            ELSE 0
+          END as completeness
+        FROM cl_students 
+        LEFT JOIN a_periode ON cl_students.periode = a_periode.id
+        LEFT JOIN a_homebase ON cl_students.homebase = a_homebase.id
+        LEFT JOIN a_class ON cl_students.classid = a_class.id
+        LEFT JOIN db_student ds ON cl_students.student = ds.userid
+        WHERE classid = $1 AND student_name ILIKE $2
+        ORDER BY student_name
+        LIMIT $3 OFFSET $4`,
+      [classid, `%${search}%`, limit, offset]
+    );
+
+    const total = parseInt(count.rows[0].count);
+    const totalPages = Math.ceil(total / limit);
+
+    return res.status(200).json({
+      students: data.rows,
+      totalPages,
+      totalData: total,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
+  }
+});
+
 router.get(
   "/get-student-data",
   authorize("admin", "teacher", "student", "parent"),

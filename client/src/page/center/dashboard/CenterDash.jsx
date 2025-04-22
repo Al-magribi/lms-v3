@@ -15,7 +15,6 @@ import {
 import StudentDemographics from "./components/StudentDemographics";
 import GeographicalDistribution from "../../../components/geographical/GeographicalDistribution";
 import EntryYearDistribution from "./components/EntryYearDistribution";
-import FamilyInformation from "./components/FamilyInformation";
 
 // Register ChartJS components
 ChartJS.register(
@@ -38,12 +37,13 @@ const CenterDash = () => {
 
   if (isLoading) {
     return (
-      <Layout title={"Admin Dashboard"}>
+      <Layout title={"Dashboard Admin"} levels={["center"]}>
         <div
-          className='d-flex justify-content-center align-items-center'
-          style={{ height: "50vh" }}>
-          <div className='spinner-border text-primary' role='status'>
-            <span className='visually-hidden'>Loading...</span>
+          className="d-flex justify-content-center align-items-center"
+          style={{ height: "50vh" }}
+        >
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Memuat...</span>
           </div>
         </div>
       </Layout>
@@ -52,12 +52,12 @@ const CenterDash = () => {
 
   if (error) {
     return (
-      <Layout title={"Admin Dashboard"}>
-        <div className='alert alert-danger' role='alert'>
-          <h4 className='alert-heading'>Error!</h4>
-          <p>Failed to load dashboard data. Please try again later.</p>
+      <Layout title={"Dashboard Admin"} levels={["center"]}>
+        <div className="alert alert-danger" role="alert">
+          <h4 className="alert-heading">Error!</h4>
+          <p>Gagal memuat data dashboard. Silakan coba lagi nanti.</p>
           <hr />
-          <p className='mb-0'>Error details: {error.message}</p>
+          <p className="mb-0">Detail error: {error.message}</p>
         </div>
       </Layout>
     );
@@ -67,51 +67,48 @@ const CenterDash = () => {
     basicStats,
     studentsPerGrade,
     teacherComposition,
-    examStats,
-    learningStats,
     recentActivities,
     homebaseStats,
     activityLogs,
     studentDemographics,
     geographicalDistribution,
-    familyStats,
     entryStats,
   } = dashboardData || {};
 
   return (
-    <Layout title={"Admin Dashboard"} levels={["center"]}>
-      <div className='container-fluid'>
+    <Layout title={"Dashboard Admin"} levels={["center"]}>
+      <div className="container-fluid">
         {/* Overview Cards */}
-        <div className='row mb-4'>
-          <div className='col-md-3'>
-            <div className='card bg-primary text-white'>
-              <div className='card-body'>
-                <h5 className='card-title'>Total Students</h5>
-                <h2 className='card-text'>{basicStats?.total_students || 0}</h2>
+        <div className="row mb-4">
+          <div className="col-md-3">
+            <div className="card bg-primary text-white">
+              <div className="card-body">
+                <h5 className="card-title">Total Siswa</h5>
+                <h2 className="card-text">{basicStats?.total_students || 0}</h2>
               </div>
             </div>
           </div>
-          <div className='col-md-3'>
-            <div className='card bg-success text-white'>
-              <div className='card-body'>
-                <h5 className='card-title'>Total Teachers</h5>
-                <h2 className='card-text'>{basicStats?.total_teachers || 0}</h2>
+          <div className="col-md-3">
+            <div className="card bg-success text-white">
+              <div className="card-body">
+                <h5 className="card-title">Total Guru</h5>
+                <h2 className="card-text">{basicStats?.total_teachers || 0}</h2>
               </div>
             </div>
           </div>
-          <div className='col-md-3'>
-            <div className='card bg-info text-white'>
-              <div className='card-body'>
-                <h5 className='card-title'>Total Classes</h5>
-                <h2 className='card-text'>{basicStats?.total_classes || 0}</h2>
+          <div className="col-md-3">
+            <div className="card bg-info text-white">
+              <div className="card-body">
+                <h5 className="card-title">Total Kelas</h5>
+                <h2 className="card-text">{basicStats?.total_classes || 0}</h2>
               </div>
             </div>
           </div>
-          <div className='col-md-3'>
-            <div className='card bg-warning text-white'>
-              <div className='card-body'>
-                <h5 className='card-title'>Total Homebase</h5>
-                <h2 className='card-text'>{basicStats?.total_homebase || 0}</h2>
+          <div className="col-md-3">
+            <div className="card bg-warning text-white">
+              <div className="card-body">
+                <h5 className="card-title">Total Homebase</h5>
+                <h2 className="card-text">{basicStats?.total_homebase || 0}</h2>
               </div>
             </div>
           </div>
@@ -121,7 +118,7 @@ const CenterDash = () => {
         <StudentDemographics studentDemographics={studentDemographics} />
 
         {/* Geographical Distribution and Entry Year */}
-        <div className='row mb-3'>
+        <div className="row mb-3">
           <GeographicalDistribution data={geographicalDistribution} />
           <EntryYearDistribution
             entryStats={entryStats}
@@ -129,34 +126,28 @@ const CenterDash = () => {
           />
         </div>
 
-        {/* Family Information */}
-        <FamilyInformation
-          familyStats={familyStats}
-          studentDemographics={studentDemographics}
-        />
-
         {/* Homebase Statistics */}
-        <div className='row mb-4'>
-          <div className='col-md-12'>
-            <div className='card'>
-              <div className='card-header'>
-                <h5 className='card-title mb-0'>Statistik Homebase</h5>
+        <div className="row mb-4">
+          <div className="col-md-12">
+            <div className="card">
+              <div className="card-header">
+                <h5 className="card-title mb-0">Statistik Homebase</h5>
               </div>
-              <div className='card-body'>
-                <div className='table-responsive'>
-                  <table className='table table-striped'>
+              <div className="card-body">
+                <div className="table-responsive">
+                  <table className="table table-striped">
                     <thead>
                       <tr>
                         <th>Homebase</th>
-                        <th>Students</th>
-                        <th>Teachers</th>
-                        <th>Classes</th>
-                        <th>Subjects</th>
+                        <th>Siswa</th>
+                        <th>Guru</th>
+                        <th>Kelas</th>
+                        <th>Mata Pelajaran</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {homebaseStats?.map((homebase) => (
-                        <tr key={homebase.homebase_name}>
+                      {homebaseStats?.map((homebase, index) => (
+                        <tr key={`homebase-${index}-${homebase.homebase_name}`}>
                           <td>{homebase.homebase_name}</td>
                           <td>{homebase.total_students}</td>
                           <td>{homebase.total_teachers}</td>
@@ -173,26 +164,26 @@ const CenterDash = () => {
         </div>
 
         {/* Students Distribution by Grade */}
-        <div className='row mb-4'>
-          <div className='col-md-6'>
-            <div className='card'>
-              <div className='card-header'>
-                <h5 className='card-title mb-0'>Students by Grade</h5>
+        <div className="row mb-4">
+          <div className="col-md-6">
+            <div className="card">
+              <div className="card-header">
+                <h5 className="card-title mb-0">Siswa per Kelas</h5>
               </div>
-              <div className='card-body'>
-                <div className='table-responsive'>
-                  <table className='table table-striped'>
+              <div className="card-body">
+                <div className="table-responsive">
+                  <table className="table table-striped">
                     <thead>
                       <tr>
-                        <th>Grade</th>
-                        <th>Total Students</th>
-                        <th>Male</th>
-                        <th>Female</th>
+                        <th>Kelas</th>
+                        <th>Total Siswa</th>
+                        <th>Laki-laki</th>
+                        <th>Perempuan</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {studentsPerGrade?.map((grade) => (
-                        <tr key={grade.grade_name}>
+                      {studentsPerGrade?.map((grade, index) => (
+                        <tr key={`grade-${index}-${grade.grade_name}`}>
                           <td>{grade.grade_name}</td>
                           <td>{grade.total_students}</td>
                           <td>{grade.male_count}</td>
@@ -206,20 +197,20 @@ const CenterDash = () => {
             </div>
           </div>
 
-          <div className='col-md-6'>
-            <div className='card'>
-              <div className='card-header'>
-                <h5 className='card-title mb-0'>Teacher Composition</h5>
+          <div className="col-md-6">
+            <div className="card">
+              <div className="card-header">
+                <h5 className="card-title mb-0">Komposisi Guru</h5>
               </div>
-              <div className='card-body'>
-                <div className='row'>
-                  <div className='col-md-6'>
-                    <h6>Gender Distribution</h6>
-                    <p>Male: {teacherComposition?.male_count || 0}</p>
-                    <p>Female: {teacherComposition?.female_count || 0}</p>
+              <div className="card-body">
+                <div className="row">
+                  <div className="col-md-6">
+                    <h6>Distribusi Gender</h6>
+                    <p>Laki-laki: {teacherComposition?.male_count || 0}</p>
+                    <p>Perempuan: {teacherComposition?.female_count || 0}</p>
                   </div>
-                  <div className='col-md-6'>
-                    <h6>Homeroom Teachers</h6>
+                  <div className="col-md-6">
+                    <h6>Guru Wali Kelas</h6>
                     <p>Total: {teacherComposition?.homeroom_count || 0}</p>
                   </div>
                 </div>
@@ -228,78 +219,27 @@ const CenterDash = () => {
           </div>
         </div>
 
-        {/* Learning Materials and Exams */}
-        <div className='row mb-4'>
-          <div className='col-md-6'>
-            <div className='card'>
-              <div className='card-header'>
-                <h5 className='card-title mb-0'>Learning Materials</h5>
-              </div>
-              <div className='card-body'>
-                <div className='row'>
-                  <div className='col-md-4'>
-                    <h6>Chapters</h6>
-                    <p>{learningStats?.total_chapters || 0}</p>
-                  </div>
-                  <div className='col-md-4'>
-                    <h6>Contents</h6>
-                    <p>{learningStats?.total_contents || 0}</p>
-                  </div>
-                  <div className='col-md-4'>
-                    <h6>Files</h6>
-                    <p>{learningStats?.total_files || 0}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className='col-md-6'>
-            <div className='card'>
-              <div className='card-header'>
-                <h5 className='card-title mb-0'>Exam Statistics</h5>
-              </div>
-              <div className='card-body'>
-                <div className='row'>
-                  <div className='col-md-4'>
-                    <h6>Total Exams</h6>
-                    <p>{examStats?.total_exams || 0}</p>
-                  </div>
-                  <div className='col-md-4'>
-                    <h6>Active Exams</h6>
-                    <p>{examStats?.active_exams || 0}</p>
-                  </div>
-                  <div className='col-md-4'>
-                    <h6>Teachers</h6>
-                    <p>{examStats?.teacher_count || 0}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Recent Activities */}
-        <div className='row'>
-          <div className='col-md-12'>
-            <div className='card'>
-              <div className='card-header'>
-                <h5 className='card-title mb-0'>Recent Activities</h5>
+        <div className="row">
+          <div className="col-md-12">
+            <div className="card">
+              <div className="card-header">
+                <h5 className="card-title mb-0">Aktivitas Terbaru</h5>
               </div>
-              <div className='card-body'>
-                <div className='table-responsive'>
-                  <table className='table table-striped'>
+              <div className="card-body">
+                <div className="table-responsive">
+                  <table className="table table-striped">
                     <thead>
                       <tr>
-                        <th>Type</th>
-                        <th>Title</th>
-                        <th>Teacher</th>
-                        <th>Date</th>
+                        <th>Tipe</th>
+                        <th>Judul</th>
+                        <th>Guru</th>
+                        <th>Tanggal</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {recentActivities?.map((activity) => (
-                        <tr key={activity.id}>
+                      {recentActivities?.map((activity, index) => (
+                        <tr key={`activity-${index}-${activity.id}`}>
                           <td>{activity.type}</td>
                           <td>{activity.title}</td>
                           <td>{activity.teacher_name}</td>
