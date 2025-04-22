@@ -173,6 +173,7 @@ router.post("/signin", async (req, res) => {
 				GROUP BY 
 					u_teachers.id, 
 					a_class.name,
+					a_class.id,
 					hb.name`,
         [user.id]
       );
@@ -352,8 +353,8 @@ router.get(
 						WHERE u_teachers.id = $1
 						GROUP BY 
 							u_teachers.id, 
-              a_class.id,
-							a_class.name,
+              a_class.name,
+							a_class.id,
 							hb.name`,
           transform: (row) => ({
             id: row.id,
