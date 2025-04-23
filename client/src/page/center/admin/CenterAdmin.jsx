@@ -5,7 +5,7 @@ import TableData from "./TableData";
 
 const CenterAdmin = () => {
   return (
-    <Layout title={"Administrator"}>
+    <Layout title={"Administrator"} levels={["center"]}>
       <div className="row g-2">
         <div className="col-lg-3 col-12">
           <Form />

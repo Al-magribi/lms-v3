@@ -6,7 +6,7 @@ import TableData from "./TableData";
 const CenterHomebase = () => {
   const [detail, setDetail] = useState("");
   return (
-    <Layout title={"Satuan Pendidikan"}>
+    <Layout title={"Satuan Pendidikan"} levels={["center"]}>
       <div className="h-100 row g-2">
         <div className="col-lg-3 col-12">
           <Form detail={detail} setDetail={setDetail} />

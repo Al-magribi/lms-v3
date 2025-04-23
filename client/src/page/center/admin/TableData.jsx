@@ -55,52 +55,52 @@ const TableData = () => {
       totalData={totalData}
       totalPages={totalPages}
     >
-      <table className='table table-bordered table-striped table-hover'>
+      <table className="table table-bordered table-striped table-hover">
         <thead>
           <tr>
-            <td className='text-center'>No</td>
-            <td className='text-center'>Satuan</td>
-            <td className='text-center'>Nama</td>
-            <td className='text-center'>Email</td>
-            <td className='text-center'>Whatsapp</td>
-            <td className='text-center'>Status</td>
-            <td className='text-center'>Aksi</td>
+            <td className="text-center">No</td>
+            <td className="text-center">Satuan</td>
+            <td className="text-center">Nama</td>
+            <td className="text-center">Email</td>
+            <td className="text-center">Whatsapp</td>
+            <td className="text-center">Status</td>
+            <td className="text-center">Aksi</td>
           </tr>
         </thead>
         <tbody>
           {admin?.map((item, i) => (
             <tr key={i}>
-              <td className='align-middle text-center'>
+              <td className="align-middle text-center">
                 {(page - 1) * limit + i + 1}
               </td>
-              <td className='align-middle text-center'>
+              <td className="align-middle text-center">
                 {item.homebase ? item.homebase : "Pusat"}
               </td>
-              <td className='align-middle'>{item.username}</td>
-              <td className='align-middle text-center'>{item.email}</td>
-              <td className='align-middle text-center'>{item.phone}</td>
-              <td className='align-middle text-center'>
+              <td className="align-middle">{item.username}</td>
+              <td className="align-middle text-center">{item.email}</td>
+              <td className="align-middle text-center">{item.phone}</td>
+              <td className="align-middle text-center">
                 {item.isactive ? (
-                  <span className='badge text-bg-success'>aktif</span>
+                  <span className="badge text-bg-success">aktif</span>
                 ) : (
-                  <span className='badge text-bg-danger'>non-aktif</span>
+                  <span className="badge text-bg-danger">non-aktif</span>
                 )}
               </td>
-              <td className='align-middle text-center'>
-                <div className='d-flex justify-content-center gap-2'>
-                  <div className='d-flex gap-2 justify-content-center'>
+              <td className="align-middle text-center">
+                <div className="d-flex justify-content-center gap-2">
+                  <div className="d-flex gap-2 justify-content-center">
                     <button
-                      className='btn btn-sm btn-warning'
+                      className="btn btn-sm btn-warning"
                       onClick={() => copyLink(item.activation)}
                     >
-                      <i class='bi bi-link-45deg'></i>
+                      <i className="bi bi-link-45deg"></i>
                     </button>
                     <button
-                      className='btn btn-sm btn-danger'
+                      className="btn btn-sm btn-danger"
                       disabled={isLoading}
                       onClick={() => deleteHandler(item.id)}
                     >
-                      <i className='bi bi-folder-minus'></i>
+                      <i className="bi bi-folder-minus"></i>
                     </button>
                   </div>
                 </div>

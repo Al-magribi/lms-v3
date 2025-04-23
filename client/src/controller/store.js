@@ -7,6 +7,8 @@ import { ApiAuth } from "./api/auth/ApiAuth";
 import { ApiHomebase } from "./api/center/ApiHomebase";
 import { ApiAdmin } from "./api/center/ApiAdmin";
 import { ApiCenterData } from "./api/center/ApiCenterData";
+import { ApiApp } from "./api/center/ApiApp";
+
 // Admin satuan
 import { ApiPeriode } from "./api/admin/ApiPeriode";
 import { ApiGrade } from "./api/admin/ApiGrade";
@@ -48,6 +50,7 @@ const store = configureStore({
     [ApiHomebase.reducerPath]: ApiHomebase.reducer,
     [ApiAdmin.reducerPath]: ApiAdmin.reducer,
     [ApiCenterData.reducerPath]: ApiCenterData.reducer,
+    [ApiApp.reducerPath]: ApiApp.reducer,
 
     [ApiPeriode.reducerPath]: ApiPeriode.reducer,
     [ApiGrade.reducerPath]: ApiGrade.reducer,
@@ -83,6 +86,7 @@ const store = configureStore({
       ApiHomebase.middleware,
       ApiAdmin.middleware,
       ApiCenterData.middleware,
+      ApiApp.middleware,
 
       ApiPeriode.middleware,
       ApiGrade.middleware,

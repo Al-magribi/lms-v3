@@ -7,13 +7,13 @@ const SendEmail = async (options) => {
     service: "gmail",
     secure: true,
     auth: {
-      user: process.env.SMTP_USER,
+      user: process.env.SMTP_EMAIL,
       pass: process.env.SMTP_PASS,
     },
   });
 
   const message = {
-    from: `${process.env.SMTP_NAME} <${process.env.SMTP_FROM_EMAIL}>`,
+    from: `<${process.env.SMTP_EMAIL}>`,
     to: options.email,
     subject: options.subject,
     text: options.message,

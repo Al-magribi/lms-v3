@@ -1,18 +1,18 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
-import {
-  useSigninMutation,
-  useLoadUserMutation,
-} from "../controller/api/auth/ApiAuth";
+import { useSigninMutation } from "../controller/api/auth/ApiAuth";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { setLogin } from "../controller/slice/AuthSlice";
 import "./Index.css";
+import { useGetAppQuery } from "../controller/api/center/ApiApp";
 
 const Index = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user, isSignin } = useSelector((state) => state.auth);
+
+  const { data: app } = useGetAppQuery();
 
   const routes = {
     center: "/center-dashboard",
@@ -160,7 +160,7 @@ const Index = () => {
         style={{ height: "100vh" }}
       >
         <img
-          src="/logo.png"
+          src={app?.logo ? app?.logo : "/logo.png"}
           alt="logo"
           style={{ height: 120, width: 120, marginBottom: "1rem" }}
         />

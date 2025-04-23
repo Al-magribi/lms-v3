@@ -10,10 +10,10 @@ const config = {
   port: 5432,
   max: 20,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 10000,
   application_name: "LMS-V3",
-  statement_timeout: 10000,
-  query_timeout: 10000,
+  statement_timeout: 30000,
+  query_timeout: 30000,
   prepare: true,
   keepalive: true,
   keepaliveInitialDelayMillis: 10000,
@@ -30,22 +30,33 @@ pool.on("remove", (client) => {
 });
 
 const connectToDatabase = async () => {
-  try {
-    const client = await pool.connect();
-    const result = await client.query("SELECT NOW() as current_time");
-    client.release();
+  let retries = 5;
+  while (retries > 0) {
+    try {
+      const client = await pool.connect();
+      const result = await client.query("SELECT NOW() as current_time");
+      client.release();
 
-    console.log(
-      `Connected to PostgreSQL database: ${result.rows[0].current_time}`
-    );
-  } catch (err) {
-    console.error("Error connecting to PostgreSQL:", err);
+      console.log(
+        `Connected to PostgreSQL database: ${result.rows[0].current_time}`
+      );
+      return;
+    } catch (err) {
+      console.error(
+        `Error connecting to PostgreSQL (attempt ${6 - retries}/5):`,
+        err
+      );
+      retries--;
+      if (retries === 0) {
+        throw new Error("Failed to connect to database after 5 attempts");
+      }
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+    }
   }
 };
 
 pool.on("error", (err, client) => {
   console.error("Unexpected error on idle client", err);
-  process.exit(-1);
 });
 
 export { pool, connectToDatabase };

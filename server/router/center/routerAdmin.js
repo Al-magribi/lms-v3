@@ -83,7 +83,7 @@ router.post("/add-admin", authorize("center"), async (req, res) => {
         [name, email, hashedPassword, level, home, phone, activation]
       );
 
-      const url = `${process.env.URL}/aktivasi-akun/${data.rows[0].activation}`;
+      const url = `${process.env.DOMAIN}/aktivasi-akun/${data.rows[0].activation}`;
       const message = `Link aktivasi: ${url}`;
 
       await SendEmail({ email: email, subject: "Aktivasi Akun", message });

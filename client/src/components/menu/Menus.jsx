@@ -17,7 +17,7 @@ export const CenterMenus = [
   { label: "Market", link: "/center-market", icon: <Pi.PiTarget /> },
   {
     label: "Pengaturan",
-    link: "/center-setting",
+    link: "/center-pengaturan",
     icon: <Lu.LuSettings />,
   },
 ];

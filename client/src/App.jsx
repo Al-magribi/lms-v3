@@ -8,6 +8,7 @@ import { setLogin } from "./controller/slice/AuthSlice";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import LoadingScreen from "./components/loader/LoadingScreen";
+import { useGetAppQuery } from "./controller/api/center/ApiApp";
 
 const Index = lazy(() => import("./home/Index"));
 // Otentikasi
@@ -24,6 +25,7 @@ const CenterStudents = lazy(() =>
   import("./page/center/student/CenterStudents")
 );
 const CenterMarket = lazy(() => import("./page/center/market/CenterMarket"));
+const CenterSetting = lazy(() => import("./page/center/setting/CenterSetting"));
 
 // Admin Satuan
 const AdminDash = lazy(() => import("./page/admin/dashboard/AdminDash"));
@@ -85,6 +87,23 @@ const DbList = lazy(() => import("./page/Database/DbList"));
 function App() {
   const dispatch = useDispatch();
   const [loadUser] = useLoadUserMutation();
+  const { data: appData } = useGetAppQuery();
+
+  // Update favicon when app.logo is available
+  useEffect(() => {
+    if (appData?.logo) {
+      const favicon = document.querySelector("link[rel='icon']");
+      if (favicon) {
+        favicon.href = appData.logo;
+      } else {
+        const newFavicon = document.createElement("link");
+        newFavicon.rel = "icon";
+        newFavicon.type = "image/svg+xml";
+        newFavicon.href = appData.logo;
+        document.head.appendChild(newFavicon);
+      }
+    }
+  }, [appData]);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -121,8 +140,9 @@ function App() {
           desc={
             "LMS mempermudah pembelajaran online dengan fitur interaktif. Solusi ideal untuk pengajar dan pelajar modern."
           }
+          favicon={appData?.logo}
         />
-        <Suspense fallback={<LoadingScreen />}>
+        <Suspense fallback={<LoadingScreen logo={appData?.logo} />}>
           <Routes>
             <Route path="*" element={<Index />} />
 
@@ -143,6 +163,8 @@ function App() {
             <Route path="/center-siswa" element={<CenterStudents />} />
 
             <Route path="/center-market" element={<CenterMarket />} />
+
+            <Route path="/center-pengaturan" element={<CenterSetting />} />
 
             {/*Admin Satuan */}
             <Route path="/admin-dashboard" element={<AdminDash />} />

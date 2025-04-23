@@ -14,7 +14,7 @@ import { setLogout } from "../../controller/slice/AuthSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { useLogoutMutation } from "../../controller/api/auth/ApiAuth";
 import * as Pi from "react-icons/pi";
-
+import { useGetAppQuery } from "../../controller/api/center/ApiApp";
 const center = "/center-dashboard";
 const admin = "/admin-dashboard";
 const teacher = "/guru-dashboard";
@@ -31,6 +31,7 @@ const Layout = ({ children, title, desc, levels }) => {
 
   const { user, isSignin } = useSelector((state) => state.auth);
   const [logout, { isSuccess, isLoading, error, reset }] = useLogoutMutation();
+  const { data: appData } = useGetAppQuery();
 
   const logoutHandler = () => {
     toast.promise(
@@ -133,7 +134,7 @@ const Layout = ({ children, title, desc, levels }) => {
                 : tahfiz
             }
           >
-            <span className="d-none d-md-inline">
+            <span className="d-inline">
               <i className="bi bi-person-circle me-2"></i>
               {user?.name}
             </span>
@@ -263,7 +264,9 @@ const Layout = ({ children, title, desc, levels }) => {
         <div className="container-fluid text-center">
           <div className="d-flex align-items-center justify-content-center gap-2">
             <i className="bi bi-c-circle"></i>
-            <small>LMS {new Date().getFullYear()} | NIBS </small>
+            <small>
+              ALMADEV {new Date().getFullYear()} | {appData?.app_name}
+            </small>
           </div>
         </div>
       </footer>
