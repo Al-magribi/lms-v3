@@ -2,6 +2,20 @@ import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useAddParentsDataMutation } from "../../controller/api/database/ApiDatabase";
 
+const formatDate = (dateString) => {
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return ""; // Handle invalid dates
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const formatPhoneNumber = (phone) => {
+  if (!phone) return "";
+  return phone.startsWith("0") ? "62" + phone.substring(1) : phone;
+};
+
 const Parent = ({ studentData, userid, onRefetch }) => {
   const [formData, setFormData] = useState({
     userid: userid,
@@ -9,18 +23,22 @@ const Parent = ({ studentData, userid, onRefetch }) => {
     father_name: studentData?.father_name || "",
     father_birth_place: studentData?.father_birth_place || "",
     father_birth_date: studentData?.father_birth_date
-      ? new Date(studentData.father_birth_date).toISOString().split("T")[0]
-      : new Date().toISOString().split("T")[0],
+      ? formatDate(studentData.father_birth_date)
+      : formatDate(new Date()),
     father_job: studentData?.father_job || "",
-    father_phone: studentData?.father_phone || "",
+    father_phone: studentData?.father_phone
+      ? formatPhoneNumber(studentData.father_phone)
+      : "",
     mother_nik: studentData?.mother_nik || "",
     mother_name: studentData?.mother_name || "",
     mother_birth_place: studentData?.mother_birth_place || "",
     mother_birth_date: studentData?.mother_birth_date
-      ? new Date(studentData.mother_birth_date).toISOString().split("T")[0]
-      : new Date().toISOString().split("T")[0],
+      ? formatDate(studentData.mother_birth_date)
+      : formatDate(new Date()),
     mother_job: studentData?.mother_job || "",
-    mother_phone: studentData?.mother_phone || "",
+    mother_phone: studentData?.mother_phone
+      ? formatPhoneNumber(studentData.mother_phone)
+      : "",
   });
 
   const [addParentsData, { isLoading, isSuccess, isError, reset }] =
@@ -28,10 +46,22 @@ const Parent = ({ studentData, userid, onRefetch }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+
+    // Special handling for phone numbers
+    if (name === "father_phone" || name === "mother_phone") {
+      const formattedValue = value.startsWith("0")
+        ? "62" + value.substring(1)
+        : value;
+      setFormData((prev) => ({
+        ...prev,
+        [name]: formattedValue,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   const handleSubmit = (e) => {
@@ -256,6 +286,13 @@ const Parent = ({ studentData, userid, onRefetch }) => {
               className="btn btn-sm btn-success"
               disabled={isLoading}
             >
+              {isLoading ? (
+                <span
+                  className="spinner-border spinner-border-sm me-1"
+                  role="status"
+                  aria-hidden="true"
+                ></span>
+              ) : null}
               Simpan Data
             </button>
           </div>

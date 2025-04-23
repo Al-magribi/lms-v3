@@ -125,7 +125,8 @@ router.put(
 router.put("/update-smtp", authorize("center"), async (req, res) => {
   const client = await pool.connect();
   try {
-    const { smtp_host, smtp_port, smtp_email, smtp_password } = req.body;
+    const { smtp_host, smtp_port, smtp_email, smtp_password, smtp_domain } =
+      req.body;
     const { rows: app } = await client.query("SELECT * FROM app_config");
 
     await client.query(
@@ -133,9 +134,10 @@ router.put("/update-smtp", authorize("center"), async (req, res) => {
             SET smtp_host = $1, 
             smtp_port = $2, 
             smtp_email = $3, 
-            smtp_password = $4 
-            WHERE id = $5`,
-      [smtp_host, smtp_port, smtp_email, smtp_password, app[0].id]
+            smtp_password = $4,
+            smtp_domain = $5
+            WHERE id = $6`,
+      [smtp_host, smtp_port, smtp_email, smtp_password, smtp_domain, app[0].id]
     );
 
     res.status(200).json({ message: "Berhasil diperbarui" });

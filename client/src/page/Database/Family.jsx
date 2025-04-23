@@ -5,13 +5,22 @@ import {
   useDeleteFamilyDataMutation,
 } from "../../controller/api/database/ApiDatabase";
 
+const formatDate = (dateString) => {
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return ""; // Handle invalid dates
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 const Family = ({ families, onRefetch, userid }) => {
   const initialFormState = {
     id: "",
     userid: userid,
     name: "",
     gender: "",
-    birth_date: new Date().toISOString().split("T")[0],
+    birth_date: formatDate(new Date()),
   };
 
   const [formData, setFormData] = useState(initialFormState);
@@ -72,7 +81,7 @@ const Family = ({ families, onRefetch, userid }) => {
       userid: family.userid,
       name: family.name,
       gender: family.gender,
-      birth_date: new Date(family.birth_date).toISOString().split("T")[0],
+      birth_date: formatDate(family.birth_date),
     });
     setFormErrors({});
   };

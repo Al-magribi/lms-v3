@@ -12,6 +12,15 @@ import {
 } from "../../controller/api/database/ApiDatabase";
 import toast from "react-hot-toast";
 
+const formatDate = (dateString) => {
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return ""; // Handle invalid dates
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 const Biodata = ({ studentData, onRefetch }) => {
   const [formData, setFormData] = useState({
     userid: studentData?.userid || "",
@@ -26,8 +35,8 @@ const Biodata = ({ studentData, onRefetch }) => {
     nis: studentData?.nis || "",
     birth_place: studentData?.birth_place || "",
     birth_date: studentData?.birth_date
-      ? new Date(studentData.birth_date).toISOString().split("T")[0]
-      : new Date().toISOString().split("T")[0],
+      ? formatDate(studentData.birth_date)
+      : formatDate(new Date()),
     order_number: studentData?.order_number || "",
     siblings: studentData?.siblings || "",
     height: studentData?.height || "",
@@ -64,10 +73,12 @@ const Biodata = ({ studentData, onRefetch }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => {
-      const newData = { ...prev, [name]: value };
+      const newData = { ...prev };
 
-      // Handle entry selection
-      if (name === "entryid") {
+      if (name === "birth_date") {
+        // Use formatDate for date input values
+        newData[name] = value; // No need to format here as HTML date input provides YYYY-MM-DD
+      } else if (name === "entryid") {
         const selectedPeriode = periode?.find((p) => p.id === parseInt(value));
         if (selectedPeriode) {
           newData.entryid = selectedPeriode.id;
@@ -122,6 +133,8 @@ const Biodata = ({ studentData, onRefetch }) => {
           newData.villageid = selectedVillage.id.trim();
           newData.village_name = selectedVillage.name;
         }
+      } else {
+        newData[name] = value;
       }
 
       return newData;

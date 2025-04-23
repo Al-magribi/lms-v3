@@ -45,6 +45,7 @@ const SmtpSetting = ({ app }) => {
       smtp_port: formData.smtp_port,
       smtp_email: formData.smtp_email,
       smtp_password: formData.smtp_password,
+      smtp_domain: formData.smtp_domain,
     };
 
     toast.promise(
