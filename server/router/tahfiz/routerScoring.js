@@ -66,11 +66,13 @@ router.get("/get-targets", authorize("tahfiz"), async (req, res) => {
   try {
     // Fetch all target data sorted by grade and juz name
     const targetData = await client.query(
-      `SELECT t_target.*, t_juz.name AS juz_name, a_grade.name AS grade_name
+      `SELECT t_target.*,
+          t_juz.name AS juz_name, 
+          a_grade.name AS grade_name
       FROM t_target 
-      LEFT JOIN t_juz ON t_juz.id = t_target.juz_id
-      LEFT JOIN a_grade ON a_grade.id = t_target.grade_id
-      ORDER BY a_grade.name::INTEGER ASC, t_juz.name DESC`
+        LEFT JOIN t_juz ON t_juz.id = t_target.juz_id
+        LEFT JOIN a_grade ON a_grade.id = t_target.grade_id
+        ORDER BY a_grade.name::INTEGER ASC, t_juz.name DESC`
     );
 
     // Fetch total ayat and total lines for each juz
@@ -90,6 +92,7 @@ router.get("/get-targets", authorize("tahfiz"), async (req, res) => {
           juz: target.juz_name,
           total_ayat: parseInt(ayatData.rows[0].total_ayat, 10),
           total_line: parseInt(ayatData.rows[0].total_line, 10),
+          id: target.id,
         };
       })
     );
@@ -109,9 +112,11 @@ router.get("/get-targets", authorize("tahfiz"), async (req, res) => {
 
       // Add juz data
       gradeEntry.target.push({
+        target_id: target.id,
         juz: target.juz,
         total_ayat: target.total_ayat,
         total_line: target.total_line,
+        id: target.id,
       });
 
       // Sum total ayat and total line for the grade
@@ -137,7 +142,7 @@ router.delete("/delete-target", authorize("tahfiz"), async (req, res) => {
 
     // Check if target exists
     const targetExists = await client.query(
-      "SELECT * FROM t_target WHERE id = $1",
+      `SELECT * FROM t_target WHERE id = $1`,
       [id]
     );
 

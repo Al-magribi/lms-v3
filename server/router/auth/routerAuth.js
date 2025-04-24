@@ -516,49 +516,53 @@ router.post("/logout", async (req, res) => {
   }
 });
 
-router.put("/admin-update-profile", authorize("admin"), async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const { id } = req.user;
-    const { name, email, phone, newPassword, oldPassword } = req.body;
+router.put(
+  "/admin-update-profile",
+  authorize("admin", "tahfiz"),
+  async (req, res) => {
+    const client = await pool.connect();
+    try {
+      const { id } = req.user;
+      const { name, email, phone, newPassword, oldPassword } = req.body;
 
-    const user = await client.query(`SELECT * FROM u_admin WHERE id = $1`, [
-      id,
-    ]);
+      const user = await client.query(`SELECT * FROM u_admin WHERE id = $1`, [
+        id,
+      ]);
 
-    if (user.rowCount === 0) {
-      return res.status(404).json({ message: "User tidak ditemukan" });
-    }
-
-    const userData = user.rows[0];
-
-    if (oldPassword) {
-      const match = await bcrypt.compare(oldPassword, userData.password);
-      if (!match) {
-        return res.status(401).json({ message: "Password lama salah" });
+      if (user.rowCount === 0) {
+        return res.status(404).json({ message: "User tidak ditemukan" });
       }
 
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      const userData = user.rows[0];
 
-      await client.query(
-        `UPDATE u_admin SET name = $1, email = $2, phone = $3, password = $4 WHERE id = $5`,
-        [name, email, phone, hashedPassword, id]
-      );
-    } else {
-      await client.query(
-        `UPDATE u_admin SET name = $1, email = $2, phone = $3 WHERE id = $4`,
-        [name, email, phone, id]
-      );
+      if (oldPassword) {
+        const match = await bcrypt.compare(oldPassword, userData.password);
+        if (!match) {
+          return res.status(401).json({ message: "Password lama salah" });
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        await client.query(
+          `UPDATE u_admin SET name = $1, email = $2, phone = $3, password = $4 WHERE id = $5`,
+          [name, email, phone, hashedPassword, id]
+        );
+      } else {
+        await client.query(
+          `UPDATE u_admin SET name = $1, email = $2, phone = $3 WHERE id = $4`,
+          [name, email, phone, id]
+        );
+      }
+
+      return res.status(200).json({ message: "Profile berhasil diubah" });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: error.message });
+    } finally {
+      client.release();
     }
-
-    return res.status(200).json({ message: "Profile berhasil diubah" });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: error.message });
-  } finally {
-    client.release();
   }
-});
+);
 
 router.put(
   "/teacher-update-profile",

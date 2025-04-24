@@ -69,7 +69,6 @@ router.post(
       address,
     } = req.body;
 
-    // Pengecekan apakah NIS sudah ada di db_student
     const studentCheck = await executeQuery(
       client,
       `SELECT * FROM db_student WHERE userid = $1`,
@@ -77,7 +76,6 @@ router.post(
     );
 
     if (studentCheck.rows.length > 0) {
-      // Jika NIS ditemukan, update kolom yang sesuai dengan data dari req.body
       await executeQuery(
         client,
         `UPDATE db_student SET
@@ -146,7 +144,6 @@ router.post(
 
       return res.status(200).json({ message: "Berhasil diperbarui" });
     } else {
-      // Jika NIS tidak ditemukan, tambahkan data baru ke db_student
       await executeQuery(
         client,
         `INSERT INTO db_student (
@@ -221,7 +218,6 @@ router.post(
       mother_phone,
     } = req.body;
 
-    // Check if the student exists in db_student
     const studentCheck = await executeQuery(
       client,
       `SELECT * FROM db_student WHERE userid = $1`,

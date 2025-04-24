@@ -83,6 +83,7 @@ const TahfizMemo = lazy(() => import("./page/tahfiz/memo/TahfizMemo"));
 const TahfizStudent = lazy(() => import("./page/tahfiz/memo/TahfizStudent"));
 const TahfizReport = lazy(() => import("./page/tahfiz/report/TahfizReport"));
 const StudentReport = lazy(() => import("./page/tahfiz/report/StudentReport"));
+const TahfizProfile = lazy(() => import("./page/tahfiz/profile/TahfizProfile"));
 
 // Database
 const DbPage = lazy(() => import("./page/Database/DbPage"));
@@ -275,6 +276,8 @@ function App() {
               path="/tahfiz-laporan-siswa/:userid/:name"
               element={<StudentReport />}
             />
+
+            <Route path="/tahfiz-profile" element={<TahfizProfile />} />
 
             {/* Database */}
             <Route path="/database/:userid/:name" element={<DbPage />} />

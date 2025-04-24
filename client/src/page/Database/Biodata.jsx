@@ -21,9 +21,9 @@ const formatDate = (dateString) => {
   return `${year}-${month}-${day}`;
 };
 
-const Biodata = ({ studentData, onRefetch }) => {
+const Biodata = ({ studentData, onRefetch, userid }) => {
   const [formData, setFormData] = useState({
-    userid: studentData?.userid || "",
+    userid: userid,
     entryid: studentData?.entryid || "",
     entry_name: studentData?.entry_name || "",
     homebaseid: studentData?.homebaseid || "",
@@ -87,7 +87,7 @@ const Biodata = ({ studentData, onRefetch }) => {
       }
       // Handle homebase selection
       else if (name === "homebaseid") {
-        const selectedHomebase = homebase?.find((h) => h.id === value);
+        const selectedHomebase = homebase?.find((h) => h.id == value);
         if (selectedHomebase) {
           newData.homebaseid = selectedHomebase.id;
           newData.homebase_name = selectedHomebase.name;

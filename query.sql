@@ -610,4 +610,6 @@ CREATE INDEX idx_village_district ON db_village(districtid);
 
 ALTER TABLE "db_student" ADD COLUMN "createdat" TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 
+ALTER TABLE "u_students" ADD COLUMN "periode" INT REFERENCES a_periode(id) ON DELETE CASCADE;
+
 SELECT setval('db_student_id_seq', (SELECT MAX(id) FROM db_student));

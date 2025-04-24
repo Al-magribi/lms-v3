@@ -103,7 +103,8 @@ router.get("/get-students", authorize("admin"), async (req, res) => {
       ),
       client.query(
         `SELECT u_students.*,
-				a_periode.id AS entry_id, a_periode.name AS entry,
+				a_periode.id AS entry_id,
+        a_periode.name AS entry,
 				a_homebase.name AS homebase
 				FROM u_students
 				LEFT JOIN a_periode ON u_students.entry = a_periode.id
@@ -148,4 +149,28 @@ router.delete("/delete-student", authorize("admin"), async (req, res) => {
   }
 });
 
+router.put("/update-periode", authorize("admin"), async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { homebase } = req.user;
+
+    const data = await client.query(
+      `SELECT * FROM a_periode WHERE homebase = $1 AND isactive = true`,
+      [homebase]
+    );
+
+    const periode = data.rows[0].id;
+
+    await client.query(
+      `UPDATE u_students SET periode = $1 WHERE homebase = $2`,
+      [periode, homebase]
+    );
+
+    res.status(200).json({ message: "Berhasil memperbarui periode" });
+  } catch (error) {
+    console.log(error);
+  } finally {
+    client.release();
+  }
+});
 export default router;

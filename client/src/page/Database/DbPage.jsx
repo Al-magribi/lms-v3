@@ -16,10 +16,6 @@ const DbPage = () => {
   const { data, isLoading, isError, refetch } = useGetStudentDataQuery(userid);
   const { user } = useSelector((state) => state.auth);
 
-  if (isError) {
-    toast.error("Gagal mengambil data siswa");
-  }
-
   const studentData = data?.data;
 
   const handleTab = (tab) => {
@@ -52,18 +48,18 @@ const DbPage = () => {
     );
   }
 
-  if (!studentData) {
-    return (
-      <Layout
-        title={`Database ${name.replace(/-/g, " ")}`}
-        levels={["admin", "teacher", "student", "parent"]}
-      >
-        <div className="alert alert-danger text-center">
-          Data siswa tidak ditemukan
-        </div>
-      </Layout>
-    );
-  }
+  // if (!studentData) {
+  //   return (
+  //     <Layout
+  //       title={`Database ${name.replace(/-/g, " ")}`}
+  //       levels={["admin", "teacher", "student", "parent"]}
+  //     >
+  //       <div className="alert alert-danger text-center">
+  //         Data siswa tidak ditemukan
+  //       </div>
+  //     </Layout>
+  //   );
+  // }
 
   return (
     <Layout
@@ -79,21 +75,21 @@ const DbPage = () => {
                   <div className="d-flex flex-wrap gap-2">
                     <span className="badge bg-secondary">
                       <i className="bi bi-calendar me-1"></i>
-                      {studentData.periode_name}
+                      {studentData?.periode_name}
                     </span>
 
                     <span className="badge bg-primary">
-                      {studentData.grade_name} {studentData.class_name}
+                      {studentData?.grade_name} {studentData?.class_name}
                     </span>
 
                     <span className="badge bg-info">
                       <i className="bi bi-person me-1"></i>
-                      {studentData.student_gender}
+                      {studentData?.student_gender}
                     </span>
 
                     <span className="badge bg-success">
                       <i className="bi bi-check-circle me-1"></i>
-                      {studentData.isactive ? "Aktif" : "Tidak Aktif"}
+                      {studentData?.isactive ? "Aktif" : "Tidak Aktif"}
                     </span>
                   </div>
 
@@ -154,21 +150,22 @@ const DbPage = () => {
                 <div className="tab-content">
                   {activeTab === "biodata" && (
                     <Biodata
-                      studentData={studentData}
+                      studentData={studentData && studentData}
+                      userid={userid}
                       onRefetch={handleRefetch}
                     />
                   )}
                   {activeTab === "parent" && (
                     <Parent
-                      studentData={studentData}
-                      userid={studentData.userid}
+                      studentData={studentData && studentData}
+                      userid={userid}
                       onRefetch={handleRefetch}
                     />
                   )}
                   {activeTab === "family" && (
                     <Family
-                      families={studentData.family}
-                      userid={studentData.userid}
+                      families={studentData?.family}
+                      userid={userid}
                       onRefetch={handleRefetch}
                     />
                   )}
