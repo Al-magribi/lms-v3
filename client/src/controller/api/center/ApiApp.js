@@ -29,6 +29,14 @@ export const ApiApp = createApi({
       }),
       invalidatesTags: ["App"],
     }),
+    updateProfile: builder.mutation({
+      query: (data) => ({
+        url: "/update-profile",
+        method: "PUT",
+        body: data,
+      }),
+      invalidatesTags: ["App", "User"],
+    }),
   }),
 });
 
@@ -37,4 +45,5 @@ export const {
   useGetAppDataQuery,
   useUpdateAppMutation,
   useUpdateSmtpMutation,
+  useUpdateProfileMutation,
 } = ApiApp;

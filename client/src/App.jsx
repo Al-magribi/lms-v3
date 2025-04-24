@@ -38,6 +38,7 @@ const AdminClass = lazy(() => import("./page/admin/class/AdminClass"));
 const AdminSubject = lazy(() => import("./page/admin/subject/AdminSubject"));
 const AdminCbt = lazy(() => import("./page/admin/cbt/AdminCbt"));
 const AdminExam = lazy(() => import("./page/admin/cbt/AdminExam"));
+const AdminProfile = lazy(() => import("./page/admin/profile/AdminProfile"));
 
 // Teacher
 const TeacherDash = lazy(() => import("./page/teacher/dashboard/TeacherDash"));
@@ -45,6 +46,9 @@ const TeacherCbt = lazy(() => import("./page/teacher/cbt/TeacherCbt"));
 const TeacherExam = lazy(() => import("./page/teacher/cbt/TeacherExam"));
 const TeacherDatabase = lazy(() =>
   import("./page/teacher/database/TeacherDatabase")
+);
+const TeacherProfile = lazy(() =>
+  import("./page/teacher/profile/TeacherProfile")
 );
 
 // Student
@@ -187,6 +191,8 @@ function App() {
 
             <Route path="/admin-cbt-exam" element={<AdminExam />} />
 
+            <Route path="/admin-profile" element={<AdminProfile />} />
+
             {/* Teacher */}
             <Route path="/guru-dashboard" element={<TeacherDash />} />
 
@@ -198,6 +204,8 @@ function App() {
               path="/guru-wali-kelas/:classname/:classid"
               element={<TeacherDatabase />}
             />
+
+            <Route path="/guru-profile" element={<TeacherProfile />} />
 
             {/* Student */}
             <Route path="/siswa-dashboard" element={<StudentDash />} />

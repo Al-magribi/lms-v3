@@ -219,10 +219,12 @@ const Layout = ({ children, title, desc, levels }) => {
           <Meta title={title} desc={desc} />
           <div className="content-wrapper">
             <div className="d-flex align-items-center justify-content-between mb-2">
-              <div className="d-flex gap-2">
-                <i className="bi bi-house-door-fill me-2 text-primary"></i>
-                <h4 className="mb-0">{title}</h4>
-              </div>
+              {title !== "Profile" && (
+                <div className="d-flex gap-2">
+                  <i className="bi bi-house-door-fill me-2 text-primary"></i>
+                  <h4 className="mb-0">{title}</h4>
+                </div>
+              )}
 
               {title === "Siswa" && (
                 <div>

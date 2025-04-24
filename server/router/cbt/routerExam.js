@@ -301,21 +301,25 @@ router.get("/get-exam", authorize("admin", "teacher"), async (req, res) => {
   }
 });
 
-router.delete("/delete-exam", authorize("admin"), async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const { id } = req.query;
+router.delete(
+  "/delete-exam",
+  authorize("admin", "teacher"),
+  async (req, res) => {
+    const client = await pool.connect();
+    try {
+      const { id } = req.query;
 
-    await client.query("DELETE FROM c_exam WHERE id = $1", [id]);
+      await client.query("DELETE FROM c_exam WHERE id = $1", [id]);
 
-    res.status(200).json({ message: remove });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: error.message });
-  } finally {
-    client.release();
+      res.status(200).json({ message: remove });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: error.message });
+    } finally {
+      client.release();
+    }
   }
-});
+);
 
 router.put("/change-status", authorize("admin"), async (req, res) => {
   const client = await pool.connect();

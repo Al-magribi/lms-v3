@@ -4,6 +4,7 @@ import { pool } from "../../config/config.js";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import bcrypt from "bcrypt";
 
 const imageStorage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -139,6 +140,49 @@ router.put("/update-smtp", authorize("center"), async (req, res) => {
             WHERE id = $6`,
       [smtp_host, smtp_port, smtp_email, smtp_password, smtp_domain, app[0].id]
     );
+
+    res.status(200).json({ message: "Berhasil diperbarui" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+router.put("/update-profile", authorize("center"), async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { id } = req.user;
+    const { name, email, phone, old_password, new_password } = req.body;
+
+    if (new_password && old_password) {
+      const { rows: admin } = await client.query(
+        "SELECT * FROM u_admin WHERE id = $1",
+        [id]
+      );
+
+      const isPasswordCorrect = await bcrypt.compare(
+        old_password,
+        admin[0].password
+      );
+
+      if (!isPasswordCorrect) {
+        return res.status(400).json({ message: "Password lama salah" });
+      }
+
+      const hashedPassword = await bcrypt.hash(new_password, 10);
+
+      await client.query(
+        `UPDATE u_admin SET name = $1, email = $2, phone = $3, password = $4 WHERE id = $5`,
+        [name, email, phone, hashedPassword, id]
+      );
+    } else {
+      await client.query(
+        `UPDATE u_admin SET name = $1, email = $2, phone = $3 WHERE id = $4`,
+        [name, email, phone, id]
+      );
+    }
 
     res.status(200).json({ message: "Berhasil diperbarui" });
   } catch (error) {

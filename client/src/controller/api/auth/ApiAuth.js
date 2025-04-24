@@ -42,6 +42,30 @@ export const ApiAuth = createApi({
       }),
       invalidatesTags: ["User"],
     }),
+    updateAdminProfile: builder.mutation({
+      query: (body) => ({
+        url: "/admin-update-profile",
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["User"],
+    }),
+    updateTeacherProfile: builder.mutation({
+      query: (body) => ({
+        url: "/teacher-update-profile",
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["User"],
+    }),
+    updateParentProfile: builder.mutation({
+      query: (body) => ({
+        url: "/parent-update-profile",
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["User"],
+    }),
   }),
 });
 
@@ -50,5 +74,7 @@ export const {
   useSignupMutation,
   useLoadUserMutation,
   useLogoutMutation,
-  useUpdateProfileMutation,
+  useUpdateAdminProfileMutation,
+  useUpdateTeacherProfileMutation,
+  useUpdateParentProfileMutation,
 } = ApiAuth;

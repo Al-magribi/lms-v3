@@ -1,26 +1,24 @@
 import React, { useState, useEffect } from "react";
+import {
+  useUpdateProfileMutation,
+  useGetAppDataQuery,
+} from "../../../controller/api/center/ApiApp";
+import toast from "react-hot-toast";
+import { useLoadUserMutation } from "../../../controller/api/auth/ApiAuth";
 
 const Profile = ({ admin }) => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
+    old_password: "",
+    new_password: "",
   });
 
-  useEffect(() => {
-    if (admin) {
-      // Format phone number: replace leading 0 with 62
-      const formattedPhone = admin.phone?.startsWith("0")
-        ? "62" + admin.phone.substring(1)
-        : admin.phone;
-
-      setFormData({
-        name: admin.name || "",
-        email: admin.email || "",
-        phone: formattedPhone || "",
-      });
-    }
-  }, [admin]);
+  const [updateProfile, { isLoading, isSuccess, isError, reset }] =
+    useUpdateProfileMutation();
+  const { refetch } = useGetAppDataQuery();
+  const [loadUser] = useLoadUserMutation();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -39,9 +37,43 @@ const Profile = ({ admin }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // TODO: Add API call to update profile
-    console.log("Updated data:", formData);
+
+    toast.promise(
+      updateProfile(formData)
+        .unwrap()
+        .then((res) => res.message),
+      {
+        loading: "Menyimpan...",
+        success: (message) => message,
+        error: (error) => error.data.message,
+      }
+    );
   };
+
+  useEffect(() => {
+    if (admin) {
+      // Format phone number: replace leading 0 with 62
+      const formattedPhone = admin.phone?.startsWith("0")
+        ? "62" + admin.phone.substring(1)
+        : admin.phone;
+
+      setFormData({
+        name: admin.name || "",
+        email: admin.email || "",
+        phone: formattedPhone || "",
+        old_password: "",
+        new_password: "",
+      });
+    }
+  }, [admin]);
+
+  useEffect(() => {
+    if (isSuccess || isError) {
+      reset();
+      loadUser();
+      refetch();
+    }
+  }, [isSuccess, isError]);
 
   return (
     <form className="d-flex flex-column gap-3 p-2" onSubmit={handleSubmit}>
@@ -104,9 +136,51 @@ const Profile = ({ admin }) => {
         />
       </div>
 
+      <div className="input-group">
+        <span
+          style={{ width: 150 }}
+          className="input-group-text"
+          id="basic-addon1"
+        >
+          Password Lama
+        </span>
+        <input
+          type="password"
+          className="form-control"
+          name="old_password"
+          value={formData.old_password}
+          onChange={handleChange}
+          aria-label="Password Lama"
+          aria-describedby="basic-addon1"
+        />
+      </div>
+
+      <div className="input-group">
+        <span
+          style={{ width: 150 }}
+          className="input-group-text"
+          id="basic-addon1"
+        >
+          Password Baru
+        </span>
+        <input
+          type="password"
+          className="form-control"
+          name="new_password"
+          value={formData.new_password}
+          onChange={handleChange}
+          aria-label="Password Baru"
+          aria-describedby="basic-addon1"
+        />
+      </div>
+
       <div className="text-end">
-        <button type="submit" className="btn btn-sm btn-success">
-          Simpan
+        <button
+          type="submit"
+          className="btn btn-sm btn-success"
+          disabled={isLoading}
+        >
+          {isLoading ? "Menyimpan..." : "Simpan"}
         </button>
       </div>
     </form>

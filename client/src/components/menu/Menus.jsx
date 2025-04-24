@@ -36,6 +36,11 @@ export const AdminMenus = [
     icon: <Md.MdOutlineFolderCopy />,
   },
   { label: "Ujian", link: "/admin-cbt-exam", icon: <Bs.BsLaptopFill /> },
+  {
+    label: "Profile",
+    link: "/admin-profile",
+    icon: <Md.MdOutlineAdminPanelSettings />,
+  },
 ];
 
 export const TeacherMenus = [
@@ -46,11 +51,13 @@ export const TeacherMenus = [
     icon: <Md.MdOutlineFolderCopy />,
   },
   { label: "Ujian", link: "/guru-ujian", icon: <Bs.BsLaptopFill /> },
+  { label: "Profile", link: "/guru-profile", icon: <Fa.FaRegUser /> },
 ];
 
 export const StudentMenus = [
   { label: "Pelajaran", link: "/siswa-pelajaran", icon: <Gi.GiOpenFolder /> },
   { label: "Ujian", link: "/siswa-daftar-ujian", icon: <Bs.BsLaptopFill /> },
+  { label: "Profile", link: "/guru-profile", icon: <Fa.FaRegUser /> },
 ];
 
 export const TahfizMenus = [
@@ -62,4 +69,9 @@ export const TahfizMenus = [
   { label: "Penilaian", link: "/tahfiz-penilaian", icon: <Gr.GrScorecard /> },
   { label: "Metrik", link: "/tahfiz-metrik", icon: <Di.DiAtom /> },
   { label: "Laporan", link: "/tahfiz-laporan", icon: <Fa6.FaChartBar /> },
+  {
+    label: "Profile",
+    link: "/tahfiz-profile",
+    icon: <Md.MdOutlineAdminPanelSettings />,
+  },
 ];
