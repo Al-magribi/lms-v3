@@ -17,6 +17,13 @@ router.post("/add-student", authorize("admin"), async (req, res) => {
     const password = "12345678";
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    const periode = await client.query(
+      `SELECT * FROM a_periode WHERE isactive = true AND homebase = $1`,
+      [homebase]
+    );
+
+    const activePeriode = periode.rows[0].id;
+
     await client.query("BEGIN");
 
     const checkData = await client.query(
@@ -38,9 +45,9 @@ router.post("/add-student", authorize("admin"), async (req, res) => {
       );
     } else {
       await client.query(
-        `INSERT INTO u_students(entry, nis, name, password, homebase, gender)
-				VALUES ($1, $2, $3, $4, $5, $6)`,
-        [entry, nis, name, hashedPassword, homebase, gender]
+        `INSERT INTO u_students(entry, nis, name, password, homebase, gender, periode)
+				VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [entry, nis, name, hashedPassword, homebase, gender, activePeriode]
       );
     }
 
@@ -95,25 +102,44 @@ router.get("/get-students", authorize("admin"), async (req, res) => {
     const offset = (page - 1) * limit;
     const homebase = req.user.homebase;
 
+    const periode = await client.query(
+      `SELECT * FROM a_periode 
+      WHERE isactive = true AND homebase = $1`,
+      [homebase]
+    );
+
+    const activePeriode = periode.rows[0].id;
+
+    console.log(activePeriode);
+
     const [count, data] = await Promise.all([
       client.query(
         `SELECT COUNT(*) FROM u_students
-				WHERE homebase = $1 AND (name ILIKE $2 OR nis ILIKE $2)`,
-        [homebase, `%${search}%`]
+				WHERE homebase = $1 
+        AND (name ILIKE $2 OR nis ILIKE $2)
+        AND periode = $3
+        AND isactive = true`,
+        [homebase, `%${search}%`, activePeriode]
       ),
+
       client.query(
         `SELECT u_students.*,
-				a_periode.id AS entry_id,
-        a_periode.name AS entry,
+				entry_periode.id AS entry_id,
+        entry_periode.name AS entry,
+				periode_periode.id AS periode_id,
+        periode_periode.name AS periode_name,
 				a_homebase.name AS homebase
 				FROM u_students
-				LEFT JOIN a_periode ON u_students.entry = a_periode.id
+				LEFT JOIN a_periode AS entry_periode ON u_students.entry = entry_periode.id
+				LEFT JOIN a_periode AS periode_periode ON u_students.periode = periode_periode.id
 				LEFT JOIN a_homebase ON u_students.homebase = a_homebase.id
 				WHERE u_students.homebase = $1
-				AND (u_students.name ILIKE $2 OR u_students.nis ILIKE $2)
-				ORDER BY a_periode.name DESC, u_students.name ASC
-				LIMIT $3 OFFSET $4`,
-        [homebase, `%${search}%`, limit, offset]
+				AND (u_students.name ILIKE $2 OR u_students.nis ILIKE $2) 
+				AND u_students.periode = $3
+        AND u_students.isactive = true
+				ORDER BY entry_periode.name DESC, u_students.name ASC
+				LIMIT $4 OFFSET $5`,
+        [homebase, `%${search}%`, activePeriode, limit, offset]
       ),
     ]);
 
@@ -149,28 +175,72 @@ router.delete("/delete-student", authorize("admin"), async (req, res) => {
   }
 });
 
-router.put("/update-periode", authorize("admin"), async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const { homebase } = req.user;
+router.put(
+  "/change-status",
+  authorize("admin", "center", "teacher"),
+  async (req, res) => {
+    const client = await pool.connect();
+    try {
+      const { id } = req.query;
 
-    const data = await client.query(
-      `SELECT * FROM a_periode WHERE homebase = $1 AND isactive = true`,
-      [homebase]
-    );
+      const student = await client.query(
+        `SELECT * FROM u_students WHERE id = $1`,
+        [id]
+      );
 
-    const periode = data.rows[0].id;
+      const isactive = student.rows[0].isactive;
 
-    await client.query(
-      `UPDATE u_students SET periode = $1 WHERE homebase = $2`,
-      [periode, homebase]
-    );
+      await client.query(
+        `UPDATE u_students SET isactive = $1 
+      WHERE id = $2`,
+        [!isactive, id]
+      );
 
-    res.status(200).json({ message: "Berhasil memperbarui periode" });
-  } catch (error) {
-    console.log(error);
-  } finally {
-    client.release();
+      res.status(200).json({ message: "Berhasil mengubah status" });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: error.message });
+    } finally {
+      client.release();
+    }
   }
-});
+);
+
+router.put(
+  "/change-periode",
+  authorize("admin", "teacher"),
+  async (req, res) => {
+    const client = await pool.connect();
+    try {
+      const { userid, periodeid } = req.body;
+
+      await client.query("BEGIN");
+
+      const user = await client.query(
+        `SELECT * FROM u_students WHERE id = $1`,
+        [userid]
+      );
+
+      if (user.rowCount === 0) {
+        await client.query("ROLLBACK");
+        return res.status(400).json({ message: "Siswa tidak ditemukan" });
+      }
+
+      await client.query(`UPDATE u_students SET periode = $1 WHERE id = $2`, [
+        periodeid,
+        userid,
+      ]);
+
+      await client.query("COMMIT");
+
+      res.status(200).json({ message: "Berhasil mengubah tahun ajaran" });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: error.message });
+    } finally {
+      client.release();
+    }
+  }
+);
+
 export default router;

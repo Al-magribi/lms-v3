@@ -75,7 +75,7 @@ const Upload = () => {
   return (
     <form
       onSubmit={uploadData}
-      className="rounded bg-white p-2 border shadow d-flex flex-column gap-2 mt-2"
+      className="rounded bg-white p-2 border  d-flex flex-column gap-2 mt-2"
     >
       <p className="m-0 h6">Upload Siswa</p>
 

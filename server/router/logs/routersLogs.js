@@ -226,11 +226,20 @@ router.get("/get-exam-log", authorize("admin", "teacher"), async (req, res) => {
   const client = await pool.connect();
   try {
     const { exam, classid, page, limit, search } = req.query;
+    const homebase = req.user.homebase;
 
     // Safely parse page and limit with defaults
     const pageNum = page && !isNaN(page) ? parseInt(page) : 1;
     const limitNum = limit && !isNaN(limit) ? parseInt(limit) : 10;
     const offset = (pageNum - 1) * limitNum;
+
+    const period = await client.query(
+      `SELECT * FROM a_periode WHERE
+      homebase = $1 AND isactive = true`,
+      [homebase]
+    );
+
+    const activePeriod = period.rows[0].id;
 
     // Base query to get all students in classes that have the exam
     let baseQuery = `
@@ -239,11 +248,14 @@ router.get("/get-exam-log", authorize("admin", "teacher"), async (req, res) => {
         cs.classid as class_id
       FROM c_class cc
       JOIN cl_students cs ON cc.classid = cs.classid
+      JOIN u_students us ON cs.student = us.id
       WHERE cc.exam = $1
+      AND us.periode = $2
+      AND us.isactive = true
     `;
 
     // Add class filter if provided
-    const queryParams = [exam];
+    const queryParams = [exam, activePeriod];
     if (classid) {
       baseQuery += ` AND cs.classid = $${queryParams.length + 1}`;
       queryParams.push(classid);

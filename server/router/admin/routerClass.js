@@ -22,21 +22,28 @@ router.get("/get-class", authorize("admin", "teacher"), async (req, res) => {
       return res.status(200).json(data.rows);
     }
 
+    const periode = await client.query(
+      `SELECT * FROM a_periode WHERE isactive = true AND homebase = $1`,
+      [homebase]
+    );
+    const activePeriode = periode.rows[0].id;
+
     const [classes, count] = await Promise.all([
       client.query({
         text: `
 					SELECT a_class.*, a_grade.name AS grade_name, a_major.name AS major_name,
-					COUNT(cl_students.classid) AS students
+					COUNT(DISTINCT CASE WHEN u_students.isactive = true AND u_students.periode = $5 THEN cl_students.id END) AS students
 					FROM a_class
 					LEFT JOIN a_grade ON a_class.grade = a_grade.id 
 					LEFT JOIN a_major ON a_class.major = a_major.id
 					LEFT JOIN cl_students ON a_class.id = cl_students.classid
+					LEFT JOIN u_students ON cl_students.student = u_students.id
 					WHERE a_class.name ILIKE $1 AND a_class.homebase = $2
 					GROUP BY a_class.id, a_grade.name, a_major.name
 					ORDER BY a_major.name ASC, a_grade.name ASC, a_class.name ASC
 					LIMIT $3 OFFSET $4
 				`,
-        values: [`%${search}%`, homebase, limit, offset],
+        values: [`%${search}%`, homebase, limit, offset, activePeriode],
       }),
       client.query({
         text: `

@@ -6,7 +6,7 @@ export const ApiStudent = createApi({
     baseUrl: "/api/admin/student",
     credentials: "include",
   }),
-  tagTypes: ["student"],
+  tagTypes: ["students"],
   endpoints: (builder) => ({
     addStudent: builder.mutation({
       query: (body) => ({
@@ -14,7 +14,7 @@ export const ApiStudent = createApi({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["student"],
+      invalidatesTags: ["students"],
     }),
     getStudents: builder.query({
       query: ({ page, limit, search }) => ({
@@ -22,7 +22,7 @@ export const ApiStudent = createApi({
         method: "GET",
         params: { page, limit, search },
       }),
-      providesTags: ["student"],
+      providesTags: ["students"],
     }),
     deleteStudent: builder.mutation({
       query: (id) => ({
@@ -30,7 +30,7 @@ export const ApiStudent = createApi({
         method: "DELETE",
         params: { id },
       }),
-      invalidatesTags: ["student"],
+      invalidatesTags: ["students"],
     }),
     uploadStudents: builder.mutation({
       query: (body) => ({
@@ -38,7 +38,22 @@ export const ApiStudent = createApi({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["student"],
+      invalidatesTags: ["students"],
+    }),
+    changeStatus: builder.mutation({
+      query: (id) => ({
+        url: "/change-status",
+        method: "PUT",
+        params: { id },
+      }),
+      invalidatesTags: ["students"],
+    }),
+    changePeriode: builder.mutation({
+      query: (body) => ({
+        url: "/change-periode",
+        method: "PUT",
+        body,
+      }),
     }),
   }),
 });
@@ -48,4 +63,6 @@ export const {
   useGetStudentsQuery,
   useDeleteStudentMutation,
   useUploadStudentsMutation,
+  useChangeStatusMutation,
+  useChangePeriodeMutation,
 } = ApiStudent;

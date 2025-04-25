@@ -152,9 +152,9 @@ const ScoreChart = forwardRef(({ examid }, ref) => {
 
   if (isLoading) {
     return (
-      <div className='card shadow w-100 h-75 d-flex justify-content-center align-items-center'>
-        <div className='spinner-border text-primary' role='status'>
-          <span className='visually-hidden'>Loading...</span>
+      <div className="card shadow w-100 h-75 d-flex justify-content-center align-items-center">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
         </div>
       </div>
     );
@@ -162,14 +162,14 @@ const ScoreChart = forwardRef(({ examid }, ref) => {
 
   if (error) {
     return (
-      <div className='card shadow w-100 h-75 d-flex justify-content-center align-items-center text-danger'>
-        <div>Error loading chart data</div>
+      <div className="card shadow w-100 h-75 text-danger">
+        <div className="card-body">Data belum tersedia</div>
       </div>
     );
   }
 
   return (
-    <div className='card shadow w-100 h-75 p-3'>
+    <div className="card shadow w-100 h-75 p-3">
       <div style={{ width: "100%", height: "100%", minHeight: "550px" }}>
         <Line options={options} data={chartData} />
       </div>

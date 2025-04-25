@@ -260,6 +260,14 @@ router.get(
     const client = await pool.connect();
     try {
       const { exam } = req.query;
+      const homebase = req.user.homebase;
+
+      const period = await client.query(
+        `SELECT * FROM a_periode WHERE homebase = $1 AND isactive = true`,
+        [homebase]
+      );
+
+      const activePeriod = period.rows[0].id;
 
       const query = `
         WITH student_scores AS (
@@ -289,6 +297,8 @@ router.get(
           JOIN c_exam ce ON ca.exam = ce.id
           JOIN c_question cq ON ca.question = cq.id
           WHERE ca.exam = $1
+          AND us.periode = $2
+          AND us.isactive = true
           GROUP BY us.id, ce.mc_score, ce.essay_score
         ),
         score_ranges AS (
@@ -316,7 +326,7 @@ router.get(
         FROM score_ranges
       `;
 
-      const result = await client.query(query, [exam]);
+      const result = await client.query(query, [exam, activePeriod]);
       res.status(200).json(result.rows);
     } catch (error) {
       console.log(error);
@@ -335,6 +345,16 @@ router.get(
     try {
       const { exam, classid, page = 1, limit = 10, search = "" } = req.query;
       const offset = (page - 1) * limit;
+
+      const homebase = req.user.homebase;
+
+      const period = await client.query(
+        `SELECT * FROM a_periode WHERE 
+        homebase = $1 AND isactive = true`,
+        [homebase]
+      );
+
+      const activePeriod = period.rows[0].id;
 
       // Base query for exam info
       const examInfoQuery = `
@@ -394,9 +414,11 @@ router.get(
           LEFT JOIN c_answer ca ON us.id = ca.student AND ca.exam = $1
           JOIN c_exam ce ON ce.id = $1
           WHERE ($2::integer IS NULL OR cls.classid = $2)
+          AND us.periode = $3
+          AND us.isactive = true
           AND (
-            LOWER(us.name) LIKE LOWER($3) OR 
-            LOWER(us.nis) LIKE LOWER($3)
+            LOWER(us.name) LIKE LOWER($4) OR 
+            LOWER(us.nis) LIKE LOWER($4)
           )
           GROUP BY 
             us.id, us.nis, us.name, ag.name, ac.name, ce.mc_score, ce.essay_score
@@ -405,7 +427,7 @@ router.get(
           SELECT COUNT(*) OVER() as total_count, student_data.*
           FROM student_data
           ORDER BY score DESC, CAST(student_class AS TEXT) ASC, student_name ASC
-          LIMIT $4 OFFSET $5
+          LIMIT $5 OFFSET $6
         )
         SELECT 
           COALESCE(json_agg(
@@ -431,6 +453,7 @@ router.get(
       const result = await client.query(studentsQuery, [
         exam,
         classid || null,
+        activePeriod,
         searchPattern,
         limit,
         offset,

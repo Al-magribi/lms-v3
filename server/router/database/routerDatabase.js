@@ -483,6 +483,16 @@ router.get(
     const { page, limit, search, classid } = req.query;
     const offset = (page - 1) * limit;
 
+    const homebase = req.user.homebase;
+
+    const periode = await executeQuery(
+      client,
+      `SELECT * FROM a_periode WHERE homebase = $1 AND isactive = true`,
+      [homebase]
+    );
+
+    const periodeData = periode.rows[0].id;
+
     const count = await executeQuery(
       client,
       `SELECT COUNT(*) FROM cl_students 
@@ -492,7 +502,10 @@ router.get(
 
     const data = await executeQuery(
       client,
-      `SELECT cl_students.*,
+      `SELECT cl_students.*, 
+        u_students.gender as student_gender,
+        u_students.isactive as isactive,
+        p.name as active_periode,
         a_periode.name as periode_name, 
         a_homebase.name as homebase_name,
         a_class.name as class_name,
@@ -528,10 +541,14 @@ router.get(
       LEFT JOIN a_homebase ON cl_students.homebase = a_homebase.id
       LEFT JOIN a_class ON cl_students.classid = a_class.id
       LEFT JOIN db_student ds ON cl_students.student = ds.userid
-      WHERE classid = $1 AND student_name ILIKE $2
+      LEFT JOIN u_students ON cl_students.student = u_students.id
+      LEFT JOIN a_periode p ON u_students.periode = p.id
+      WHERE classid = $1 
+      AND student_name ILIKE $2 
+      AND a_periode.id = $3
       ORDER BY student_name
-      LIMIT $3 OFFSET $4`,
-      [classid, `%${search}%`, limit, offset]
+      LIMIT $4 OFFSET $5`,
+      [classid, `%${search}%`, periodeData, limit, offset]
     );
 
     const total = parseInt(count.rows[0].count);

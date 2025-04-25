@@ -40,7 +40,7 @@ router.post("/add-periode", authorize("admin"), async (req, res) => {
   }
 });
 
-router.get("/get-periode", authorize("admin"), async (req, res) => {
+router.get("/get-periode", authorize("admin", "teacher"), async (req, res) => {
   const client = await pool.connect();
   try {
     const { page, limit, search } = req.query;
