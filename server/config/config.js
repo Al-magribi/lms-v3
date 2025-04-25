@@ -40,10 +40,15 @@ const config = {
 
 const pool = new Pool(config);
 
+// Fungsi untuk mendapatkan waktu Indonesia (WIB)
+const getIndonesianTime = () => {
+  return new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" });
+};
+
 // Fungsi untuk membaca dan mencatat error
 const logError = (error, context = "") => {
   const errorType = ERROR_TYPES[error.code] || "Unknown Error";
-  const timestamp = new Date().toISOString();
+  const timestamp = getIndonesianTime();
 
   console.error(`
 [${timestamp}] Database Error:
@@ -69,13 +74,11 @@ pool.on("error", (err, client) => {
 });
 
 pool.on("connect", (client) => {
-  console.log(
-    `[${new Date().toISOString()}] Koneksi baru ke database berhasil`
-  );
+  console.log(`[${getIndonesianTime()}] Koneksi baru ke database berhasil`);
 });
 
 pool.on("remove", (client) => {
-  console.log(`[${new Date().toISOString()}] Client dihapus dari pool`);
+  console.log(`[${getIndonesianTime()}] Client dihapus dari pool`);
 });
 
 // Monitoring pool setiap 30 detik
@@ -84,7 +87,7 @@ setInterval(() => {
     total: pool.totalCount,
     idle: pool.idleCount,
     waiting: pool.waitingCount,
-    timestamp: new Date().toISOString(),
+    timestamp: getIndonesianTime(),
   };
 
   console.log(`
@@ -102,11 +105,13 @@ const connectToDatabase = async () => {
   while (retries > 0) {
     try {
       const client = await pool.connect();
-      const result = await client.query("SELECT NOW() as current_time");
+      const result = await client.query(
+        "SELECT NOW() AT TIME ZONE 'Asia/Jakarta' as current_time"
+      );
       client.release();
 
       console.log(
-        `[${new Date().toISOString()}] Terhubung ke PostgreSQL: ${
+        `[${getIndonesianTime()}] Terhubung ke PostgreSQL: ${
           result.rows[0].current_time
         }`
       );
@@ -170,7 +175,7 @@ const getPoolStats = () => {
     totalConnections: pool.totalCount,
     idleConnections: pool.idleCount,
     waitingRequests: pool.waitingCount,
-    timestamp: new Date().toISOString(),
+    timestamp: getIndonesianTime(),
   };
 };
 
