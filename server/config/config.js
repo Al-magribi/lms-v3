@@ -25,7 +25,7 @@ const config = {
   database: process.env.P_DATABASE,
   port: 5432,
   max: 5000,
-  min: 100,
+  min: 1000,
   idleTimeoutMillis: 300000,
   connectionTimeoutMillis: 60000,
   application_name: "LMS-V3",
