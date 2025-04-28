@@ -21,6 +21,11 @@ const Modal = ({ exam, setExam }) => {
   const [addCbtLogs, { isLoading: logLoading }] = useAddCbtLogsMutation();
 
   const confirm = () => {
+    if (!exam.id) {
+      toast.error("Ujian tidak ditemukan");
+      return;
+    }
+
     if (token !== exam.token) {
       toast.error("Token Salah");
       setToken("");
@@ -102,52 +107,52 @@ const Modal = ({ exam, setExam }) => {
   return (
     <div
       ref={modalRef}
-      className='modal fade'
-      id='token'
-      tabIndex='-1'
-      role='dialog'
-      aria-labelledby='token-label'
-      aria-modal='true'
+      className="modal fade"
+      id="token"
+      tabIndex="-1"
+      role="dialog"
+      aria-labelledby="token-label"
+      aria-modal="true"
     >
-      <div className='modal-dialog'>
-        <div className='modal-content'>
-          <div className='modal-header'>
-            <h5 className='modal-title' id='token-label'>
+      <div className="modal-dialog">
+        <div className="modal-content">
+          <div className="modal-header">
+            <h5 className="modal-title" id="token-label">
               Token {exam.name}
             </h5>
             <button
-              type='button'
-              className='btn-close'
-              data-bs-dismiss='modal'
-              aria-label='Close'
+              type="button"
+              className="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
               onClick={cancel}
             ></button>
           </div>
-          <div className='modal-body'>
+          <div className="modal-body">
             <input
-              type='text'
-              name='token'
-              id='token'
-              className='form-control'
-              placeholder='Masukkan Token'
+              type="text"
+              name="token"
+              id="token"
+              className="form-control"
+              placeholder="Masukkan Token"
               value={token}
               onChange={(e) => setToken(e.target.value)}
-              aria-label='Token input'
+              aria-label="Token input"
             />
           </div>
-          <div className='modal-footer'>
+          <div className="modal-footer">
             <button
-              type='button'
-              className='btn btn-sm btn-danger'
-              data-bs-dismiss='modal'
+              type="button"
+              className="btn btn-sm btn-danger"
+              data-bs-dismiss="modal"
               onClick={cancel}
             >
               Tutup
             </button>
 
             <button
-              type='button'
-              className='btn btn-sm btn-primary'
+              type="button"
+              className="btn btn-sm btn-primary"
               onClick={confirm}
               disabled={isLoading || logLoading}
             >

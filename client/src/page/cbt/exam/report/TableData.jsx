@@ -34,6 +34,8 @@ const TableData = forwardRef(({ classid, examid }, ref) => {
   const { result = [], totalData, totalPages } = data;
   const [detail, setDetail] = useState({});
 
+  console.log(result);
+
   const [finishCbt, { isLoading: finishLoad }] = useFinishCbtMutation();
   const [rejoinExam, { isLoading: rejoinLoad }] = useRejoinExamMutation();
   const [retakeExam, { isLoading: retakeLoad }] = useRetakeExamMutation();
@@ -96,38 +98,38 @@ const TableData = forwardRef(({ classid, examid }, ref) => {
       >
         <table
           ref={tableRef}
-          className='table table-striped table-hover table-bordered'
+          className="table table-striped table-hover table-bordered"
         >
-          <thead className='table-light'>
+          <thead className="table-light">
             <tr>
-              <th scope='col' className='text-center'>
+              <th scope="col" className="text-center">
                 No
               </th>
-              <th scope='col' className='text-center'>
+              <th scope="col" className="text-center">
                 NIS
               </th>
-              <th scope='col' className='text-center'>
+              <th scope="col" className="text-center">
                 Nama Siswa
               </th>
-              <th scope='col' className='text-center'>
+              <th scope="col" className="text-center">
                 Kelas
               </th>
-              <th scope='col' className='text-center'>
+              <th scope="col" className="text-center">
                 Tingkat
               </th>
-              <th scope='col' className='text-center'>
+              <th scope="col" className="text-center">
                 IP Address
               </th>
-              <th scope='col' className='text-center'>
+              <th scope="col" className="text-center">
                 Browser
               </th>
-              <th scope='col' className='text-center'>
+              <th scope="col" className="text-center">
                 Waktu Mulai
               </th>
-              <th scope='col' className='text-center'>
+              <th scope="col" className="text-center">
                 Status
               </th>
-              <th scope='col' className='text-center'>
+              <th scope="col" className="text-center">
                 Aksi
               </th>
             </tr>
@@ -136,80 +138,80 @@ const TableData = forwardRef(({ classid, examid }, ref) => {
             {result.length > 0 ? (
               result.map((item, index) => (
                 <tr key={item.student_id || index}>
-                  <td className='text-center align-middle'>
+                  <td className="text-center align-middle">
                     {(page - 1) * limit + index + 1}
                   </td>
-                  <td className='text-center align-middle'>{item.nis}</td>
-                  <td className='align-middle'>{item.student_name}</td>
-                  <td className='text-center align-middle'>
+                  <td className="text-center align-middle">{item.nis}</td>
+                  <td className="align-middle">{item.student_name}</td>
+                  <td className="text-center align-middle">
                     {item.class_name}
                   </td>
-                  <td className='text-center align-middle'>
+                  <td className="text-center align-middle">
                     {item.grade_name}
                   </td>
-                  <td className='text-center align-middle'>{item.ip || "-"}</td>
-                  <td className='text-center align-middle'>
+                  <td className="text-center align-middle">{item.ip || "-"}</td>
+                  <td className="text-center align-middle">
                     {item.browser || "-"}
                   </td>
-                  <td className='text-center align-middle'>
+                  <td className="text-center align-middle">
                     {item.createdat ? (
-                      <span className='badge bg-success'>
+                      <span className="badge bg-success">
                         {new Date(item.createdat).toLocaleString()}
                       </span>
                     ) : (
                       "-"
                     )}
                   </td>
-                  <td className='text-center align-middle'>
+                  <td className="text-center align-middle">
                     {item.ispenalty ? (
-                      <span className='badge bg-danger'>Melanggar</span>
+                      <span className="badge bg-danger">Melanggar</span>
                     ) : item.isactive ? (
-                      <span className='badge bg-warning'>Mengerjakan</span>
+                      <span className="badge bg-warning">Mengerjakan</span>
                     ) : item.isdone ? (
-                      <span className='badge bg-success'>Selesai</span>
+                      <span className="badge bg-success">Selesai</span>
                     ) : (
-                      <span className='badge bg-secondary'>Belum Masuk</span>
+                      <span className="badge bg-secondary">Belum Masuk</span>
                     )}
                   </td>
-                  <td className='text-center align-middle'>
-                    <div className='d-flex justify-content-center gap-2'>
+                  <td className="text-center align-middle">
+                    <div className="d-flex justify-content-center gap-2">
                       <button
-                        className='btn btn-sm btn-primary'
-                        title='Lihat Detail'
-                        data-bs-toggle='modal'
-                        data-bs-target='#answerSheet'
+                        className="btn btn-sm btn-primary"
+                        title="Lihat Detail"
+                        data-bs-toggle="modal"
+                        data-bs-target="#answerSheet"
                         onClick={() => setDetail(item)}
                       >
-                        <i className='bi bi-eye'></i>
+                        <i className="bi bi-eye"></i>
                       </button>
 
                       <button
-                        className='btn btn-sm btn-warning'
-                        title='Izinkan Masuk'
+                        className="btn btn-sm btn-warning"
+                        title="Izinkan Masuk"
                         onClick={() => handleRejoin(item.log_id)}
                         disabled={rejoinLoad || !item.isactive}
                       >
-                        <i className='bi bi-arrow-repeat'></i>
+                        <i className="bi bi-arrow-repeat"></i>
                       </button>
 
                       <button
-                        className='btn btn-sm btn-success'
-                        title='Selesaikan'
+                        className="btn btn-sm btn-success"
+                        title="Selesaikan"
                         onClick={() => hanldeFinish(item.log_id)}
                         disabled={finishLoad || item.isdone || !item.isactive}
                       >
-                        <i className='bi bi-check-circle'></i>
+                        <i className="bi bi-check-circle"></i>
                       </button>
 
                       <button
-                        className='btn btn-sm btn-danger'
-                        title='Ulangi Ujian'
+                        className="btn btn-sm btn-danger"
+                        title="Ulangi Ujian"
                         onClick={() =>
                           handleRetake(item.log_id, item.student_id)
                         }
                         disabled={retakeLoad || !item.isdone}
                       >
-                        <i className='bi bi-recycle'></i>
+                        <i className="bi bi-recycle"></i>
                       </button>
                     </div>
                   </td>
@@ -217,7 +219,7 @@ const TableData = forwardRef(({ classid, examid }, ref) => {
               ))
             ) : (
               <tr>
-                <td colSpan='10' className='text-center'>
+                <td colSpan="10" className="text-center">
                   {isLoading
                     ? "Memuat data..."
                     : "Tidak ada data yang ditemukan"}
