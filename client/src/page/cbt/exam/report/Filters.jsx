@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useGetFilterQuery } from "../../../../controller/api/log/ApiLog";
+import "./Filters.css";
 
 const Filters = ({
   classid,
@@ -26,74 +27,104 @@ const Filters = ({
   };
 
   return (
-    <div className='card my-1'>
-      <div className='card-body d-flex justify-content-between align-items-center'>
-        <div className='d-flex flex-column gap-1 align-items-start'>
-          <div className='d-flex gap-2 align-items-center'>
-            <p className='m-0 h5'>{name?.replace(/-/g, " ")}</p>
-            <span className='badge bg-primary m-0'>{token}</span>
+    <div className="card my-2 shadow-sm hover-shadow transition-all">
+      <div className="card-body p-3">
+        <div className="row g-3 align-items-center">
+          {/* Title and Token Section */}
+          <div className="col-md-4">
+            <div className="d-flex flex-column gap-2">
+              <div className="d-flex gap-2 align-items-center">
+                <h5 className="m-0 fw-bold text-primary">
+                  {name?.replace(/-/g, " ")}
+                </h5>
+                <span className="badge bg-primary px-3 py-2 rounded-pill">
+                  {token}
+                </span>
+              </div>
+              {lastUpdateTime && (
+                <span className="badge bg-danger px-3 py-2 rounded-pill">
+                  <i className="bi bi-clock-history me-1"></i>
+                  Terakhir diperbarui: {lastUpdateTime}
+                </span>
+              )}
+            </div>
           </div>
 
-          {lastUpdateTime && (
-            <span className='badge bg-danger'>
-              Terakhir diperbarui: {lastUpdateTime}
-            </span>
-          )}
-        </div>
+          {/* View Toggle Buttons */}
+          <div className="col-md-4">
+            <div className="d-flex justify-content-center gap-2">
+              <button
+                className={`btn ${
+                  activeView === "table" ? "btn-success" : "btn-outline-success"
+                } rounded-pill px-3 hover-scale`}
+                onClick={() => setActiveView("table")}
+                title="Tampilan Tabel"
+              >
+                <i className="bi bi-person-lines-fill"></i>
+              </button>
+              <button
+                className={`btn ${
+                  activeView === "chart" ? "btn-success" : "btn-outline-success"
+                } rounded-pill px-3 hover-scale`}
+                onClick={() => setActiveView("chart")}
+                title="Tampilan Grafik"
+              >
+                <i className="bi bi-bar-chart"></i>
+              </button>
+              <button
+                className={`btn ${
+                  activeView === "list" ? "btn-success" : "btn-outline-success"
+                } rounded-pill px-3 hover-scale`}
+                onClick={() => setActiveView("list")}
+                title="Tampilan List"
+              >
+                <i className="bi bi-file-earmark-excel"></i>
+              </button>
 
-        <div className='btn-group'>
-          <button
-            className={`btn btn-sm ${
-              activeView === "table" ? "btn-success" : "btn-outline-success"
-            }`}
-            onClick={() => setActiveView("table")}>
-            <i className='bi bi-person-lines-fill'></i>
-          </button>
-          <button
-            className={`btn btn-sm ${
-              activeView === "chart" ? "btn-success" : "btn-outline-success"
-            }`}
-            onClick={() => setActiveView("chart")}>
-            <i className='bi bi-bar-chart'></i>
-          </button>
-          <button
-            className={`btn btn-sm ${
-              activeView === "list" ? "btn-success" : "btn-outline-success"
-            }`}
-            onClick={() => setActiveView("list")}>
-            <i className='bi bi-file-earmark-excel'></i>
-          </button>
+              {(activeView === "table" || activeView === "list") && (
+                <button
+                  className="btn btn-primary rounded-pill px-3 hover-scale"
+                  onClick={onExport}
+                  title="Export to Excel"
+                >
+                  <i className="bi bi-file-earmark-arrow-down"></i>
+                </button>
+              )}
+            </div>
+          </div>
 
-          {(activeView === "table" || activeView === "list") && (
-            <button
-              className='btn btn-sm btn-primary'
-              onClick={onExport}
-              title='Export to Excel'>
-              <i className='bi bi-file-earmark-arrow-down'></i>
-            </button>
-          )}
-        </div>
-
-        <div className='btn-group'>
-          {classes?.map((item) => (
-            <button
-              key={item.id}
-              className={`btn btn-sm ${
-                classid === item.id ? "btn-secondary" : "btn-outline-secondary"
-              }`}
-              onClick={() => setClassid(item.id)}>
-              {item.name}
-            </button>
-          ))}
-          <button
-            className='btn btn-sm btn-dark'
-            onClick={() => setClassid("")}>
-            <i className='bi bi-recycle'></i>
-          </button>
-
-          <button className='btn btn-sm btn-danger' onClick={handleRefetch}>
-            <i className='bi bi-repeat'></i>
-          </button>
+          {/* Class Filter Buttons */}
+          <div className="col-md-4">
+            <div className="d-flex justify-content-end gap-2 flex-wrap">
+              {classes?.map((item) => (
+                <button
+                  key={item.id}
+                  className={`btn ${
+                    classid === item.id
+                      ? "btn-secondary"
+                      : "btn-outline-secondary"
+                  } rounded-pill px-3 hover-scale`}
+                  onClick={() => setClassid(item.id)}
+                >
+                  {item.name}
+                </button>
+              ))}
+              <button
+                className="btn btn-dark rounded-pill px-3 hover-scale"
+                onClick={() => setClassid("")}
+                title="Reset Filter"
+              >
+                <i className="bi bi-recycle"></i>
+              </button>
+              <button
+                className="btn btn-danger rounded-pill px-3 hover-scale"
+                onClick={handleRefetch}
+                title="Refresh Data"
+              >
+                <i className="bi bi-repeat"></i>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

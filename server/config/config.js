@@ -24,8 +24,8 @@ const config = {
   host: process.env.P_HOST,
   database: process.env.P_DATABASE,
   port: 5432,
-  max: 100,
-  min: 20,
+  max: 5000,
+  min: 100,
   idleTimeoutMillis: 300000,
   connectionTimeoutMillis: 60000,
   application_name: "LMS-V3",
@@ -36,6 +36,9 @@ const config = {
   keepaliveInitialDelayMillis: 10000,
   maxUses: 7500,
   allowExitOnIdle: true,
+  maxWaitingClients: 5000,
+  connectionTimeoutMillis: 30000,
+  idleInTransactionSessionTimeout: 60000,
 };
 
 const pool = new Pool(config);
@@ -63,13 +66,49 @@ Stack: ${error.stack}
   // fs.appendFileSync('database-errors.log', errorLog);
 };
 
-// Error handling untuk pool
+// Enhanced pool monitoring
+const monitorPool = () => {
+  const stats = {
+    total: pool.totalCount,
+    idle: pool.idleCount,
+    waiting: pool.waitingCount,
+    timestamp: getIndonesianTime(),
+  };
+
+  // Log warning if pool is getting full
+  if (stats.total > config.max * 0.8) {
+    console.warn(
+      `[${stats.timestamp}] WARNING: Pool usage high (${stats.total}/${config.max})`
+    );
+  }
+
+  // Log warning if many clients are waiting
+  if (stats.waiting > 50) {
+    console.warn(
+      `[${stats.timestamp}] WARNING: High number of waiting clients (${stats.waiting})`
+    );
+  }
+
+  console.log(`
+[${stats.timestamp}] Status Pool:
+Total Koneksi: ${stats.total}
+Koneksi Idle: ${stats.idle}
+Request Menunggu: ${stats.waiting}
+  `);
+};
+
+// Monitor pool every 30 seconds
+setInterval(monitorPool, 30000);
+
+// Enhanced error handling for pool
 pool.on("error", (err, client) => {
   logError(err, "Pool Error");
 
   if (err.code === "57P01" || err.code === "08006") {
     console.log("Mencoba menghubungkan ulang ke database...");
-    connectToDatabase();
+    setTimeout(() => {
+      connectToDatabase();
+    }, 5000);
   }
 });
 
@@ -77,26 +116,24 @@ pool.on("connect", (client) => {
   console.log(`[${getIndonesianTime()}] Koneksi baru ke database berhasil`);
 });
 
+// Add connection release monitoring with enhanced logging
 pool.on("remove", (client) => {
-  console.log(`[${getIndonesianTime()}] Client dihapus dari pool`);
-});
-
-// Monitoring pool setiap 30 detik
-setInterval(() => {
-  const poolStatus = {
+  const stats = {
     total: pool.totalCount,
     idle: pool.idleCount,
     waiting: pool.waitingCount,
     timestamp: getIndonesianTime(),
   };
 
-  console.log(`
-[${poolStatus.timestamp}] Status Pool:
-Total Koneksi: ${poolStatus.total}
-Koneksi Idle: ${poolStatus.idle}
-Request Menunggu: ${poolStatus.waiting}
-  `);
-}, 30000);
+  console.log(`[${stats.timestamp}] Client dihapus dari pool. Status:`, stats);
+
+  // Log warning if pool is getting exhausted
+  if (stats.total < config.min) {
+    console.warn(
+      `[${stats.timestamp}] WARNING: Pool size below minimum (${stats.total}/${config.min})`
+    );
+  }
+});
 
 const connectToDatabase = async () => {
   let retries = 5;
@@ -130,6 +167,7 @@ const connectToDatabase = async () => {
   }
 };
 
+// Enhanced getClient function with better error handling and connection management
 const getClient = async () => {
   const maxRetries = 3;
   let retryCount = 0;
@@ -137,16 +175,24 @@ const getClient = async () => {
   while (retryCount < maxRetries) {
     try {
       const client = await pool.connect();
+
+      // Set statement timeout for this client
+      await client.query("SET statement_timeout = $1", [
+        config.statement_timeout,
+      ]);
+
       return client;
     } catch (err) {
+      retryCount++;
+      const waitTime = Math.min(1000 * Math.pow(2, retryCount), 10000);
+
       if (err.code === "57P01") {
-        retryCount++;
-        const waitTime = Math.min(1000 * Math.pow(2, retryCount), 10000);
         logError(err, `Pool Exhausted - Percobaan ${retryCount}/${maxRetries}`);
         console.error(`Menunggu ${waitTime}ms sebelum mencoba lagi...`);
         await new Promise((resolve) => setTimeout(resolve, waitTime));
         continue;
       }
+
       logError(err, "Error saat mendapatkan client");
       throw err;
     }

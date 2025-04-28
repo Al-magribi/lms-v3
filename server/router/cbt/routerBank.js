@@ -368,6 +368,8 @@ router.post(
         let totalPoinQtype1 = 0; // Inisialisasi total poin untuk qtype 1
         let totalPoinQtype2 = 0; // Inisialisasi total poin untuk qtype 2
         const validQuestions = []; // Array untuk menyimpan pertanyaan yang valid
+        let hasQtype1 = false; // Flag untuk mengecek apakah ada qtype 1
+        let hasQtype2 = false; // Flag untuk mengecek apakah ada qtype 2
 
         // Validasi dan hitung total poin
         for (const question of questions) {
@@ -384,24 +386,26 @@ router.post(
           // Tambahkan poin ke total berdasarkan qtype
           if (qtype === 1) {
             totalPoinQtype1 += poin; // Tambahkan poin untuk qtype 1
+            hasQtype1 = true; // Set flag bahwa ada qtype 1
           } else if (qtype === 2) {
             totalPoinQtype2 += poin; // Tambahkan poin untuk qtype 2
+            hasQtype2 = true; // Set flag bahwa ada qtype 2
           }
 
           // Simpan pertanyaan yang valid
           validQuestions.push(question);
         }
 
-        // Validasi total poin untuk qtype 1 dan qtype 2
-        if (totalPoinQtype1 !== 100) {
+        // Validasi total poin untuk qtype 1 dan qtype 2 hanya jika ada pertanyaan dengan qtype tersebut
+        if (hasQtype1 && totalPoinQtype1 !== 100) {
           return res
             .status(400)
-            .json({ message: "Total poin untuk qtype 1 harus 100" });
+            .json({ message: "Total poin untuk pg harus 100" });
         }
-        if (totalPoinQtype2 !== 100) {
+        if (hasQtype2 && totalPoinQtype2 !== 100) {
           return res
             .status(400)
-            .json({ message: "Total poin untuk qtype 2 harus 100" });
+            .json({ message: "Total poin untuk essay harus 100" });
         }
 
         // Simpan semua pertanyaan yang valid ke database

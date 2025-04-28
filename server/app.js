@@ -92,4 +92,44 @@ app.use("/api/logs", routerLogs);
 
 app.use("/api/area", routerArea);
 app.use("/api/database", routerDatabase);
+
+// Global error handling middleware
+app.use((err, req, res, next) => {
+  console.error("Global Error Handler:", {
+    error: err.message,
+    stack: err.stack,
+    timestamp: new Date().toISOString(),
+  });
+
+  res.status(err.status || 500).json({
+    error: "Internal Server Error",
+    message:
+      process.env.NODE_ENV === "development"
+        ? err.message
+        : "Something went wrong",
+  });
+});
+
+// Handle uncaught exceptions
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught Exception:", {
+    error: err.message,
+    stack: err.stack,
+    timestamp: new Date().toISOString(),
+  });
+  // Give time for logging before exiting
+  setTimeout(() => {
+    process.exit(1);
+  }, 1000);
+});
+
+// Handle unhandled promise rejections
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("Unhandled Rejection:", {
+    reason: reason,
+    promise: promise,
+    timestamp: new Date().toISOString(),
+  });
+});
+
 export default app;
