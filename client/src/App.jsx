@@ -14,6 +14,9 @@ const Index = lazy(() => import("./home/Index"));
 // Otentikasi
 const Activation = lazy(() => import("./components/auth/Activation"));
 
+// CMS
+const Homepage = lazy(() => import("./home/Homepage"));
+
 // Admin Pusat
 const CenterDash = lazy(() => import("./page/center/dashboard/CenterDash"));
 const CenterHomebase = lazy(() =>
@@ -155,6 +158,9 @@ function App() {
 
             {/* Otentikasi */}
             <Route path="/aktivasi-akun/:code" element={<Activation />} />
+
+            {/* CMS */}
+            <Route path="/homepage" element={<Homepage />} />
 
             {/* Admin Pusat */}
             <Route path="/center-dashboard" element={<CenterDash />} />

@@ -1,0 +1,120 @@
+.homepage {
+  --primary-color: #f1dae7;
+  --secondary-color: #9c6b7d;
+  --text-color: #333;
+  --light-bg: #f8f9fa;
+  --dark-accent: #7a4f5f;
+  padding-top: 76px; /* Height of the header */
+}
+
+.hero-section {
+  background: linear-gradient(
+      rgba(241, 218, 231, 0.9),
+      rgba(241, 218, 231, 0.9)
+    ),
+    url("/hero-bg.jpg") center/cover no-repeat;
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+}
+
+.hero-content {
+  z-index: 2;
+}
+
+.hero-content h1 {
+  color: var(--dark-accent);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.hero-content p {
+  color: var(--secondary-color);
+}
+
+.section-title {
+  color: var(--dark-accent);
+  position: relative;
+  padding-bottom: 15px;
+}
+
+.section-title::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 50px;
+  height: 3px;
+  background-color: var(--secondary-color);
+}
+
+.text-primary {
+  color: var(--dark-accent) !important;
+}
+
+.bg-primary {
+  background-color: var(--primary-color) !important;
+}
+
+.btn-primary {
+  background-color: var(--dark-accent);
+  border-color: var(--dark-accent);
+}
+
+.btn-primary:hover {
+  background-color: var(--secondary-color);
+  border-color: var(--secondary-color);
+}
+
+.btn-outline-primary {
+  color: var(--dark-accent);
+  border-color: var(--dark-accent);
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--dark-accent);
+  border-color: var(--dark-accent);
+}
+
+.feature-card {
+  transition: transform 0.3s ease;
+  background-color: var(--primary-color);
+}
+
+.feature-card:hover {
+  transform: translateY(-5px);
+  background-color: white;
+}
+
+.facility-item {
+  padding: 20px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.facility-item:hover {
+  background-color: var(--primary-color);
+}
+
+.contact-info p {
+  margin-bottom: 10px;
+  color: var(--text-color);
+}
+
+.contact-info i {
+  color: var(--dark-accent);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .hero-section {
+    min-height: 60vh;
+  }
+
+  .hero-content h1 {
+    font-size: 2rem;
+  }
+
+  .section-title {
+    font-size: 1.5rem;
+  }
+}
