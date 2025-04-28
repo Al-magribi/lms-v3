@@ -24,32 +24,47 @@ const Upload = ({ bankid }) => {
           range: 1,
         });
 
+        // Filter out empty rows and process the data
         const filteredData = jsonData
+          .filter(
+            (row) =>
+              row.length > 0 &&
+              row.some((cell) => cell !== null && cell !== undefined)
+          )
           .map((row) => {
             const [colA, colB, colC, colD, colE, colF, colG, colH, colI] = row;
 
-            // Jika colA adalah 2, izinkan colC, colD, colE, colF, colG untuk kosong
-            if (colA == 2 || colA == 1) {
-              return [colA, colB, null, null, null, null, null, colH, colI]; // Set kolom C, D, E, F, G menjadi null
+            // Handle type 2 questions (where some columns can be null)
+            if (colA === 2) {
+              return [
+                colA, // qtype
+                colB, // question
+                null, // a
+                null, // b
+                null, // c
+                null, // d
+                null, // e
+                colH, // qkey (correct answer)
+                colI, // poin
+              ];
             }
 
-            return [colA, colB, colC, colD, colE, colF, colG, colH, colI];
-          })
-          .filter((row) => {
-            // Hanya filter baris yang memiliki colA != 2
-            if (row[0] === 2) {
-              return true; // Izinkan baris dengan colA == 2
-            }
-            return row.every((cell) => cell !== null && cell !== undefined); // Filter baris lainnya
+            // Handle regular questions
+            return [
+              colA, // qtype
+              colB, // question
+              colC, // a
+              colD, // b
+              colE, // c
+              colF, // d
+              colG, // e
+              colH, // qkey (correct answer)
+              colI, // poin
+            ];
           });
 
-        // Pastikan filteredData adalah array
-        const result = Array.isArray(filteredData)
-          ? filteredData
-          : [filteredData];
-
         toast.promise(
-          uploadQuestion({ body: result, bankid: bankid })
+          uploadQuestion({ body: filteredData, bankid: bankid })
             .unwrap()
             .then((res) => res.message),
           {
