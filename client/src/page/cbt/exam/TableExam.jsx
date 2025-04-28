@@ -93,7 +93,7 @@ const TableExam = ({ setDetail }) => {
             <th className="text-center">PG</th>
             <th className="text-center">Essay</th>
             <th className="text-center">Kelas</th>
-            <th className="text-center">Acak Soal</th>
+            <th className="text-center">Acak</th>
             <th className="text-center">Durasi</th>
             <th className="text-center">Status</th>
             <th className="text-center">Token</th>
@@ -121,7 +121,7 @@ const TableExam = ({ setDetail }) => {
                 <td className="text-center align-middle">
                   <p className="m-0 badge bg-success">{`${exam.essay_score}%`}</p>
                 </td>
-                <td className="d-flex align-items-center justify-content-center">
+                <td className="align-middle">
                   <div
                     style={{ width: 100 }}
                     className="d-flex align-items-center justify-content-center flex-wrap gap-2"

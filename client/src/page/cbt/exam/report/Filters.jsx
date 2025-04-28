@@ -34,9 +34,6 @@ const Filters = ({
           <div className="col-md-4">
             <div className="d-flex flex-column gap-2">
               <div className="d-flex gap-2 align-items-center">
-                <h5 className="m-0 fw-bold text-primary">
-                  {name?.replace(/-/g, " ")}
-                </h5>
                 <span className="badge bg-primary px-3 py-2 rounded-pill">
                   {token}
                 </span>

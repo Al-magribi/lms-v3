@@ -75,10 +75,7 @@ const ExamReport = () => {
   };
 
   return (
-    <Layout
-      title={`Laporan Ujian ${name.replace(/-/g, " ")}`}
-      levels={["admin", "teacher"]}
-    >
+    <Layout title={`${name.replace(/-/g, " ")}`} levels={["admin", "teacher"]}>
       <Filters
         classid={classid}
         setClassid={setClassid}
@@ -90,7 +87,7 @@ const ExamReport = () => {
         setActiveView={setActiveView}
         onExport={convertToExcel}
       />
-      <div className='mt-3'>
+      <div className="mt-3">
         {activeView === "table" && (
           <TableData ref={tableRef} examid={examid} classid={classid} />
         )}
