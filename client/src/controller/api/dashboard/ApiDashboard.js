@@ -20,6 +20,10 @@ export const ApiDashboard = createApi({
       query: () => "/center-stats",
       providesTags: ["CenterDash"],
     }),
+    getHomeInfografis: builder.query({
+      query: () => "/infografis",
+      providesTags: ["HomeInfografis"],
+    }),
   }),
 });
 
@@ -28,4 +32,5 @@ export const {
   useGetTeacherDashboardQuery,
   useGetStudentDashboardQuery,
   useGetCenterDashboardQuery,
+  useGetHomeInfografisQuery,
 } = ApiDashboard;

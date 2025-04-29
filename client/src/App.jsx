@@ -10,7 +10,7 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import LoadingScreen from "./components/loader/LoadingScreen";
 import { useGetAppQuery } from "./controller/api/center/ApiApp";
 
-const Index = lazy(() => import("./home/Index"));
+const Index = lazy(() => import("./components/auth/Index"));
 // Otentikasi
 const Activation = lazy(() => import("./components/auth/Activation"));
 

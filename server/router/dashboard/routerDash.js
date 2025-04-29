@@ -945,4 +945,96 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
   }
 });
 
+// ======================================
+// Home Infograpis
+// ======================================
+
+router.get("/infografis", async (req, res) => {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const basicStats = await pool.query(`
+      SELECT 
+        (SELECT COUNT(*) FROM u_students WHERE isactive = true) as total_students,
+        (SELECT COUNT(*) FROM u_teachers) as total_teachers
+    `);
+
+    const geographicalDistribution = await pool.query(`
+      WITH province_stats AS (
+        SELECT 
+          p.name as province_name,
+          COUNT(*) as student_count
+        FROM db_student ds
+        JOIN db_province p ON ds.provinceid = p.id
+        GROUP BY p.id, p.name
+        ORDER BY student_count DESC
+        LIMIT 5
+      ),
+      city_stats AS (
+        SELECT 
+          c.name as city_name,
+          p.name as province_name,
+          COUNT(*) as student_count
+        FROM db_student ds
+        JOIN db_city c ON ds.cityid = c.id
+        JOIN db_province p ON c.provinceid = p.id
+        GROUP BY c.id, c.name, p.name
+        ORDER BY student_count DESC
+        LIMIT 5
+      ),
+      district_stats AS (
+        SELECT 
+          d.name as district_name,
+          c.name as city_name,
+          p.name as province_name,
+          COUNT(*) as student_count
+        FROM db_student ds
+        JOIN db_district d ON ds.districtid = d.id
+        JOIN db_city c ON d.cityid = c.id
+        JOIN db_province p ON c.provinceid = p.id
+        GROUP BY d.id, d.name, c.name, p.name
+        ORDER BY student_count DESC
+        LIMIT 5
+      ),
+      village_stats AS (
+        SELECT 
+          v.name as village_name,
+          d.name as district_name,
+          c.name as city_name,
+          p.name as province_name,
+          COUNT(*) as student_count
+        FROM db_student ds
+        JOIN db_village v ON ds.villageid = v.id
+        JOIN db_district d ON v.districtid = d.id
+        JOIN db_city c ON d.cityid = c.id
+        JOIN db_province p ON c.provinceid = p.id
+        GROUP BY v.id, v.name, d.name, c.name, p.name
+        ORDER BY student_count DESC
+        LIMIT 5
+      )
+      SELECT 
+        json_build_object(
+          'provinces', (SELECT json_agg(province_stats) FROM province_stats),
+          'cities', (SELECT json_agg(city_stats) FROM city_stats),
+          'districts', (SELECT json_agg(district_stats) FROM district_stats),
+          'villages', (SELECT json_agg(village_stats) FROM village_stats)
+        ) as geographical_data
+    `);
+
+    res.json({
+      basicStats: basicStats.rows[0],
+      geographicalDistribution: geographicalDistribution.rows[0],
+    });
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error fetching infografis:", error);
+    res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
+  }
+});
+
 export default router;

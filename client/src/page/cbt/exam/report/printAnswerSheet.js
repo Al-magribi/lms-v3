@@ -38,7 +38,7 @@ export const printAnswerSheet = (studentData, name, detail) => {
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
         <style>
           body { 
-            padding: 20px; 
+            padding: 10px; 
             font-size: 12px;
           }
           .card { 
@@ -192,7 +192,7 @@ export const printAnswerSheet = (studentData, name, detail) => {
         </style>
       </head>
       <body>
-        <div class="container">
+        <div class="container-fluid">
           <div class="print-header">
             <p>${currentUrl}</p>
           </div>

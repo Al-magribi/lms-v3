@@ -27,17 +27,16 @@ const Filters = ({
   };
 
   return (
-    <div className="card my-2 shadow-sm hover-shadow transition-all">
+    <div className="card my-2 hover-shadow transition-all">
       <div className="card-body p-3">
         <div className="row g-3 align-items-center">
           {/* Title and Token Section */}
           <div className="col-md-4">
-            <div className="d-flex flex-column gap-2">
-              <div className="d-flex gap-2 align-items-center">
-                <span className="badge bg-primary px-3 py-2 rounded-pill">
-                  {token}
-                </span>
-              </div>
+            <div className="d-flex gap-2 align-items-center">
+              <span className="badge bg-primary px-3 py-2 rounded-pill">
+                {token}
+              </span>
+
               {lastUpdateTime && (
                 <span className="badge bg-danger px-3 py-2 rounded-pill">
                   <i className="bi bi-clock-history me-1"></i>
