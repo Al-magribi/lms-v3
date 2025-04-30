@@ -240,7 +240,7 @@ router.post("/signin", async (req, res) => {
 
 router.get(
   "/load-user",
-  authorize("admin", "student", "teacher", "parent", "center", "tahfiz"),
+  authorize("admin", "student", "teacher", "parent", "center", "tahfiz", "cms"),
   async (req, res) => {
     const client = await pool.connect();
     try {
@@ -268,6 +268,10 @@ router.get(
           transform: (row) => row,
         },
         center: {
+          text: `SELECT * FROM u_admin WHERE id = $1`,
+          transform: (row) => row,
+        },
+        cms: {
           text: `SELECT * FROM u_admin WHERE id = $1`,
           transform: (row) => row,
         },
@@ -518,7 +522,7 @@ router.post("/logout", async (req, res) => {
 
 router.put(
   "/admin-update-profile",
-  authorize("admin", "tahfiz"),
+  authorize("admin", "tahfiz", "cms"),
   async (req, res) => {
     const client = await pool.connect();
     try {

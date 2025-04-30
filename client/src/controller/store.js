@@ -3,6 +3,9 @@ import { configureStore } from "@reduxjs/toolkit";
 import AuthSlice from "./slice/AuthSlice";
 import { ApiAuth } from "./api/auth/ApiAuth";
 
+// CMS
+import { ApiHomepage } from "./api/cms/ApiHomepage";
+
 // center
 import { ApiHomebase } from "./api/center/ApiHomebase";
 import { ApiAdmin } from "./api/center/ApiAdmin";
@@ -47,6 +50,9 @@ const store = configureStore({
   reducer: {
     auth: AuthSlice,
     [ApiAuth.reducerPath]: ApiAuth.reducer,
+
+    [ApiHomepage.reducerPath]: ApiHomepage.reducer,
+
     [ApiHomebase.reducerPath]: ApiHomebase.reducer,
     [ApiAdmin.reducerPath]: ApiAdmin.reducer,
     [ApiCenterData.reducerPath]: ApiCenterData.reducer,
@@ -83,6 +89,9 @@ const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat([
       ApiAuth.middleware,
+
+      ApiHomepage.middleware,
+
       ApiHomebase.middleware,
       ApiAdmin.middleware,
       ApiCenterData.middleware,

@@ -1,12 +1,12 @@
 import React from "react";
 
-const Footer = () => {
+const Footer = ({ data }) => {
   return (
     <footer className="bg-dark text-light py-5">
       <div className="container">
         <div className="row">
           {/* Contact Information */}
-          <div className="col-md-4 mb-4">
+          <div className="col-md-6 col-12">
             <h5 className="mb-3">Kontak Kami</h5>
             <ul className="list-unstyled">
               <li className="mb-2">
@@ -28,43 +28,8 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Quick Links */}
-          <div className="col-md-4 mb-4">
-            <h5 className="mb-3">Menu Utama</h5>
-            <ul className="list-unstyled">
-              <li className="mb-2">
-                <a href="/" className="text-light text-decoration-none">
-                  Home
-                </a>
-              </li>
-              <li className="mb-2">
-                <a href="/sambutan" className="text-light text-decoration-none">
-                  Sambutan - Sambutan
-                </a>
-              </li>
-              <li className="mb-2">
-                <a href="/artikel" className="text-light text-decoration-none">
-                  Artikel & Berita
-                </a>
-              </li>
-              <li className="mb-2">
-                <a href="/karir" className="text-light text-decoration-none">
-                  Karir
-                </a>
-              </li>
-              <li className="mb-2">
-                <a
-                  href="/pendaftaran"
-                  className="text-light text-decoration-none"
-                >
-                  Pendaftaran Siswa Baru
-                </a>
-              </li>
-            </ul>
-          </div>
-
           {/* Location */}
-          <div className="col-md-4 mb-4">
+          <div className="col-md-6 col-12">
             <h5 className="mb-3">Lokasi</h5>
             <p className="mb-2">
               Jl. Guru Mukhtar II No.1 RT/RW.03/15 Cimahpar, Bogor Utara Kota
@@ -72,13 +37,13 @@ const Footer = () => {
             </p>
             <h5 className="mb-3 mt-4">Media Sosial</h5>
             <div className="d-flex gap-3">
-              <a href="#" className="text-light">
+              <a href={data?.facebook} className="text-light" target="_blank">
                 <i className="bi bi-facebook fs-5"></i>
               </a>
-              <a href="#" className="text-light">
+              <a href={data?.instagram} className="text-light" target="_blank">
                 <i className="bi bi-instagram fs-5"></i>
               </a>
-              <a href="#" className="text-light">
+              <a href={data?.youtube} className="text-light" target="_blank">
                 <i className="bi bi-youtube fs-5"></i>
               </a>
             </div>
@@ -89,9 +54,7 @@ const Footer = () => {
         <div className="row mt-4">
           <div className="col-12">
             <hr className="border-light" />
-            <p className="text-center mb-0">
-              ©2024 Nuraida Islamic Boarding School. All rights reserved.
-            </p>
+            <p className="text-center mb-0">&copy; ALMADEV | {data?.name}</p>
           </div>
         </div>
       </div>

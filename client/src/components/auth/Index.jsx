@@ -21,6 +21,7 @@ const Index = () => {
     teacher: "/guru-dashboard",
     parent: "/wali-dashboard",
     tahfiz: "/tahfiz-dashboard",
+    cms: "/cms-dashboard",
   };
 
   // Add useEffect for initial auth check

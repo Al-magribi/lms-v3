@@ -67,9 +67,10 @@ const Reason = () => {
     <section className="py-5 bg-light">
       <div className="container">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          transition={{ duration: 0.4 }}
+          viewport={{ once: true }}
           className="text-center mb-5"
         >
           <h2 className="display-5 fw-bold mb-3">Mengapa Memilih NIBS?</h2>
@@ -83,9 +84,10 @@ const Reason = () => {
           {reasons.map((reason, index) => (
             <motion.div
               key={reason.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              transition={{ duration: 0.3, delay: index * 0.1 }}
+              viewport={{ once: true }}
               className="col-md-6 col-lg-4"
             >
               <div className="card h-100 border-0 shadow-sm hover-shadow">

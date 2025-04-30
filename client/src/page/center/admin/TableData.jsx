@@ -13,6 +13,9 @@ const TableData = () => {
 
   const { data: rawData = {} } = useGetAdminQuery({ page, limit, search });
   const { admin = [], totalData, totalPages } = rawData;
+
+  console.log(admin);
+
   const [deleteAdmin, { isLoading, isSuccess, error, reset }] =
     useDeleteAdminMutation();
 
@@ -58,13 +61,13 @@ const TableData = () => {
       <table className="table table-bordered table-striped table-hover">
         <thead>
           <tr>
-            <td className="text-center">No</td>
-            <td className="text-center">Satuan</td>
-            <td className="text-center">Nama</td>
-            <td className="text-center">Email</td>
-            <td className="text-center">Whatsapp</td>
-            <td className="text-center">Status</td>
-            <td className="text-center">Aksi</td>
+            <th className="text-center">No</th>
+            <th className="text-center">Level</th>
+            <th className="text-center">Nama</th>
+            <th className="text-center">Email</th>
+            <th className="text-center">Whatsapp</th>
+            <th className="text-center">Status</th>
+            <th className="text-center">Aksi</th>
           </tr>
         </thead>
         <tbody>
@@ -73,12 +76,10 @@ const TableData = () => {
               <td className="align-middle text-center">
                 {(page - 1) * limit + i + 1}
               </td>
-              <td className="align-middle text-center">
-                {item.homebase ? item.homebase : "Pusat"}
-              </td>
+              <td className="align-middle">{item.level}</td>
               <td className="align-middle">{item.username}</td>
-              <td className="align-middle text-center">{item.email}</td>
-              <td className="align-middle text-center">{item.phone}</td>
+              <td className="align-middle">{item.email}</td>
+              <td className="align-middle">{item.phone}</td>
               <td className="align-middle text-center">
                 {item.isactive ? (
                   <span className="badge text-bg-success">aktif</span>

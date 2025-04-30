@@ -26,7 +26,7 @@ router.get("/get-admin", authorize("center"), async (req, res) => {
       ),
       client.query(
         `SELECT u_admin.id, u_admin.name AS username, u_admin.email,
-        u_admin.activation, 
+        u_admin.activation, u_admin.level,
         a_homebase.name AS homebase, u_admin.isactive, u_admin.phone
         FROM u_admin
         LEFT JOIN a_homebase ON a_homebase.id = u_admin.homebase

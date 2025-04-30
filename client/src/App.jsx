@@ -16,6 +16,22 @@ const Activation = lazy(() => import("./components/auth/Activation"));
 
 // CMS
 const Homepage = lazy(() => import("./home/Homepage"));
+const CmsDash = lazy(() => import("./page/cms/Dashboard/CmsDash"));
+const CmsNews = lazy(() => import("./page/cms/News/NewsPage"));
+const CmsReasons = lazy(() => import("./page/cms/Reasons/ReasonsPage"));
+const CmsFacilities = lazy(() =>
+  import("./page/cms/Facilities/FacilitiesPage")
+);
+const CmsTestimonials = lazy(() =>
+  import("./page/cms/Testimonials/TestimonialsPage")
+);
+const CmsGraduation = lazy(() =>
+  import("./page/cms/Graduation/GraduationPage")
+);
+const CmsCategories = lazy(() =>
+  import("./page/cms/Categories/CategoriesPage")
+);
+const CmsSettings = lazy(() => import("./page/cms/Settings/SettingsPage"));
 
 // Admin Pusat
 const CenterDash = lazy(() => import("./page/center/dashboard/CenterDash"));
@@ -144,9 +160,9 @@ function App() {
       <BrowserRouter>
         <Toaster />
         <Meta
-          title={"NIBS"}
+          title={"Nuraida Islamic Boarding School"}
           desc={
-            "LMS mempermudah pembelajaran online dengan fitur interaktif. Solusi ideal untuk pengajar dan pelajar modern."
+            "Nuraida Islamic Boarding School adalah sekolah yang berdedikasi untuk pendidikan Islam yang berkualitas tinggi."
           }
           favicon={appData?.logo}
         />
@@ -156,11 +172,29 @@ function App() {
 
             <Route path="/" element={<Index />} />
 
+            <Route path="/signin" element={<Index />} />
+
             {/* Otentikasi */}
             <Route path="/aktivasi-akun/:code" element={<Activation />} />
 
             {/* CMS */}
             <Route path="/homepage" element={<Homepage />} />
+
+            <Route path="/cms-dashboard" element={<CmsDash />} />
+
+            <Route path="/cms-news" element={<CmsNews />} />
+
+            <Route path="/cms-reason" element={<CmsReasons />} />
+
+            <Route path="/cms-facility" element={<CmsFacilities />} />
+
+            <Route path="/cms-testimoni" element={<CmsTestimonials />} />
+
+            <Route path="/cms-graduation" element={<CmsGraduation />} />
+
+            <Route path="/cms-category" element={<CmsCategories />} />
+
+            <Route path="/cms-settings" element={<CmsSettings />} />
 
             {/* Admin Pusat */}
             <Route path="/center-dashboard" element={<CenterDash />} />

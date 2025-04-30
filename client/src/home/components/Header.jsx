@@ -1,6 +1,6 @@
 import React from "react";
 
-const Header = () => {
+const Header = ({ data }) => {
   return (
     <>
       <style>
@@ -33,10 +33,12 @@ const Header = () => {
           <div className="container-fluid">
             <a className="navbar-brand" href="/">
               <img
-                src="/home_logo.png"
+                src={data?.logo}
                 alt="logo"
                 height={45}
-                style={{ objectFit: "cover" }}
+                width={150}
+                loading="lazy"
+                style={{ objectFit: "contain" }}
               />
             </a>
 
@@ -57,7 +59,7 @@ const Header = () => {
               id="navbarSupportedContent"
             >
               <ul className="navbar-nav mb-2 mb-lg-0">
-                <li className="nav-item mx-2">
+                <li className="nav-item mx-1">
                   <a
                     className="nav-link active px-3 py-2 rounded-pill hover-shadow transition-all"
                     aria-current="page"
@@ -67,7 +69,8 @@ const Header = () => {
                     Tentang Kami
                   </a>
                 </li>
-                <li className="nav-item mx-2">
+
+                <li className="nav-item mx-1">
                   <a
                     className="nav-link px-3 py-2 rounded-pill hover-shadow transition-all"
                     href="#fasilitas"
@@ -76,7 +79,8 @@ const Header = () => {
                     Fasilitas
                   </a>
                 </li>
-                <li className="nav-item mx-2">
+
+                <li className="nav-item mx-1">
                   <a
                     className="nav-link px-3 py-2 rounded-pill hover-shadow transition-all"
                     href="#infografis"
@@ -85,10 +89,22 @@ const Header = () => {
                     Infografis
                   </a>
                 </li>
-                <li className="nav-item mx-2">
+
+                <li className="nav-item mx-1">
+                  <a
+                    className="nav-link px-3 py-2 rounded-pill hover-shadow transition-all pointer"
+                    target="_blank"
+                    onClick={() => window.open(data?.ppdb_url, "_blank")}
+                  >
+                    <i className="bi bi-journal-text me-1"></i>
+                    PPDB
+                  </a>
+                </li>
+
+                <li className="nav-item mx-1">
                   <a
                     className="nav-link btn btn-primary text-white px-4 py-2 rounded-pill hover-shadow transition-all"
-                    href="#"
+                    href="/signin"
                     tabIndex="-1"
                     aria-disabled="true"
                   >

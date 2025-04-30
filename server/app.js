@@ -13,6 +13,9 @@ const app = express();
 // Otentikasi
 import routerAuth from "./router/auth/routerAuth.js";
 
+// CMS
+import routerHomepage from "./router/cms/routerHomepage.js";
+
 // Admin Pusat
 import routerHomebase from "./router/center/routerHomebase.js";
 import routerAdmin from "./router/center/routerAdmin.js";
@@ -61,6 +64,9 @@ app.use("/assets", express.static(path.join(__dirname, "assets")));
 
 // Router
 app.use("/api/auth", routerAuth);
+
+app.use("/api/cms/homepage", routerHomepage);
+
 app.use("/api/center/homebase", routerHomebase);
 app.use("/api/center/admin", routerAdmin);
 app.use("/api/center/data", routerCenterData);

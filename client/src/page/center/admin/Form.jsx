@@ -75,34 +75,35 @@ const Form = () => {
   return (
     <form
       onSubmit={addHandler}
-      className='d-flex flex-column gap-2 rounded p-2 shadow bg-white border '
+      className="d-flex flex-column gap-2 rounded p-2 border "
     >
-      <p className='m-0 h6'>Administrator</p>
+      <p className="m-0 h6">Administrator</p>
 
       <select
-        name='level'
-        id='level'
-        className='form-select'
+        name="level"
+        id="level"
+        className="form-select"
         value={formData.level}
         onChange={handleChange}
       >
-        <option value='' hidden>
+        <option value="" hidden>
           Pilih Level
         </option>
-        <option value='center'>Pusat</option>
-        <option value='admin'>Satuan</option>
-        <option value='tahfiz'>Tahfiz</option>
+        <option value="center">Pusat</option>
+        <option value="admin">Satuan</option>
+        <option value="tahfiz">Tahfiz</option>
+        <option value="cms">Konten Managemen</option>
       </select>
 
       {formData.level !== "center" && (
         <select
-          name='home'
-          id='home'
-          className='form-select'
+          name="home"
+          id="home"
+          className="form-select"
           value={formData.home}
           onChange={handleChange}
         >
-          <option value='' hidden>
+          <option value="" hidden>
             Pilih Satuan
           </option>
           {homebase?.map((item) => (
@@ -114,57 +115,57 @@ const Form = () => {
       )}
 
       <input
-        type='text'
-        name='name'
-        id='name'
-        placeholder='Username'
-        className='form-control'
+        type="text"
+        name="name"
+        id="name"
+        placeholder="Username"
+        className="form-control"
         value={formData.name || ""}
         onChange={handleChange}
         required
       />
 
       <input
-        type='email'
-        name='email'
-        id='email'
-        className='form-control'
-        placeholder='Email'
+        type="email"
+        name="email"
+        id="email"
+        className="form-control"
+        placeholder="Email"
         value={formData.email || ""}
         onChange={handleChange}
         required
       />
 
       <input
-        type='text'
-        name='phone'
-        id='phone'
-        className='form-control'
-        placeholder='Whatsapp'
+        type="text"
+        name="phone"
+        id="phone"
+        className="form-control"
+        placeholder="Whatsapp"
         value={formData.phone || ""}
         onChange={handleChange}
       />
 
       <input
-        type='password'
-        name='password'
-        id='password'
-        className='form-control'
-        placeholder='Password'
+        type="password"
+        name="password"
+        id="password"
+        className="form-control"
+        placeholder="Password"
         value={formData.password || ""}
         onChange={handleChange}
         required
       />
 
-      <div className='d-flex justify-content-end gap-2'>
+      <div className="d-flex justify-content-end gap-2">
         <button
-          type='button'
-          className='btn btn-warning'
+          type="button"
+          className="btn btn-warning"
           onClick={() => setDetail("")}
         >
           Batal
         </button>
-        <button type='submit' className='btn btn-success' disabled={isLoading}>
+        <button type="submit" className="btn btn-success" disabled={isLoading}>
           Simpan
         </button>
       </div>

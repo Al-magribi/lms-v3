@@ -613,3 +613,67 @@ ALTER TABLE "db_student" ADD COLUMN "createdat" TIMESTAMP DEFAULT CURRENT_TIMEST
 ALTER TABLE "u_students" ADD COLUMN "periode" INT REFERENCES a_periode(id) ON DELETE CASCADE;
 
 SELECT setval('db_student_id_seq', (SELECT MAX(id) FROM db_student));
+
+
+-- CMS
+CREATE TABLE cms_homepage(
+    id SERIAL PRIMARY KEY NOT NULL,
+    name TEXT,
+    tagline TEXT,
+    description TEXT,
+    video_url TEXT,
+    youtube TEXT,
+    instagram TEXT,
+    facebook TEXT,
+    ppdb_url TEXT,
+    logo TEXT,
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+
+ALTER TABLE cms_homepage ADD COLUMN logo TEXT;
+
+
+CREATE TABLE cms_reason(
+    id SERIAL PRIMARY KEY NOT NULL,
+    name TEXT,
+    image TEXT,
+    description TEXT,
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+
+CREATE TABLE cms_facility(
+    id SERIAL PRIMARY KEY NOT NULL,
+    name TEXT,
+    image TEXT,
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+
+CREATE TABLE cms_testimoni(
+    id SERIAL PRIMARY KEY NOT NULL,
+    name TEXT,
+    description TEXT,
+    testimonial TEXT,
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+
+CREATE TABLE cms_graduation(
+    id SERIAL PRIMARY KEY NOT NULL,
+    name TEXT,
+    total TEXT,
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+
+CREATE TABLE cms_category(
+    id SERIAL PRIMARY KEY NOT NULL,
+    name TEXT,
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+
+CREATE TABLE cms_news(
+    id SERIAL PRIMARY KEY NOT NULL,
+    category_id INT REFERENCES cms_category(id) ON DELETE CASCADE,
+    title TEXT,
+    image TEXT,
+    description TEXT,
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
