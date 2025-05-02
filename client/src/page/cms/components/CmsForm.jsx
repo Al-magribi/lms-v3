@@ -1,14 +1,14 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { FaUpload, FaImage, FaTimes } from "react-icons/fa";
+import { FaUpload, FaTimes } from "react-icons/fa";
 
 const CmsForm = ({
   fields,
   initialValues = {},
   onSubmit,
-  submitButtonText = "Save",
+  submitButtonText = "Simpan",
   submitButtonClass = "btn-primary",
-  cancelButtonText = "Cancel",
+  cancelButtonText = "Batal",
   onCancel,
   layout = "vertical",
 }) => {
@@ -228,7 +228,7 @@ const CmsForm = ({
         {onCancel && (
           <motion.button
             type="button"
-            className="btn btn-secondary"
+            className="btn btn-sm btn-warning"
             onClick={onCancel}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -239,7 +239,7 @@ const CmsForm = ({
 
         <motion.button
           type="submit"
-          className={`btn ${submitButtonClass}`}
+          className={`btn btn-sm ${submitButtonClass}`}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >

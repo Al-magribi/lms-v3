@@ -1,107 +1,39 @@
 import React, { useState, useEffect } from "react";
 import Layout from "../layout/Layout";
-import CmsDataTable from "../components/CmsDataTable";
 import CmsModal from "../components/CmsModal";
 import CmsForm from "../components/CmsForm";
 import { motion } from "framer-motion";
-import { FaComments, FaEdit, FaTrash } from "react-icons/fa";
+import * as FaIcons from "react-icons/fa";
+import {
+  useGetTestimoniesQuery,
+  useAddTestimonyMutation,
+  useDeleteTestimonyMutation,
+} from "../../../controller/api/cms/ApiTestimoni";
+import { toast } from "react-hot-toast";
+import Table from "../../../components/table/Table";
 
 const TestimonialsPage = () => {
-  const [testimonials, setTestimonials] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalType, setModalType] = useState("add"); // "add" or "edit"
+  const [modalType, setModalType] = useState("add");
   const [selectedTestimonial, setSelectedTestimonial] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [search, setSearch] = useState("");
+  const [formKey, setFormKey] = useState(0);
 
-  // Mock data for demonstration
-  useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setTestimonials([
-        {
-          id: 1,
-          name: "Ahmad Rahman",
-          role: "Parent",
-          content:
-            "My children have shown remarkable improvement since joining this school. The Islamic values and academic excellence are perfectly balanced.",
-          image: "ahmad.jpg",
-          rating: 5,
-        },
-        {
-          id: 2,
-          name: "Fatima Zahra",
-          role: "Student",
-          content:
-            "I love the learning environment here. The teachers are supportive and the facilities are excellent. I've grown both academically and spiritually.",
-          image: "fatima.jpg",
-          rating: 5,
-        },
-        {
-          id: 3,
-          name: "Umar Hassan",
-          role: "Parent",
-          content:
-            "The school's commitment to Islamic education while maintaining high academic standards is impressive. My son has developed a strong moral compass.",
-          image: "umar.jpg",
-          rating: 4,
-        },
-      ]);
-      setIsLoading(false);
-    }, 1000);
-  }, []);
+  const { data, isLoading, refetch } = useGetTestimoniesQuery({
+    page,
+    limit,
+    search,
+  });
+  const { results: testimonials, totalData, totalPage } = data || {};
+  console.log(data);
 
-  const columns = [
-    {
-      header: "Name",
-      accessor: "name",
-    },
-    {
-      header: "Role",
-      accessor: "role",
-    },
-    {
-      header: "Content",
-      accessor: "content",
-    },
-    {
-      header: "Rating",
-      accessor: "rating",
-      cell: (row) => (
-        <div className="d-flex">
-          {[...Array(5)].map((_, i) => (
-            <span
-              key={i}
-              className={`me-1 ${
-                i < row.rating ? "text-warning" : "text-muted"
-              }`}
-            >
-              ★
-            </span>
-          ))}
-        </div>
-      ),
-    },
-    {
-      header: "Actions",
-      accessor: "actions",
-      cell: (row) => (
-        <div className="d-flex gap-2">
-          <button
-            className="btn btn-sm btn-outline-primary"
-            onClick={() => handleEdit(row)}
-          >
-            <FaEdit />
-          </button>
-          <button
-            className="btn btn-sm btn-outline-danger"
-            onClick={() => handleDelete(row.id)}
-          >
-            <FaTrash />
-          </button>
-        </div>
-      ),
-    },
-  ];
+  const [
+    addTestimony,
+    { isSuccess, error, isLoading: addLoading, data: msg, reset },
+  ] = useAddTestimonyMutation();
+  const [deleteTestimony] = useDeleteTestimonyMutation();
 
   const handleAdd = () => {
     setModalType("add");
@@ -115,68 +47,75 @@ const TestimonialsPage = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this testimonial?")) {
-      // In a real app, you would call an API here
-      setTestimonials(
-        testimonials.filter((testimonial) => testimonial.id !== id)
-      );
+  const handleDelete = async (id) => {
+    if (window.confirm("Apakah anda yakin ingin menghapus testimoni ini?")) {
+      try {
+        await deleteTestimony(id).unwrap();
+        toast.success("Testimoni berhasil dihapus");
+        refetch();
+      } catch (error) {
+        toast.error(error.data?.message || "Gagal menghapus testimoni");
+      }
     }
   };
 
-  const handleSubmit = (formData) => {
-    if (modalType === "add") {
-      // In a real app, you would call an API here
-      const newTestimonial = {
-        id: testimonials.length + 1,
-        ...formData,
-      };
-      setTestimonials([...testimonials, newTestimonial]);
-    } else {
-      // In a real app, you would call an API here
-      setTestimonials(
-        testimonials.map((testimonial) =>
-          testimonial.id === selectedTestimonial.id
-            ? { ...testimonial, ...formData }
-            : testimonial
-        )
-      );
+  const handleSubmit = async (formData) => {
+    try {
+      await addTestimony(formData).unwrap();
+    } catch (error) {
+      console.log(error);
+      toast.error(error.data?.message || "Gagal menyimpan testimoni");
     }
+  };
+
+  const handleCancel = () => {
+    setSelectedTestimonial(null);
     setIsModalOpen(false);
+    setFormKey((prev) => prev + 1);
+  };
+
+  useEffect(() => {
+    if (isSuccess) {
+      toast.success(msg.message);
+      setIsModalOpen(false);
+      refetch();
+      setSelectedTestimonial(null);
+      setFormKey((prev) => prev + 1);
+      reset();
+    }
+    if (error) {
+      toast.error(error.data?.message);
+      reset();
+    }
+  }, [isSuccess, error, msg, reset, refetch]);
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedTestimonial(null);
+    setFormKey((prev) => prev + 1);
   };
 
   const formFields = [
     {
       name: "name",
-      label: "Name",
+      label: "Nama",
       type: "text",
       required: true,
+      placeholder: "Masukkan nama",
     },
     {
-      name: "role",
-      label: "Role",
+      name: "description",
+      label: "Deskripsi",
       type: "text",
       required: true,
+      placeholder: "Masukkan deskripsi",
     },
     {
-      name: "content",
-      label: "Content",
+      name: "testimonial",
+      label: "Testimoni",
       type: "textarea",
       required: true,
-    },
-    {
-      name: "image",
-      label: "Image URL",
-      type: "text",
-      required: true,
-    },
-    {
-      name: "rating",
-      label: "Rating",
-      type: "number",
-      required: true,
-      min: 1,
-      max: 5,
+      placeholder: "Masukkan testimoni",
     },
   ];
 
@@ -188,26 +127,75 @@ const TestimonialsPage = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <div className="d-flex justify-content-between align-items-center mb-4">
+          <div className="d-flex justify-content-between align-items-center mb-2">
             <div className="d-flex align-items-center">
               <div className="bg-primary bg-opacity-10 p-3 rounded me-3">
-                <FaComments className="text-primary fs-4" />
+                <FaIcons.FaComments className="text-primary fs-4" />
               </div>
-              <h4 className="mb-0">Testimonials</h4>
+              <h4 className="mb-0">Testimoni</h4>
             </div>
-            <button className="btn btn-primary" onClick={handleAdd}>
-              Add New Testimonial
+            <button className="btn btn-sm btn-primary" onClick={handleAdd}>
+              <i className="bi bi-plus-circle"></i>
+              <span className="ms-2">Tambah Testimoni</span>
             </button>
           </div>
 
           <div className="card border-0 shadow-sm">
             <div className="card-body">
-              <CmsDataTable
-                columns={columns}
-                data={testimonials}
+              <Table
                 isLoading={isLoading}
-                noDataMessage="No testimonials found"
-              />
+                page={page}
+                setPage={setPage}
+                totalPages={totalPage}
+                limit={limit}
+                setLimit={setLimit}
+                setSearch={setSearch}
+                totalData={totalData}
+              >
+                <table className="mb-0 table table-bordered table-striped table-hover">
+                  <thead>
+                    <tr>
+                      <th className="text-center align-middle">No</th>
+                      <th className="text-center align-middle">Nama</th>
+                      <th className="text-center align-middle">Deskripsi</th>
+                      <th className="text-center align-middle">Testimoni</th>
+                      <th className="text-center align-middle">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {testimonials?.map((testimonial, index) => (
+                      <tr key={testimonial.id}>
+                        <td className="text-center align-middle">
+                          {(page - 1) * limit + index + 1}
+                        </td>
+                        <td className="align-middle">{testimonial.name}</td>
+                        <td className="align-middle">
+                          {testimonial.description}
+                        </td>
+                        <td className="align-middle">
+                          {testimonial.testimonial}
+                        </td>
+                        <td className="text-center align-middle">
+                          <div className="d-flex align-items-center justify-content-center gap-2">
+                            <button
+                              className="btn btn-sm btn-warning"
+                              onClick={() => handleEdit(testimonial)}
+                            >
+                              <i className="bi bi-pencil-square"></i>
+                            </button>
+                            <button
+                              className="btn btn-sm btn-danger"
+                              onClick={() => handleDelete(testimonial.id)}
+                            >
+                              <i className="bi bi-trash"></i>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </Table>
             </div>
           </div>
         </motion.div>
@@ -215,16 +203,26 @@ const TestimonialsPage = () => {
 
       <CmsModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={modalType === "add" ? "Add New Testimonial" : "Edit Testimonial"}
+        onClose={handleCloseModal}
+        title={modalType === "add" ? "Tambah Testimoni" : "Edit Testimoni"}
       >
         <CmsForm
+          key={formKey}
           fields={formFields}
-          initialValues={selectedTestimonial}
-          onSubmit={handleSubmit}
-          submitButtonText={
-            modalType === "add" ? "Add Testimonial" : "Update Testimonial"
+          initialValues={
+            selectedTestimonial || {
+              name: "",
+              description: "",
+              testimonial: "",
+            }
           }
+          onSubmit={handleSubmit}
+          onCancel={handleCancel}
+          submitButtonText={
+            modalType === "add" ? "Tambah Testimoni" : "Ubah Testimoni"
+          }
+          cancelButtonText="Batal"
+          isLoading={addLoading}
         />
       </CmsModal>
     </Layout>

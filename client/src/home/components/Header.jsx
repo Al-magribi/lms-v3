@@ -15,10 +15,6 @@ const Header = ({ data }) => {
           .nav-link:hover {
             background-color: rgba(0, 0, 0, 0.05);
           }
-          .btn-primary:hover {
-            background-color: #0056b3;
-            border-color: #0056b3;
-          }
           .navbar-toggler:focus {
             box-shadow: none;
             outline: none;
@@ -43,7 +39,7 @@ const Header = ({ data }) => {
             </a>
 
             <button
-              className="navbar-toggler me-5"
+              className="navbar-toggler"
               type="button"
               data-bs-toggle="collapse"
               data-bs-target="#navbarSupportedContent"
@@ -61,7 +57,7 @@ const Header = ({ data }) => {
               <ul className="navbar-nav mb-2 mb-lg-0">
                 <li className="nav-item mx-1">
                   <a
-                    className="nav-link active px-3 py-2 rounded-pill hover-shadow transition-all"
+                    className="nav-link active btn rounded-pill hover-shadow transition-all"
                     aria-current="page"
                     href="#tentang-kami"
                   >
@@ -72,7 +68,7 @@ const Header = ({ data }) => {
 
                 <li className="nav-item mx-1">
                   <a
-                    className="nav-link px-3 py-2 rounded-pill hover-shadow transition-all"
+                    className="nav-link btn rounded-pill hover-shadow transition-all"
                     href="#fasilitas"
                   >
                     <i className="bi bi-building me-1"></i>
@@ -82,7 +78,7 @@ const Header = ({ data }) => {
 
                 <li className="nav-item mx-1">
                   <a
-                    className="nav-link px-3 py-2 rounded-pill hover-shadow transition-all"
+                    className="nav-link btn rounded-pill hover-shadow transition-all"
                     href="#infografis"
                   >
                     <i className="bi bi-graph-up me-1"></i>
@@ -92,7 +88,7 @@ const Header = ({ data }) => {
 
                 <li className="nav-item mx-1">
                   <a
-                    className="nav-link px-3 py-2 rounded-pill hover-shadow transition-all pointer"
+                    className="nav-link btn rounded-pill hover-shadow transition-all"
                     target="_blank"
                     onClick={() => window.open(data?.ppdb_url, "_blank")}
                   >
@@ -102,15 +98,19 @@ const Header = ({ data }) => {
                 </li>
 
                 <li className="nav-item mx-1">
-                  <a
-                    className="nav-link btn btn-primary text-white px-4 py-2 rounded-pill hover-shadow transition-all"
+                  <button
+                    style={{
+                      backgroundColor: data?.primary_color,
+                      color: data?.secondary_color,
+                    }}
+                    className="btn rounded-pill hover-shadow transition-all"
                     href="/signin"
                     tabIndex="-1"
                     aria-disabled="true"
                   >
                     <i className="bi bi-box-arrow-in-right me-1"></i>
                     Login
-                  </a>
+                  </button>
                 </li>
               </ul>
             </div>

@@ -1,7 +1,7 @@
 import React from "react";
 import { useGetHomeInfografisQuery } from "../../controller/api/dashboard/ApiDashboard";
 
-const Infographic = () => {
+const Infographic = ({ metrics }) => {
   const { data, isLoading, error } = useGetHomeInfografisQuery();
 
   if (isLoading) {
@@ -60,7 +60,10 @@ const Infographic = () => {
           <div className="col-md-4 mb-4">
             <div className="card h-100 text-center">
               <div className="card-body">
-                <i className="bi bi-people-fill display-1 text-primary mb-3"></i>
+                <i
+                  style={{ color: metrics?.primary_color }}
+                  className="bi bi-people-fill display-1 mb-3"
+                ></i>
                 <h3 className="card-title">
                   {basicStats.total_students.toLocaleString()}
                 </h3>
@@ -71,7 +74,10 @@ const Infographic = () => {
           <div className="col-md-4 mb-4">
             <div className="card h-100 text-center">
               <div className="card-body">
-                <i className="bi bi-person-workspace display-1 text-success mb-3"></i>
+                <i
+                  style={{ color: metrics?.primary_color }}
+                  className="bi bi-person-workspace display-1 mb-3"
+                ></i>
                 <h3 className="card-title">
                   {basicStats.total_teachers.toLocaleString()}
                 </h3>
@@ -82,7 +88,10 @@ const Infographic = () => {
           <div className="col-md-4 mb-4">
             <div className="card h-100 text-center">
               <div className="card-body">
-                <i className="bi bi-graph-up display-1 text-info mb-3"></i>
+                <i
+                  style={{ color: metrics?.primary_color }}
+                  className="bi bi-graph-up display-1 mb-3"
+                ></i>
                 <h3 className="card-title">{studentTeacherRatio}:1</h3>
                 <p className="card-text">Rasio Siswa-Guru</p>
               </div>
@@ -94,7 +103,13 @@ const Infographic = () => {
         <div className="row mb-5">
           <div className="col-12">
             <div className="card">
-              <div className="card-header bg-primary text-white">
+              <div
+                style={{
+                  backgroundColor: metrics?.primary_color,
+                  color: metrics?.secondary_color,
+                }}
+                className="card-header"
+              >
                 <h5 className="mb-0">
                   <i className="bi bi-geo-alt-fill me-2"></i>Distribusi
                   Geografis
@@ -116,7 +131,13 @@ const Infographic = () => {
                             className="list-group-item d-flex justify-content-between align-items-center"
                           >
                             {province.province_name}
-                            <span className="badge bg-primary rounded-pill">
+                            <span
+                              style={{
+                                backgroundColor: metrics?.secondary_color,
+                                color: metrics?.primary_color,
+                              }}
+                              className="badge rounded-pill"
+                            >
                               {province.student_count.toLocaleString()}
                             </span>
                           </li>
@@ -138,7 +159,13 @@ const Infographic = () => {
                             className="list-group-item d-flex justify-content-between align-items-center"
                           >
                             {city.city_name}, {city.province_name}
-                            <span className="badge bg-primary rounded-pill">
+                            <span
+                              style={{
+                                backgroundColor: metrics?.secondary_color,
+                                color: metrics?.primary_color,
+                              }}
+                              className="badge rounded-pill"
+                            >
                               {city.student_count.toLocaleString()}
                             </span>
                           </li>
@@ -163,7 +190,13 @@ const Infographic = () => {
                             className="list-group-item d-flex justify-content-between align-items-center"
                           >
                             {district.district_name}, {district.city_name}
-                            <span className="badge bg-primary rounded-pill">
+                            <span
+                              style={{
+                                backgroundColor: metrics?.secondary_color,
+                                color: metrics?.primary_color,
+                              }}
+                              className="badge rounded-pill"
+                            >
                               {district.student_count.toLocaleString()}
                             </span>
                           </li>
@@ -186,7 +219,13 @@ const Infographic = () => {
                             className="list-group-item d-flex justify-content-between align-items-center"
                           >
                             {village.village_name}, {village.district_name}
-                            <span className="badge bg-primary rounded-pill">
+                            <span
+                              style={{
+                                backgroundColor: metrics?.secondary_color,
+                                color: metrics?.primary_color,
+                              }}
+                              className="badge rounded-pill"
+                            >
                               {village.student_count.toLocaleString()}
                             </span>
                           </li>

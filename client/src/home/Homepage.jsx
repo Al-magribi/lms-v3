@@ -64,6 +64,10 @@ const Homepage = () => {
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => window.open(data?.ppdb_url, "_blank")}
+              style={{
+                backgroundColor: data?.primary_color,
+                color: data?.secondary_color,
+              }}
             >
               Yuk, Daftar Sekarang!
             </motion.button>
@@ -87,7 +91,7 @@ const Homepage = () => {
           transition={{ duration: 0.5 }}
           viewport={{ amount: 0.3, once: true }}
         >
-          <Reason />
+          <Reason metrics={data} />
         </motion.div>
 
         <motion.div
@@ -96,7 +100,7 @@ const Homepage = () => {
           transition={{ duration: 0.5 }}
           viewport={{ amount: 0.3, once: true }}
         >
-          <Facilities />
+          <Facilities metrics={data} />
         </motion.div>
 
         <motion.div
@@ -105,7 +109,7 @@ const Homepage = () => {
           transition={{ duration: 0.5 }}
           viewport={{ amount: 0.3, once: true }}
         >
-          <Infographic />
+          <Infographic metrics={data} />
         </motion.div>
 
         <motion.div

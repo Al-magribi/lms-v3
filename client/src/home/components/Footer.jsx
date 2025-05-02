@@ -31,9 +31,16 @@ const Footer = ({ data }) => {
           {/* Location */}
           <div className="col-md-6 col-12">
             <h5 className="mb-3">Lokasi</h5>
-            <p className="mb-2">
-              Jl. Guru Mukhtar II No.1 RT/RW.03/15 Cimahpar, Bogor Utara Kota
-              Bogor, Jawa Barat 16155
+            <p
+              className="mb-2 pointer"
+              onClick={() => {
+                window.open(
+                  `https://www.google.com/search?q=${data?.name}`,
+                  "_blank"
+                );
+              }}
+            >
+              {data?.address}
             </p>
             <h5 className="mb-3 mt-4">Media Sosial</h5>
             <div className="d-flex gap-3">

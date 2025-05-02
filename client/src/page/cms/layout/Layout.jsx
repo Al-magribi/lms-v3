@@ -46,38 +46,32 @@ const Layout = ({ children }) => {
     },
     {
       id: "reason",
-      name: "Reasons",
+      name: "Alasan",
       icon: <FaLightbulb />,
       path: "/cms-reason",
     },
     {
       id: "facility",
-      name: "Facilities",
+      name: "Fasilitas",
       icon: <FaBuilding />,
       path: "/cms-facility",
     },
     {
       id: "testimoni",
-      name: "Testimonials",
+      name: "Testimoni",
       icon: <FaComments />,
       path: "/cms-testimoni",
     },
     {
-      id: "graduation",
-      name: "Graduation",
-      icon: <FaGraduationCap />,
-      path: "/cms-graduation",
-    },
-    {
       id: "category",
-      name: "Categories",
+      name: "Kategori",
       icon: <FaTags />,
       path: "/cms-category",
     },
-    { id: "news", name: "News", icon: <FaNewspaper />, path: "/cms-news" },
+    { id: "news", name: "Berita", icon: <FaNewspaper />, path: "/cms-news" },
     {
       id: "settings",
-      name: "Settings",
+      name: "Pengaturan",
       icon: <FaCog />,
       path: "/cms-settings",
     },
@@ -147,7 +141,7 @@ const Layout = ({ children }) => {
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
           >
-            <FaTimes />
+            <i className="bi bi-x-lg"></i>
           </motion.button>
         </div>
 
@@ -170,18 +164,6 @@ const Layout = ({ children }) => {
               </li>
             ))}
           </ul>
-        </div>
-
-        <div className="mt-auto p-3 border-top">
-          <div className="d-flex align-items-center">
-            <div className="rounded-circle bg-primary p-2 me-2">
-              <FaUser />
-            </div>
-            <div>
-              <div className="fw-bold">Admin User</div>
-              <small className="text-muted">Administrator</small>
-            </div>
-          </div>
         </div>
       </motion.div>
 

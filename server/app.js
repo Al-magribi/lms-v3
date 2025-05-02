@@ -15,7 +15,9 @@ import routerAuth from "./router/auth/routerAuth.js";
 
 // CMS
 import routerHomepage from "./router/cms/routerHomepage.js";
-
+import routerReason from "./router/cms/routerReason.js";
+import routerFacility from "./router/cms/routerFacility.js";
+import routerTestimoni from "./router/cms/routerTestimoni.js";
 // Admin Pusat
 import routerHomebase from "./router/center/routerHomebase.js";
 import routerAdmin from "./router/center/routerAdmin.js";
@@ -66,7 +68,9 @@ app.use("/assets", express.static(path.join(__dirname, "assets")));
 app.use("/api/auth", routerAuth);
 
 app.use("/api/cms/homepage", routerHomepage);
-
+app.use("/api/cms/reasons", routerReason);
+app.use("/api/cms/facilities", routerFacility);
+app.use("/api/cms/testimonies", routerTestimoni);
 app.use("/api/center/homebase", routerHomebase);
 app.use("/api/center/admin", routerAdmin);
 app.use("/api/center/data", routerCenterData);

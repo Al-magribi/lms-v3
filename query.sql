@@ -627,10 +627,24 @@ CREATE TABLE cms_homepage(
     facebook TEXT,
     ppdb_url TEXT,
     logo TEXT,
+    address TEXT,
+    title_reason TEXT,
+    desc_reason TEXT,
+    title_facility TEXT,
+    desc_facility TEXT,
+    primary_color TEXT,
+    secondary_color TEXT,
     createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )
 
 ALTER TABLE cms_homepage ADD COLUMN logo TEXT;
+ALTER TABLE cms_homepage ADD COLUMN title_reason TEXT;
+ALTER TABLE cms_homepage ADD COLUMN desc_reason TEXT;
+ALTER TABLE cms_homepage ADD COLUMN title_facility TEXT;
+ALTER TABLE cms_homepage ADD COLUMN desc_facility TEXT;
+ALTER TABLE cms_homepage ADD COLUMN address TEXT;
+ALTER TABLE cms_homepage ADD COLUMN primary_color TEXT;
+ALTER TABLE cms_homepage ADD COLUMN secondary_color TEXT;
 
 
 CREATE TABLE cms_reason(

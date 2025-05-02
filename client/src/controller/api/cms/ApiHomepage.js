@@ -14,10 +14,9 @@ export const ApiHomepage = createApi({
     }),
     updateHomepage: builder.mutation({
       query: (data) => ({
-        url: "/homepage",
+        url: "/udpate-homepage",
         method: "PUT",
         body: data,
-        // Don't set Content-Type header, let the browser set it with the boundary
         formData: true,
       }),
       invalidatesTags: ["Homepage"],
