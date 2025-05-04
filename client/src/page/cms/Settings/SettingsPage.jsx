@@ -121,21 +121,36 @@ const SettingsPage = () => {
     }
   };
 
-  const handleColorChange = (color) => {
+  const handleColorChange = async (color) => {
     const lightColor = generateLightColor(color);
-    setPrimaryColor(color);
-    setSecondaryColor(lightColor);
 
-    // Update CSS variables for immediate visual feedback
-    document.documentElement.style.setProperty("--bs-primary", color);
-    document.documentElement.style.setProperty(
-      "--bs-primary-rgb",
-      hexToRgb(color)
-    );
-    document.documentElement.style.setProperty(
-      "--bs-primary-light",
-      lightColor
-    );
+    // Langsung update ke backend
+    if (settings) {
+      try {
+        const formDataToSend = new FormData();
+        // Gabungkan data settings lama dengan warna baru
+        Object.entries({
+          ...settings,
+          primary_color: color,
+          secondary_color: lightColor,
+        }).forEach(([key, value]) => {
+          if (key !== "logo") {
+            formDataToSend.append(key, value);
+          }
+        });
+        // Logo (jika ada)
+        if (logoFile) {
+          formDataToSend.append("logo", logoFile);
+        } else if (settings.logo) {
+          formDataToSend.append("logo", settings.logo);
+        }
+        // Panggil updateHomepage
+        await updateHomepage(formDataToSend).unwrap();
+        toast.success("Warna berhasil diperbarui!");
+      } catch (error) {
+        toast.error("Gagal memperbarui warna");
+      }
+    }
   };
 
   // Helper function to convert hex to RGB
@@ -148,7 +163,6 @@ const SettingsPage = () => {
 
   useEffect(() => {
     if (isSuccess) {
-      toast.success(msg.message);
       reset();
       refetch();
       window.location.reload();
@@ -156,7 +170,6 @@ const SettingsPage = () => {
       setLogoFile(null);
     }
     if (isError) {
-      toast.error(error?.data?.message);
       reset();
     }
   }, [isSuccess, isError, msg, error, refetch, reset]);
@@ -234,45 +247,49 @@ const SettingsPage = () => {
 
   return (
     <Layout>
-      <div className="container-fluid py-3 py-md-4">
+      <div className='container-fluid py-3 py-md-4'>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="d-flex align-items-center mb-4">
-            <div className="bg-primary bg-opacity-10 p-3 rounded me-3">
-              <FaCog className="text-primary fs-4" />
+          transition={{ duration: 0.5 }}>
+          <div className='d-flex align-items-center mb-4'>
+            <div
+              style={{
+                backgroundColor: data?.secondary_color,
+                color: data?.primary_color,
+              }}
+              className=' p-3 rounded me-3'>
+              <FaCog className='fs-4' />
             </div>
-            <h4 className="mb-0">Settings</h4>
+            <h4 className='mb-0'>Settings</h4>
           </div>
 
-          <div className="card border-0 shadow-sm">
-            <div className="card-body">
+          <div className='card border-0 shadow-sm'>
+            <div className='card-body'>
               {isLoading || getLoading || updateLoading ? (
-                <div className="text-center py-5">
-                  <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Loading...</span>
+                <div className='text-center py-5'>
+                  <div className='spinner-border text-primary' role='status'>
+                    <span className='visually-hidden'>Loading...</span>
                   </div>
-                  <p className="mt-2">Loading settings...</p>
+                  <p className='mt-2'>Loading settings...</p>
                 </div>
               ) : (
                 <>
-                  <div className="mb-4">
-                    <label className="form-label">Logo</label>
-                    <div className="d-flex align-items-center gap-3">
+                  <div className='mb-4'>
+                    <label className='form-label'>Logo</label>
+                    <div className='d-flex align-items-center gap-3'>
                       <input
-                        type="file"
-                        className="form-control"
-                        accept="image/*"
+                        type='file'
+                        className='form-control'
+                        accept='image/*'
                         onChange={handleLogoChange}
                       />
                       {logoPreview && (
                         <img
                           src={logoPreview}
-                          alt="Logo preview"
+                          alt='Logo preview'
                           style={{ maxHeight: "100px", objectFit: "contain" }}
-                          className="border rounded p-2"
+                          className='border rounded p-2'
                         />
                       )}
                     </div>
@@ -281,20 +298,20 @@ const SettingsPage = () => {
                     fields={formFields}
                     initialValues={settings}
                     onSubmit={handleSubmit}
-                    submitButtonText="Save Settings"
-                    submitButtonIcon={<FaSave className="me-2" />}
+                    submitButtonText='Simpan'
+                    submitButtonIcon={<FaSave className='me-2' />}
                   />
                 </>
               )}
 
-              <div className="mt-4">
+              <div className='mt-4'>
                 <h4>Pengaturan Warna</h4>
-                <div className="mt-4">
-                  <div className="d-flex align-items-center justify-content-between mb-3">
-                    <label className="form-label mb-0">Primary Color</label>
-                    <div className="d-flex align-items-center gap-2">
+                <div className='mt-4'>
+                  <div className='d-flex align-items-center justify-content-between mb-3'>
+                    <label className='form-label mb-0'>Primary Color</label>
+                    <div className='d-flex align-items-center gap-2'>
                       <div
-                        className="rounded-circle"
+                        className='rounded-circle'
                         style={{
                           backgroundColor: secondaryColor,
                           width: "40px",
@@ -303,21 +320,20 @@ const SettingsPage = () => {
                           alignItems: "center",
                           justifyContent: "center",
                           border: "2px solid #dee2e6",
-                        }}
-                      >
+                        }}>
                         <FaRegLightbulb
                           style={{ color: primaryColor }}
-                          className="fs-4"
+                          className='fs-4'
                         />
                       </div>
                     </div>
                   </div>
 
-                  <div className="d-flex flex-wrap gap-2">
+                  <div className='d-flex flex-wrap gap-2'>
                     {baseColors.map((color) => (
                       <div
                         key={color.name}
-                        className="rounded-circle"
+                        className='rounded-circle'
                         style={{
                           backgroundColor: color.value,
                           width: "30px",
@@ -331,42 +347,40 @@ const SettingsPage = () => {
                     ))}
                   </div>
 
-                  <div className="mt-3">
+                  <div className='mt-3'>
                     <input
-                      type="color"
-                      className="form-control form-control-color"
+                      type='color'
+                      className='form-control form-control-color'
                       value={primaryColor}
                       onChange={(e) => handleColorChange(e.target.value)}
-                      title="Choose your color"
+                      title='Choose your color'
                     />
                   </div>
 
-                  <div className="mt-3">
-                    <small className="text-muted">
+                  <div className='mt-3'>
+                    <small className='text-muted'>
                       Selected Colors:
-                      <div className="d-flex gap-2 mt-1">
-                        <div className="d-flex align-items-center">
+                      <div className='d-flex gap-2 mt-1'>
+                        <div className='d-flex align-items-center'>
                           <div
-                            className="rounded-circle me-1"
+                            className='rounded-circle me-1'
                             style={{
                               backgroundColor: primaryColor,
                               width: "20px",
                               height: "20px",
                               border: "1px solid #dee2e6",
-                            }}
-                          ></div>
+                            }}></div>
                           Primary: {primaryColor}
                         </div>
-                        <div className="d-flex align-items-center">
+                        <div className='d-flex align-items-center'>
                           <div
-                            className="rounded-circle me-1"
+                            className='rounded-circle me-1'
                             style={{
                               backgroundColor: secondaryColor,
                               width: "20px",
                               height: "20px",
                               border: "1px solid #dee2e6",
-                            }}
-                          ></div>
+                            }}></div>
                           Secondary: {secondaryColor}
                         </div>
                       </div>

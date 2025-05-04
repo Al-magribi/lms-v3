@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 
-const AboutUs = ({ data }) => {
+const AboutUs = ({ metrics }) => {
+  console.log(metrics);
   const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
 
   useEffect(() => {
@@ -38,34 +39,34 @@ const AboutUs = ({ data }) => {
   };
 
   return (
-    <section id="tentang-kami" className="py-5 my-5 bg-white">
-      <div className="container">
-        <div className="row justify-content-center">
-          <div className="col-lg-6 col-12">
-            <div className="card shadow-sm mb-4">
-              <div className="card-body">
-                <h2 className="mb-4">{data?.name}</h2>
+    <section id='tentang-kami' className='py-5 my-5 bg-white'>
+      <div className='container'>
+        <div className='row justify-content-center'>
+          <div className='col-lg-6 col-12'>
+            <div className='card shadow-sm mb-4'>
+              <div className='card-body'>
+                <h2 className='mb-4'>{metrics?.name}</h2>
 
-                <p className="card-text">{data?.description}</p>
+                <p className='card-text'>{metrics?.description}</p>
               </div>
             </div>
           </div>
 
-          <div className="col-lg-6 col-12">
-            <div id="video-container" className="ratio ratio-16x9">
+          <div className='col-lg-6 col-12'>
+            <div id='video-container' className='ratio ratio-16x9'>
               {shouldLoadVideo ? (
                 <iframe
-                  src={getEmbedUrl(data?.video_url)}
-                  title="Video Profil NIBS"
+                  src={getEmbedUrl(metrics?.video_url)}
+                  title='Video Profil NIBS'
                   allowFullScreen
-                  className="rounded"
-                  loading="lazy"
+                  className='rounded'
+                  loading='lazy'
                 />
               ) : (
-                <div className="bg-light rounded d-flex align-items-center justify-content-center">
-                  <div className="text-center">
-                    <div className="spinner-border text-primary" role="status">
-                      <span className="visually-hidden">Loading...</span>
+                <div className='bg-light rounded d-flex align-items-center justify-content-center'>
+                  <div className='text-center'>
+                    <div className='spinner-border text-primary' role='status'>
+                      <span className='visually-hidden'>Loading...</span>
                     </div>
                   </div>
                 </div>

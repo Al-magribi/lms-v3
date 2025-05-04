@@ -18,11 +18,14 @@ import routerHomepage from "./router/cms/routerHomepage.js";
 import routerReason from "./router/cms/routerReason.js";
 import routerFacility from "./router/cms/routerFacility.js";
 import routerTestimoni from "./router/cms/routerTestimoni.js";
+import routerCategory from "./router/cms/routerCategory.js";
+
 // Admin Pusat
 import routerHomebase from "./router/center/routerHomebase.js";
 import routerAdmin from "./router/center/routerAdmin.js";
 import routerCenterData from "./router/center/routerCenterData.js";
 import routerApp from "./router/center/routerApp.js";
+
 // Admin Satuan
 import routerPeriode from "./router/admin/routerPeriode.js";
 import routerGrade from "./router/admin/routerGrade.js";
@@ -36,6 +39,7 @@ import routerSubject from "./router/admin/routerSubject.js";
 import routerBank from "./router/cbt/routerBank.js";
 import routerExam from "./router/cbt/routerExam.js";
 import routerAnswer from "./router/cbt/routerAnswer.js";
+
 // LMS
 import routerChapter from "./router/lms/routerChapter.js";
 import routerLmsStudent from "./router/lms/routerLms.js";
@@ -71,6 +75,8 @@ app.use("/api/cms/homepage", routerHomepage);
 app.use("/api/cms/reasons", routerReason);
 app.use("/api/cms/facilities", routerFacility);
 app.use("/api/cms/testimonies", routerTestimoni);
+app.use("/api/cms/categories", routerCategory);
+
 app.use("/api/center/homebase", routerHomebase);
 app.use("/api/center/admin", routerAdmin);
 app.use("/api/center/data", routerCenterData);

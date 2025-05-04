@@ -5,90 +5,35 @@ import CmsModal from "../components/CmsModal";
 import CmsForm from "../components/CmsForm";
 import { motion } from "framer-motion";
 import { FaTags, FaEdit, FaTrash } from "react-icons/fa";
+import { toast } from "react-hot-toast";
+import {
+  useGetCategoryQuery,
+  useCreateCategoryMutation,
+  useDeleteCategoryMutation,
+} from "../../../controller/api/cms/ApiCategory";
+import Table from "../../../components/table/Table";
 
 const CategoriesPage = () => {
-  const [categories, setCategories] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalType, setModalType] = useState("add"); // "add" or "edit"
+  const [modalType, setModalType] = useState("add");
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [search, setSearch] = useState("");
+  const [formKey, setFormKey] = useState(0);
 
-  // Mock data for demonstration
-  useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setCategories([
-        {
-          id: 1,
-          name: "Academic",
-          description: "Academic achievements and programs",
-          slug: "academic",
-          count: 15,
-        },
-        {
-          id: 2,
-          name: "Islamic Studies",
-          description: "Islamic education and religious activities",
-          slug: "islamic-studies",
-          count: 10,
-        },
-        {
-          id: 3,
-          name: "Events",
-          description: "School events and activities",
-          slug: "events",
-          count: 8,
-        },
-        {
-          id: 4,
-          name: "Announcements",
-          description: "Important announcements and updates",
-          slug: "announcements",
-          count: 12,
-        },
-      ]);
-      setIsLoading(false);
-    }, 1000);
-  }, []);
+  const { data, isLoading, refetch } = useGetCategoryQuery({
+    page,
+    limit,
+    search,
+  });
+  const { result: categories = [], totalData, totalPage } = data || {};
 
-  const columns = [
-    {
-      header: "Name",
-      accessor: "name",
-    },
-    {
-      header: "Description",
-      accessor: "description",
-    },
-    {
-      header: "Slug",
-      accessor: "slug",
-    },
-    {
-      header: "Count",
-      accessor: "count",
-    },
-    {
-      header: "Actions",
-      accessor: "actions",
-      cell: (row) => (
-        <div className="d-flex gap-2">
-          <button
-            className="btn btn-sm btn-outline-primary"
-            onClick={() => handleEdit(row)}
-          >
-            <FaEdit />
-          </button>
-          <button
-            className="btn btn-sm btn-outline-danger"
-            onClick={() => handleDelete(row.id)}
-          >
-            <FaTrash />
-          </button>
-        </div>
-      ),
-    },
-  ];
+  const [
+    createCategory,
+    { isLoading: addLoading, isSuccess, error, data: msg, reset },
+  ] = useCreateCategoryMutation();
+  const [deleteCategory] = useDeleteCategoryMutation();
 
   const handleAdd = () => {
     setModalType("add");
@@ -102,33 +47,51 @@ const CategoriesPage = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this category?")) {
-      // In a real app, you would call an API here
-      setCategories(categories.filter((category) => category.id !== id));
+      try {
+        await deleteCategory(id).unwrap();
+        toast.success("Category deleted successfully");
+        refetch();
+      } catch (error) {
+        toast.error(error.data?.message || "Failed to delete category");
+      }
     }
   };
 
-  const handleSubmit = (formData) => {
-    if (modalType === "add") {
-      // In a real app, you would call an API here
-      const newCategory = {
-        id: categories.length + 1,
-        ...formData,
-        count: 0,
-      };
-      setCategories([...categories, newCategory]);
-    } else {
-      // In a real app, you would call an API here
-      setCategories(
-        categories.map((category) =>
-          category.id === selectedCategory.id
-            ? { ...category, ...formData }
-            : category
-        )
-      );
+  const handleSubmit = async (formData) => {
+    try {
+      await createCategory(formData).unwrap();
+    } catch (error) {
+      toast.error(error.data?.message || "Failed to save category");
     }
+  };
+
+  const handleCancel = () => {
+    setSelectedCategory(null);
     setIsModalOpen(false);
+    setFormKey((prev) => prev + 1);
+  };
+
+  useEffect(() => {
+    if (isSuccess) {
+      toast.success(msg?.message || "Category saved successfully");
+      setIsModalOpen(false);
+      refetch();
+      setSelectedCategory(null);
+      setFormKey((prev) => prev + 1);
+      reset();
+    }
+    if (error) {
+      toast.error(error.data?.message);
+      reset();
+    }
+  }, [isSuccess, error, msg, reset, refetch]);
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedCategory(null);
+    setFormKey((prev) => prev + 1);
   };
 
   const formFields = [
@@ -138,48 +101,75 @@ const CategoriesPage = () => {
       type: "text",
       required: true,
     },
-    {
-      name: "description",
-      label: "Description",
-      type: "textarea",
-      required: true,
-    },
-    {
-      name: "slug",
-      label: "Slug",
-      type: "text",
-      required: true,
-    },
   ];
 
   return (
     <Layout>
-      <div className="container-fluid py-3 py-md-4">
+      <div className='container-fluid py-3 py-md-4'>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="d-flex justify-content-between align-items-center mb-4">
-            <div className="d-flex align-items-center">
-              <div className="bg-primary bg-opacity-10 p-3 rounded me-3">
-                <FaTags className="text-primary fs-4" />
+          transition={{ duration: 0.5 }}>
+          <div className='d-flex justify-content-between align-items-center mb-4'>
+            <div className='d-flex align-items-center'>
+              <div className='bg-primary bg-opacity-10 p-3 rounded me-3'>
+                <FaTags className='text-primary fs-4' />
               </div>
-              <h4 className="mb-0">Categories</h4>
+              <h4 className='mb-0'>Categories</h4>
             </div>
-            <button className="btn btn-primary" onClick={handleAdd}>
-              Add New Category
+            <button className='btn btn-sm btn-primary' onClick={handleAdd}>
+              <span className='bi bi-plus-circle'></span>
+              <span className='ms-2'>Tambah Kategori</span>
             </button>
           </div>
 
-          <div className="card border-0 shadow-sm">
-            <div className="card-body">
-              <CmsDataTable
-                columns={columns}
-                data={categories}
+          <div className='card border-0 shadow-sm'>
+            <div className='card-body'>
+              <Table
                 isLoading={isLoading}
-                noDataMessage="No categories found"
-              />
+                page={page}
+                setPage={setPage}
+                totalPages={totalPage}
+                limit={limit}
+                setLimit={setLimit}
+                setSearch={setSearch}
+                totalData={totalData}>
+                <table className='mb-0 table table-bordered table-striped table-hover'>
+                  <thead>
+                    <tr>
+                      <th className='text-center align-middle'>No</th>
+                      <th className='text-center align-middle'>Name</th>
+
+                      <th className='text-center align-middle'>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {categories?.map((category, index) => (
+                      <tr key={category.id}>
+                        <td className='text-center align-middle'>
+                          {(page - 1) * limit + index + 1}
+                        </td>
+                        <td className='align-middle'>{category.name}</td>
+
+                        <td className='text-center align-middle'>
+                          <div className='d-flex align-items-center justify-content-center gap-2'>
+                            <button
+                              className='btn btn-sm btn-warning'
+                              onClick={() => handleEdit(category)}>
+                              <i className='bi bi-pencil-square'></i>
+                            </button>
+                            <button
+                              className='btn btn-sm btn-danger'
+                              onClick={() => handleDelete(category.id)}>
+                              <i className='bi bi-trash'></i>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </Table>
             </div>
           </div>
         </motion.div>
@@ -187,16 +177,25 @@ const CategoriesPage = () => {
 
       <CmsModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={modalType === "add" ? "Add New Category" : "Edit Category"}
-      >
+        onClose={handleCloseModal}
+        title={modalType === "add" ? "Add New Category" : "Edit Category"}>
         <CmsForm
+          key={formKey}
           fields={formFields}
-          initialValues={selectedCategory}
+          initialValues={
+            selectedCategory || {
+              name: "",
+              description: "",
+              slug: "",
+            }
+          }
           onSubmit={handleSubmit}
+          onCancel={handleCancel}
           submitButtonText={
             modalType === "add" ? "Add Category" : "Update Category"
           }
+          cancelButtonText='Cancel'
+          isLoading={addLoading}
         />
       </CmsModal>
     </Layout>

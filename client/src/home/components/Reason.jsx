@@ -13,11 +13,11 @@ const Reason = ({ metrics }) => {
 
   if (isLoading) {
     return (
-      <section className="py-5 bg-light">
-        <div className="container">
-          <div className="text-center">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Loading...</span>
+      <section className='py-5 bg-light'>
+        <div className='container'>
+          <div className='text-center'>
+            <div className='spinner-border text-primary' role='status'>
+              <span className='visually-hidden'>Loading...</span>
             </div>
           </div>
         </div>
@@ -26,23 +26,21 @@ const Reason = ({ metrics }) => {
   }
 
   return (
-    <section className="py-5 bg-light">
-      <div className="container">
+    <section className='py-5 bg-light'>
+      <div className='container'>
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           transition={{ duration: 0.4 }}
           viewport={{ once: true }}
-          className="text-center mb-5"
-        >
-          <h2 className="display-5 fw-bold mb-3">Mengapa Memilih NIBS?</h2>
-          <p className="lead text-muted mx-auto" style={{ maxWidth: "700px" }}>
-            Temukan keunggulan pendidikan di NIBS yang membentuk generasi unggul
-            berakhlak mulia
+          className='text-center mb-5'>
+          <h2 className='display-5 fw-bold mb-3'>{metrics?.title_reason}</h2>
+          <p className='lead text-muted mx-auto' style={{ maxWidth: "700px" }}>
+            {metrics?.desc_reason}
           </p>
         </motion.div>
 
-        <div className="row g-4">
+        <div className='row g-4'>
           {data?.map((reason, index) => {
             // Get the icon component from either FA5 or FA6
             // Format expected in database: "FaQuran" or "Fa6Quran"
@@ -59,25 +57,23 @@ const Reason = ({ metrics }) => {
                 whileInView={{ opacity: 1 }}
                 transition={{ duration: 0.3, delay: index * 0.1 }}
                 viewport={{ once: true }}
-                className="col-md-6 col-lg-4"
-              >
-                <div className="card h-100 border-0 shadow-sm hover-shadow">
-                  <div className="card-body p-4">
-                    <div className="d-flex align-items-center mb-3">
+                className='col-md-6 col-lg-4'>
+                <div className='card h-100 border-0 shadow-sm hover-shadow'>
+                  <div className='card-body p-4'>
+                    <div className='d-flex align-items-center mb-3'>
                       <div
                         style={{
                           backgroundColor: metrics?.secondary_color,
                           color: metrics?.primary_color,
                         }}
-                        className="rounded-circle p-3 me-3"
-                      >
-                        <IconComponent className="fs-2" />
+                        className='rounded-circle p-3 me-3'>
+                        <IconComponent className='fs-2' />
                       </div>
-                      <h3 className="card-title h5 mb-0 fw-bold">
+                      <h3 className='card-title h5 mb-0 fw-bold'>
                         {reason.name}
                       </h3>
                     </div>
-                    <p className="card-text text-muted small mb-0">
+                    <p className='card-text text-muted small mb-0'>
                       {reason.description}
                     </p>
                   </div>

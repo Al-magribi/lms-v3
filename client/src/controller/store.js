@@ -8,6 +8,7 @@ import { ApiHomepage } from "./api/cms/ApiHomepage";
 import { ApiReason } from "./api/cms/ApiReason";
 import { ApiFacility } from "./api/cms/ApiFacility";
 import { ApiTestimoni } from "./api/cms/ApiTestimoni";
+import { ApiCategory } from "./api/cms/ApiCategory";
 
 // center
 import { ApiHomebase } from "./api/center/ApiHomebase";
@@ -58,6 +59,7 @@ const store = configureStore({
     [ApiReason.reducerPath]: ApiReason.reducer,
     [ApiFacility.reducerPath]: ApiFacility.reducer,
     [ApiTestimoni.reducerPath]: ApiTestimoni.reducer,
+    [ApiCategory.reducerPath]: ApiCategory.reducer,
 
     [ApiHomebase.reducerPath]: ApiHomebase.reducer,
     [ApiAdmin.reducerPath]: ApiAdmin.reducer,
@@ -100,6 +102,8 @@ const store = configureStore({
       ApiReason.middleware,
       ApiFacility.middleware,
       ApiTestimoni.middleware,
+      ApiCategory.middleware,
+
       ApiHomebase.middleware,
       ApiAdmin.middleware,
       ApiCenterData.middleware,

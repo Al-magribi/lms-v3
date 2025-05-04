@@ -138,18 +138,12 @@ router.put(
       const result = await client.query(query, values);
 
       res.status(200).json({
-        success: true,
-        message: "Data homepage berhasil diperbarui",
+        message: update,
         data: result.rows[0],
       });
     } catch (error) {
       console.error("Error in homepage update:", error);
-      res.status(500).json({
-        success: false,
-        message: "Gagal memperbarui homepage",
-        error:
-          process.env.NODE_ENV === "development" ? error.message : undefined,
-      });
+      res.status(500).json({ message: error.message });
     } finally {
       if (client) {
         client.release();
@@ -184,7 +178,6 @@ router.get("/get-data", async (req, res) => {
 
     if (!rows.length) {
       return res.status(404).json({
-        success: false,
         message: "Data homepage tidak ditemukan",
         data: null,
       });
@@ -196,18 +189,10 @@ router.get("/get-data", async (req, res) => {
 
     if (error.code === "57014") {
       res.status(504).json({
-        success: false,
         message: "Waktu tunggu query habis. Silakan coba lagi.",
-        error:
-          process.env.NODE_ENV === "development" ? error.message : undefined,
       });
     } else {
-      res.status(500).json({
-        success: false,
-        message: error,
-        error:
-          process.env.NODE_ENV === "development" ? error.message : undefined,
-      });
+      res.status(500).json({ message: error.message });
     }
   } finally {
     if (client) {
