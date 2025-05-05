@@ -28,7 +28,7 @@ const TableExam = ({ setDetail }) => {
 
   const deleteHandler = (id) => {
     const confirm = window.confirm(
-      "Apakah anda yakin ingin menghapus ujian ini?"
+      "Apakah anda yakin ingin menghapus ujian ini dan semua data yang terkait dengan ujian ini?"
     );
 
     if (confirm) {

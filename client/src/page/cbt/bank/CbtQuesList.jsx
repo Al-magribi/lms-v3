@@ -46,57 +46,61 @@ const CbtQuesList = () => {
 
   return (
     <Layout title={"Daftar Soal "} levels={["admin", "teacher"]}>
-      <div className='container-fluid bg-white p-2 rounded shadow border mb-2'>
-        <div className='row g-2'>
-          <div className='col-lg-6 col-12 d-flex align-items-center'>
-            <div className='d-flex gap-2'>
-              <p className='m-0'>
+      <div className="container-fluid bg-white p-2 rounded shadow border mb-2">
+        <div className="row g-2">
+          <div className="col-lg-6 col-12 d-flex align-items-center">
+            <div className="d-flex gap-2">
+              <p className="m-0">
                 Mata Pelajaran: <strong>{subject.replace(/-/g, " ")}</strong>
               </p>
-              <p className='m-0'>
+              <p className="m-0">
                 Bank Soal: <strong>{name.replace(/-/g, " ")}</strong>
               </p>
             </div>
           </div>
-          <div className='col-lg-6 col-12'>
-            <div className='d-flex flex-wrap gap-2 justify-content-end'>
+          <div className="col-lg-6 col-12">
+            <div className="d-flex flex-wrap gap-2 justify-content-end">
               <button
-                className='btn btn-sm btn-secondary'
-                data-toggle='tooltip'
-                data-placement='bottom'
-                title='Template'
+                className="btn btn-sm btn-secondary"
+                data-toggle="tooltip"
+                data-placement="bottom"
+                title="Template"
                 onClick={download}
               >
-                <i className='bi bi-filetype-xlsx'></i>
+                <i className="bi bi-filetype-xlsx"></i>
+                <span className="d-none d-sm-inline">Template</span>
               </button>
               <button
-                className='btn btn-sm btn-primary'
-                data-toggle='tooltip'
-                data-placement='bottom'
-                title='Upload'
-                data-bs-toggle='modal'
-                data-bs-target='#upload'
+                className="btn btn-sm btn-primary"
+                data-toggle="tooltip"
+                data-placement="bottom"
+                title="Upload"
+                data-bs-toggle="modal"
+                data-bs-target="#upload"
               >
-                <i className='bi bi-file-earmark-arrow-up'></i>
+                <i className="bi bi-file-earmark-arrow-up"></i>
+                <span className="d-none d-sm-inline">Upload Soal</span>
               </button>
               <button
-                data-toggle='tooltip'
-                data-placement='bottom'
-                title='Tambah Soal'
-                className='btn btn-sm btn-success'
+                data-toggle="tooltip"
+                data-placement="bottom"
+                title="Tambah Soal"
+                className="btn btn-sm btn-success"
                 onClick={goToLink}
               >
-                <i className='bi bi-file-earmark-plus'></i>
+                <i className="bi bi-file-earmark-plus"></i>
+                <span className="d-none d-sm-inline">Tambah Soal</span>
               </button>
               <button
-                className='btn btn-sm btn-danger'
-                data-toggle='tooltip'
-                data-placement='bottom'
-                title='Hapus Soal'
+                className="btn btn-sm btn-danger"
+                data-toggle="tooltip"
+                data-placement="bottom"
+                title="Hapus Soal"
                 disabled={isLoading}
                 onClick={clearHandler}
               >
-                <i className='bi bi-folder-x'></i>
+                <i className="bi bi-folder-x"></i>
+                <span className="d-none d-sm-inline">Hapus Semua Soal</span>
               </button>
             </div>
           </div>

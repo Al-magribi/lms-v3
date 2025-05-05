@@ -28,16 +28,21 @@ const TableData = ({ setDetail }) => {
     useDeleteMajorMutation();
 
   const deleteHandler = (id) => {
-    toast.promise(
-      deleteMajor(id)
-        .unwrap()
-        .then((res) => res.message),
-      {
-        loading: "Memproses...",
-        success: (message) => message,
-        error: (err) => err.data.message,
-      }
+    const confirm = window.confirm(
+      "Apakah anda yakin ingin menghapus data jurusan ini dan semua data yang terkait dengan jurusan ini?"
     );
+    if (confirm) {
+      toast.promise(
+        deleteMajor(id)
+          .unwrap()
+          .then((res) => res.message),
+        {
+          loading: "Memproses...",
+          success: (message) => message,
+          error: (err) => err.data.message,
+        }
+      );
+    }
   };
 
   useEffect(() => {
@@ -60,11 +65,11 @@ const TableData = ({ setDetail }) => {
       totalPages={totalPages}
       isLoading={dataLoading}
     >
-      <table className='table table-bordered table-striped table-hover'>
+      <table className="table table-bordered table-striped table-hover">
         <thead>
           <tr>
             {columns.map((item) => (
-              <th key={item.label} className='text-center'>
+              <th key={item.label} className="text-center">
                 {item.label}
               </th>
             ))}
@@ -74,26 +79,26 @@ const TableData = ({ setDetail }) => {
           {majors?.length > 0 ? (
             majors?.map((item, i) => (
               <tr key={i}>
-                <td className='text-center align-middle'>
+                <td className="text-center align-middle">
                   {(page - 1) * limit + i + 1}
                 </td>
 
-                <td className='align-middle'>{item.homebase}</td>
-                <td className='align-middle'>{item.name}</td>
-                <td className='text-center align-middle'>
-                  <div className='d-flex justify-content-center gap-2'>
+                <td className="align-middle">{item.homebase}</td>
+                <td className="align-middle">{item.name}</td>
+                <td className="text-center align-middle">
+                  <div className="d-flex justify-content-center gap-2">
                     <button
-                      className='btn btn-sm btn-warning'
+                      className="btn btn-sm btn-warning"
                       onClick={() => setDetail(item)}
                     >
-                      <i className='bi bi-pencil-square'></i>
+                      <i className="bi bi-pencil-square"></i>
                     </button>
                     <button
-                      className='btn btn-sm btn-danger'
+                      className="btn btn-sm btn-danger"
                       disabled={isLoading}
                       onClick={() => deleteHandler(item.id)}
                     >
-                      <i className='bi bi-folder-minus'></i>
+                      <i className="bi bi-folder-minus"></i>
                     </button>
                   </div>
                 </td>

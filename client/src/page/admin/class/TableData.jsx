@@ -23,16 +23,21 @@ const TableData = ({ setDetail }) => {
     useDeleteClassMutation();
 
   const deleteHandler = (id) => {
-    toast.promise(
-      deleteClass(id)
-        .unwrap()
-        .then((res) => res.message),
-      {
-        loading: "Memproses...",
-        success: (message) => message,
-        error: (err) => err.data.message,
-      }
+    const confirm = window.confirm(
+      "Apakah anda yakin ingin menghapus data kelas ini dan semua data yang terkait dengan kelas ini?"
     );
+    if (confirm) {
+      toast.promise(
+        deleteClass(id)
+          .unwrap()
+          .then((res) => res.message),
+        {
+          loading: "Memproses...",
+          success: (message) => message,
+          error: (err) => err.data.message,
+        }
+      );
+    }
   };
 
   useEffect(() => {
@@ -55,50 +60,50 @@ const TableData = ({ setDetail }) => {
       totalPages={totalPages}
       isLoading={dataLoading}
     >
-      <table className='table table-bordered table-striped table-hover'>
+      <table className="table table-bordered table-striped table-hover">
         <thead>
           <tr>
-            <th className='text-center'>No</th>
-            <th className='text-center'>Jurusan</th>
-            <th className='text-center'>Tingkat</th>
-            <th className='text-center'>Nama Kelas</th>
-            <th className='text-center'>Siswa</th>
-            <th className='text-center'>Aksi</th>
+            <th className="text-center">No</th>
+            <th className="text-center">Jurusan</th>
+            <th className="text-center">Tingkat</th>
+            <th className="text-center">Nama Kelas</th>
+            <th className="text-center">Siswa</th>
+            <th className="text-center">Aksi</th>
           </tr>
         </thead>
         <tbody>
           {classes?.map((item, i) => (
             <tr key={i}>
-              <td className='text-center align-middle'>
+              <td className="text-center align-middle">
                 {(page - 1) * limit + i + 1}
               </td>
-              <td className='align-middle'>{item.major_name}</td>
-              <td className='text-center align-middle'>{item.grade_name}</td>
-              <td className='text-center align-middle'>{item.name}</td>
-              <td className='text-center align-middle'>{item.students}</td>
-              <td className='text-center align-middle'>
-                <div className='d-flex justify-content-center gap-2'>
+              <td className="align-middle">{item.major_name}</td>
+              <td className="text-center align-middle">{item.grade_name}</td>
+              <td className="text-center align-middle">{item.name}</td>
+              <td className="text-center align-middle">{item.students}</td>
+              <td className="text-center align-middle">
+                <div className="d-flex justify-content-center gap-2">
                   <button
-                    type='button'
-                    className='btn btn-sm btn-primary'
-                    data-bs-toggle='modal'
-                    data-bs-target='#modal-add'
+                    type="button"
+                    className="btn btn-sm btn-primary"
+                    data-bs-toggle="modal"
+                    data-bs-target="#modal-add"
                     onClick={() => setClass(item)}
                   >
-                    <i className='bi bi-folder-plus'></i>
+                    <i className="bi bi-folder-plus"></i>
                   </button>
                   <button
-                    className='btn btn-sm btn-warning'
+                    className="btn btn-sm btn-warning"
                     onClick={() => setDetail(item)}
                   >
-                    <i className='bi bi-pencil-square'></i>
+                    <i className="bi bi-pencil-square"></i>
                   </button>
                   <button
-                    className='btn btn-sm btn-danger'
+                    className="btn btn-sm btn-danger"
                     disabled={isLoading}
                     onClick={() => deleteHandler(item.id)}
                   >
-                    <i className='bi bi-folder-minus'></i>
+                    <i className="bi bi-folder-minus"></i>
                   </button>
                 </div>
               </td>

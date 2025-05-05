@@ -26,16 +26,21 @@ const TableData = ({ setDetail }) => {
     useDeleteSubjectMutation();
 
   const deleteHandler = (id) => {
-    toast.promise(
-      deleteSubject(id)
-        .unwrap()
-        .then((res) => res.message),
-      {
-        loading: "Memproses...",
-        success: (message) => message,
-        error: (err) => err.data.message,
-      }
+    const confirm = window.confirm(
+      "Apakah anda yakin ingin menghapus data mata pelajaran ini dan semua data yang terkait dengan mata pelajaran ini?"
     );
+    if (confirm) {
+      toast.promise(
+        deleteSubject(id)
+          .unwrap()
+          .then((res) => res.message),
+        {
+          loading: "Memproses...",
+          success: (message) => message,
+          error: (err) => err.data.message,
+        }
+      );
+    }
   };
 
   const goToLink = (name, id) => {

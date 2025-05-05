@@ -33,16 +33,21 @@ const TableData = ({ setDetail }) => {
   const [changePeriode, { isLoading: isChanging }] = useChangePeriodeMutation();
 
   const deleteHandler = (id) => {
-    toast.promise(
-      deleteStudent(id)
-        .unwrap()
-        .then((res) => res.message),
-      {
-        loading: "Memproses...",
-        success: (message) => message,
-        error: (err) => err.data.message,
-      }
+    const confirm = window.confirm(
+      "Apakah anda yakin ingin menghapus siswa ini dan semua data yang terkait dengan siswa ini?"
     );
+    if (confirm) {
+      toast.promise(
+        deleteStudent(id)
+          .unwrap()
+          .then((res) => res.message),
+        {
+          loading: "Memproses...",
+          success: (message) => message,
+          error: (err) => err.data.message,
+        }
+      );
+    }
   };
 
   const changeHandler = (id) => {

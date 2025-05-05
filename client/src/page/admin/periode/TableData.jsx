@@ -35,33 +35,43 @@ const TableData = ({ setDetail }) => {
   });
 
   const deleteHandler = (id) => {
-    toast.promise(
-      deletePeriode(id)
-        .unwrap()
-        .then((res) => res.message),
-      {
-        loading: "Memproses...",
-        success: (message) => message,
-        error: (err) => err.data.message,
-      }
+    const confirm = window.confirm(
+      "Apakah anda yakin ingin menghapus periode ini dan semua data yang terkait dengan periode ini?"
     );
+    if (confirm) {
+      toast.promise(
+        deletePeriode(id)
+          .unwrap()
+          .then((res) => res.message),
+        {
+          loading: "Memproses...",
+          success: (message) => message,
+          error: (err) => err.data.message,
+        }
+      );
+    }
   };
 
   const changeHandler = (id) => {
-    toast.promise(
-      changeStatus(id)
-        .unwrap()
-        .then((res) => {
-          refetch();
-          refetchClass();
-          return res.message;
-        }),
-      {
-        loading: "Memproses...",
-        success: (message) => message,
-        error: (err) => err.data.message,
-      }
+    const confirm = window.confirm(
+      "Apakah anda yakin ingin mengubah status periode ini?"
     );
+    if (confirm) {
+      toast.promise(
+        changeStatus(id)
+          .unwrap()
+          .then((res) => {
+            refetch();
+            refetchClass();
+            return res.message;
+          }),
+        {
+          loading: "Memproses...",
+          success: (message) => message,
+          error: (err) => err.data.message,
+        }
+      );
+    }
   };
 
   useEffect(() => {
