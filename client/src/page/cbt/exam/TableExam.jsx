@@ -27,16 +27,22 @@ const TableExam = ({ setDetail }) => {
   ] = useChangeStatusMutation();
 
   const deleteHandler = (id) => {
-    toast.promise(
-      deleteExam(id)
-        .unwrap()
-        .then((res) => res.message),
-      {
-        loading: "Memproses...",
-        success: (message) => message,
-        error: (err) => err.data.message,
-      }
+    const confirm = window.confirm(
+      "Apakah anda yakin ingin menghapus ujian ini?"
     );
+
+    if (confirm) {
+      toast.promise(
+        deleteExam(id)
+          .unwrap()
+          .then((res) => res.message),
+        {
+          loading: "Memproses...",
+          success: (message) => message,
+          error: (err) => err.data.message,
+        }
+      );
+    }
   };
 
   const changeStatusHandler = (id) => {
@@ -97,7 +103,9 @@ const TableExam = ({ setDetail }) => {
             <th className="text-center">Durasi</th>
             <th className="text-center">Status</th>
             <th className="text-center">Token</th>
-            <th className="text-center">Aksi</th>
+            <th style={{ width: 280 }} className="text-center">
+              Aksi
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -175,6 +183,7 @@ const TableExam = ({ setDetail }) => {
                       onClick={() => openNewTab(exam.name, exam.id, exam.token)}
                     >
                       <i className="bi bi-people"></i>
+                      <span className="ms-2">Lihat</span>
                     </button>
                     <button
                       className="btn btn-sm btn-warning"
@@ -183,6 +192,7 @@ const TableExam = ({ setDetail }) => {
                       onClick={() => setDetail(exam)}
                     >
                       <i className="bi bi-pencil-square"></i>
+                      <span className="ms-2">Edit</span>
                     </button>
                     <button
                       className="btn btn-sm btn-danger"
@@ -190,6 +200,7 @@ const TableExam = ({ setDetail }) => {
                       onClick={() => deleteHandler(exam.id)}
                     >
                       <i className="bi bi-folder-x"></i>
+                      <span className="ms-2">Hapus</span>
                     </button>
                   </div>
                 </td>

@@ -72,16 +72,22 @@ const TableData = forwardRef(({ classid, examid }, ref) => {
   };
 
   const handleRetake = (id, student) => {
-    toast.promise(
-      retakeExam({ id, student, exam: examid })
-        .unwrap()
-        .then((res) => res.message),
-      {
-        loading: "Memuat data...",
-        success: (message) => message,
-        error: (error) => error.data.message,
-      }
+    const confirm = window.confirm(
+      "Apakah anda yakin ingin mengulang ujian dan menghapus seluruh data jawaban siswa? "
     );
+
+    if (confirm) {
+      toast.promise(
+        retakeExam({ id, student, exam: examid })
+          .unwrap()
+          .then((res) => res.message),
+        {
+          loading: "Memuat data...",
+          success: (message) => message,
+          error: (error) => error.data.message,
+        }
+      );
+    }
   };
 
   return (
@@ -183,6 +189,7 @@ const TableData = forwardRef(({ classid, examid }, ref) => {
                         onClick={() => setDetail(item)}
                       >
                         <i className="bi bi-eye"></i>
+                        <span className="ms-2">Lihat</span>
                       </button>
 
                       <button
@@ -192,6 +199,7 @@ const TableData = forwardRef(({ classid, examid }, ref) => {
                         disabled={rejoinLoad || !item.isactive}
                       >
                         <i className="bi bi-arrow-repeat"></i>
+                        <span className="ms-2">Izinkan</span>
                       </button>
 
                       <button
@@ -201,6 +209,7 @@ const TableData = forwardRef(({ classid, examid }, ref) => {
                         disabled={finishLoad || item.isdone || !item.isactive}
                       >
                         <i className="bi bi-check-circle"></i>
+                        <span className="ms-2">Selesaikan</span>
                       </button>
 
                       <button
@@ -212,6 +221,7 @@ const TableData = forwardRef(({ classid, examid }, ref) => {
                         disabled={retakeLoad || !item.isdone}
                       >
                         <i className="bi bi-recycle"></i>
+                        <span className="ms-2">Ulangi</span>
                       </button>
                     </div>
                   </td>
