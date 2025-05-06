@@ -30,6 +30,25 @@ router.post("/add-cbt-logs", authorize("student"), async (req, res) => {
       ipAddress = ipAddress.split("::ffff:")[1];
     }
 
+    // Check if browser is Chrome
+    if (!req.useragent.browser.toLowerCase().includes("chrome")) {
+      const data = {
+        userid: student,
+        exam,
+        ipAddress,
+        browser,
+      };
+
+      console.log(data);
+
+      res.status(400).json({
+        message: "Gunakan Chrome untuk mengikuti ujian ini",
+        browser: browser,
+        ip: ipAddress,
+      });
+      return;
+    }
+
     // Check if student and exam combination exists
     const existingLog = await client.query(
       `SELECT * FROM logs WHERE student = $1 AND exam = $2`,
