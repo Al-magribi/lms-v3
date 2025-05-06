@@ -362,12 +362,28 @@ router.delete("/delete-report", authorize("tahfiz"), async (req, res) => {
   try {
     const { userid, typeId, createdat } = req.query;
 
-    // Parse the date from DD/MM/YYYY format
-    const [day, month, year] = createdat.split("/");
-    const formattedDate = `${year}-${month.padStart(2, "0")}-${day.padStart(
-      2,
-      "0"
-    )}`;
+    // Parse the date from M/D/YYYY format
+    let formattedDate;
+    try {
+      const [month, day, year] = createdat.split("/");
+      if (!day || !month || !year) {
+        throw new Error("Invalid date format");
+      }
+      formattedDate = `${year}-${month.padStart(2, "0")}-${day.padStart(
+        2,
+        "0"
+      )}`;
+
+      // Validate the date
+      const date = new Date(formattedDate);
+      if (isNaN(date.getTime())) {
+        throw new Error("Invalid date");
+      }
+    } catch (error) {
+      return res.status(400).json({
+        message: "Invalid date format. Please use M/D/YYYY format.",
+      });
+    }
 
     // Query untuk menghapus data berdasarkan userid, type_id, dan createdat
     const deleteScore = `
