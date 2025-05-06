@@ -217,7 +217,7 @@ router.get("/get-juz", authorize("tahfiz", "student"), async (req, res) => {
         LEFT JOIN t_juzitems ON t_juz.id = t_juzitems.juz_id
         LEFT JOIN t_surah ON t_juzitems.surah_id = t_surah.id
         GROUP BY t_juz.id
-        ORDER BY t_juz.id ASC`;
+        ORDER BY CAST(SUBSTRING(t_juz.name FROM 'Juz ([0-9]+)') AS INTEGER) ASC`;
       const data = await client.query(query);
       return res.json(data.rows);
     } else {
@@ -251,7 +251,7 @@ router.get("/get-juz", authorize("tahfiz", "student"), async (req, res) => {
         LEFT JOIN t_surah ON t_juzitems.surah_id = t_surah.id
         WHERE LOWER(t_juz.name) LIKE LOWER($1)
         GROUP BY t_juz.id
-        ORDER BY t_juz.id ASC
+        ORDER BY CAST(SUBSTRING(t_juz.name FROM 'Juz ([0-9]+)') AS INTEGER) ASC
         LIMIT $2 OFFSET $3
       `;
       values = [
