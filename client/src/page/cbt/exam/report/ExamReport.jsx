@@ -5,6 +5,7 @@ import Filters from "./Filters";
 import TableData from "./TableData";
 import ScoreChart from "./ScoreChart";
 import ScoreList from "./ScoreList";
+import Analysis from "./Anslysis";
 import * as XLSX from "xlsx";
 
 const ExamReport = () => {
@@ -14,6 +15,7 @@ const ExamReport = () => {
   const tableRef = useRef();
   const chartRef = useRef();
   const listRef = useRef();
+  const analysisRef = useRef();
 
   const handleRefetch = () => {
     // Refetch all components
@@ -37,7 +39,7 @@ const ExamReport = () => {
       const data = new Blob([excelBuffer], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
-      const fileName = `table_${name}.xlsx`;
+      const fileName = `Log_${name}.xlsx`;
 
       if (navigator.msSaveBlob) {
         navigator.msSaveBlob(data, fileName);
@@ -61,7 +63,31 @@ const ExamReport = () => {
       const data = new Blob([excelBuffer], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
-      const fileName = `list_${name}.xlsx`;
+      const fileName = `Nilai_${name}.xlsx`;
+
+      if (navigator.msSaveBlob) {
+        navigator.msSaveBlob(data, fileName);
+      } else {
+        const link = document.createElement("a");
+        link.href = window.URL.createObjectURL(data);
+        link.download = fileName;
+        link.click();
+      }
+    } else if (activeView === "analysis" && analysisRef.current) {
+      const workbook = XLSX.utils.book_new();
+      const table = analysisRef.current.getTableElement();
+      const tableData = XLSX.utils.table_to_sheet(table);
+
+      XLSX.utils.book_append_sheet(workbook, tableData, "Sheet1");
+
+      const excelBuffer = XLSX.write(workbook, {
+        bookType: "xlsx",
+        type: "array",
+      });
+      const data = new Blob([excelBuffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const fileName = `Analisis_${name}.xlsx`;
 
       if (navigator.msSaveBlob) {
         navigator.msSaveBlob(data, fileName);
@@ -96,6 +122,9 @@ const ExamReport = () => {
         )}
         {activeView === "list" && (
           <ScoreList ref={listRef} examid={examid} classid={classid} />
+        )}
+        {activeView === "analysis" && (
+          <Analysis ref={analysisRef} examid={examid} classid={classid} />
         )}
       </div>
     </Layout>

@@ -153,9 +153,33 @@ router.put(
 );
 
 router.get("/get-data", async (req, res) => {
-  const client = await pool.connect();
+  let client;
   try {
-    // Check if table exists
+    console.log("[get-data] Starting query execution");
+
+    // Get client with retry mechanism
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        client = await pool.connect();
+        // Set connection parameters
+        await client.query("SET statement_timeout = 30000");
+        await client.query("SET lock_timeout = 10000");
+        await client.query("SET idle_in_transaction_session_timeout = 30000");
+        await client.query("SET search_path TO public");
+        break;
+      } catch (err) {
+        retries--;
+        if (retries === 0) throw err;
+        console.log(
+          `[get-data] Connection attempt failed, retrying... (${retries} attempts left)`
+        );
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+    }
+
+    // First check if table exists
+    console.log("[get-data] Checking table existence");
     const tableCheck = await client.query(`
       SELECT EXISTS (
         SELECT FROM information_schema.tables 
@@ -163,7 +187,10 @@ router.get("/get-data", async (req, res) => {
       )
     `);
 
+    console.log("[get-data] Table check result:", tableCheck.rows[0].exists);
+
     if (!tableCheck.rows[0].exists) {
+      console.log("[get-data] Table not found");
       return res.status(404).json({
         success: false,
         message: "Table cms_homepage tidak ditemukan",
@@ -171,32 +198,100 @@ router.get("/get-data", async (req, res) => {
       });
     }
 
-    // Get homepage data with proper error handling
-    const { rows } = await client.query(`
-      SELECT  * FROM cms_homepage
-    `);
+    // Get homepage data with prepared statement
+    console.log("[get-data] Executing main query");
 
-    if (!rows.length) {
+    // Prepare the statement
+    const statement = {
+      name: "get_homepage",
+      text: `
+        SELECT 
+          id,
+          name,
+          tagline,
+          description,
+          video_url,
+          youtube,
+          instagram,
+          facebook,
+          ppdb_url,
+          logo,
+          address,
+          title_reason,
+          desc_reason,
+          title_facility,
+          desc_facility,
+          primary_color,
+          secondary_color,
+          createdat
+        FROM cms_homepage
+        WHERE id = $1
+      `,
+      values: [1],
+    };
+
+    let data;
+    try {
+      // First try with prepared statement
+      data = await client.query(statement);
+    } catch (queryError) {
+      console.log("[get-data] Prepared statement failed, trying direct query");
+      // If prepared statement fails, try direct query
+      data = await client.query(`
+        SELECT *
+        FROM cms_homepage
+        WHERE id = 1
+      `);
+    }
+
+    console.log("[get-data] Query completed, rows found:", data.rows.length);
+
+    if (!data.rows.length) {
+      console.log("[get-data] No data found");
       return res.status(404).json({
+        success: false,
         message: "Data homepage tidak ditemukan",
         data: null,
       });
     }
 
-    res.status(200).json(rows[0]);
+    console.log("[get-data] Sending response");
+    res.status(200).json(data.rows[0]);
   } catch (error) {
-    console.error("Error in get-data:", error);
+    console.error("[get-data] Error details:", {
+      code: error.code,
+      message: error.message,
+      stack: error.stack,
+      query: error.query,
+    });
 
-    if (error.code === "57014") {
+    // Handle specific timeout errors
+    if (
+      error.code === "57014" ||
+      error.message.includes("timeout") ||
+      error.message.includes("read timeout")
+    ) {
+      console.error("[get-data] Timeout error occurred");
       res.status(504).json({
+        success: false,
         message: "Waktu tunggu query habis. Silakan coba lagi.",
+        data: null,
       });
     } else {
-      res.status(500).json({ message: error.message });
+      res.status(500).json({
+        success: false,
+        message: error.message,
+        data: null,
+      });
     }
   } finally {
     if (client) {
-      client.release();
+      try {
+        console.log("[get-data] Releasing client connection");
+        client.release();
+      } catch (releaseError) {
+        console.error("[get-data] Error releasing client:", releaseError);
+      }
     }
   }
 });

@@ -28,7 +28,7 @@ const Filters = ({
 
   return (
     <div className="card my-2 hover-shadow transition-all">
-      <div className="card-body p-3">
+      <div className="card-body p-2">
         <div className="row g-3 align-items-center">
           {/* Title and Token Section */}
           <div className="col-md-4">
@@ -48,42 +48,63 @@ const Filters = ({
 
           {/* View Toggle Buttons */}
           <div className="col-md-4">
-            <div className="d-flex justify-content-center gap-2">
+            <div className="d-flex align-items-center justify-content-center gap-2">
               <button
-                className={`btn ${
+                className={`btn btn-sm ${
                   activeView === "table" ? "btn-success" : "btn-outline-success"
-                } rounded-pill px-3 hover-scale`}
+                } rounded-pill hover-scale`}
                 onClick={() => setActiveView("table")}
-                title="Tampilan Tabel"
+                title="Log"
               >
                 <i className="bi bi-person-lines-fill"></i>
-              </button>
-              <button
-                className={`btn ${
-                  activeView === "chart" ? "btn-success" : "btn-outline-success"
-                } rounded-pill px-3 hover-scale`}
-                onClick={() => setActiveView("chart")}
-                title="Tampilan Grafik"
-              >
-                <i className="bi bi-bar-chart"></i>
-              </button>
-              <button
-                className={`btn ${
-                  activeView === "list" ? "btn-success" : "btn-outline-success"
-                } rounded-pill px-3 hover-scale`}
-                onClick={() => setActiveView("list")}
-                title="Tampilan List"
-              >
-                <i className="bi bi-file-earmark-excel"></i>
+                <span className="ms-2">Log</span>
               </button>
 
-              {(activeView === "table" || activeView === "list") && (
+              <button
+                className={`btn btn-sm ${
+                  activeView === "chart" ? "btn-success" : "btn-outline-success"
+                } rounded-pill hover-scale`}
+                onClick={() => setActiveView("chart")}
+                title="Grafik"
+              >
+                <i className="bi bi-bar-chart"></i>
+                <span className="ms-2">Grafik</span>
+              </button>
+
+              <button
+                className={`btn btn-sm ${
+                  activeView === "analysis"
+                    ? "btn-success"
+                    : "btn-outline-success"
+                } rounded-pill hover-scale`}
+                onClick={() => setActiveView("analysis")}
+                title="Analisis"
+              >
+                <i className="bi bi-clipboard2-data-fill"></i>
+                <span className="ms-2">Analisis</span>
+              </button>
+
+              <button
+                className={`btn btn-sm ${
+                  activeView === "list" ? "btn-success" : "btn-outline-success"
+                } rounded-pill hover-scale`}
+                onClick={() => setActiveView("list")}
+                title="Nilai"
+              >
+                <i className="bi bi-file-earmark-excel"></i>
+                <span className="ms-2">Nilai</span>
+              </button>
+
+              {(activeView === "table" ||
+                activeView === "list" ||
+                activeView === "analysis") && (
                 <button
-                  className="btn btn-primary rounded-pill px-3 hover-scale"
+                  className="btn btn-sm btn-primary rounded-pill hover-scale"
                   onClick={onExport}
                   title="Export to Excel"
                 >
                   <i className="bi bi-file-earmark-arrow-down"></i>
+                  <span className="ms-2">Export</span>
                 </button>
               )}
             </div>
@@ -95,25 +116,25 @@ const Filters = ({
               {classes?.map((item) => (
                 <button
                   key={item.id}
-                  className={`btn ${
+                  className={`btn btn-sm ${
                     classid === item.id
                       ? "btn-secondary"
                       : "btn-outline-secondary"
-                  } rounded-pill px-3 hover-scale`}
+                  }  hover-scale`}
                   onClick={() => setClassid(item.id)}
                 >
                   {item.name}
                 </button>
               ))}
               <button
-                className="btn btn-dark rounded-pill px-3 hover-scale"
+                className="btn btn-sm btn-dark  hover-scale"
                 onClick={() => setClassid("")}
                 title="Reset Filter"
               >
                 <i className="bi bi-recycle"></i>
               </button>
               <button
-                className="btn btn-danger rounded-pill px-3 hover-scale"
+                className="btn btn-sm btn-danger  hover-scale"
                 onClick={handleRefetch}
                 title="Refresh Data"
               >

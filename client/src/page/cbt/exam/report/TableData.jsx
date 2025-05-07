@@ -34,8 +34,6 @@ const TableData = forwardRef(({ classid, examid }, ref) => {
   const { result = [], totalData, totalPages } = data;
   const [detail, setDetail] = useState({});
 
-  console.log(result);
-
   const [finishCbt, { isLoading: finishLoad }] = useFinishCbtMutation();
   const [rejoinExam, { isLoading: rejoinLoad }] = useRejoinExamMutation();
   const [retakeExam, { isLoading: retakeLoad }] = useRetakeExamMutation();

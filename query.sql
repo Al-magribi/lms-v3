@@ -616,7 +616,7 @@ SELECT setval('db_student_id_seq', (SELECT MAX(id) FROM db_student));
 
 
 -- CMS
-CREATE TABLE cms_homepage(
+CREATE TABLE cms_home(
     id SERIAL PRIMARY KEY NOT NULL,
     name TEXT,
     tagline TEXT,
@@ -637,14 +637,6 @@ CREATE TABLE cms_homepage(
     createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )
 
-ALTER TABLE cms_homepage ADD COLUMN logo TEXT;
-ALTER TABLE cms_homepage ADD COLUMN title_reason TEXT;
-ALTER TABLE cms_homepage ADD COLUMN desc_reason TEXT;
-ALTER TABLE cms_homepage ADD COLUMN title_facility TEXT;
-ALTER TABLE cms_homepage ADD COLUMN desc_facility TEXT;
-ALTER TABLE cms_homepage ADD COLUMN address TEXT;
-ALTER TABLE cms_homepage ADD COLUMN primary_color TEXT;
-ALTER TABLE cms_homepage ADD COLUMN secondary_color TEXT;
 
 
 CREATE TABLE cms_reason(

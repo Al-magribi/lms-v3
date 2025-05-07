@@ -16,6 +16,8 @@ import { useGetHomepageQuery } from "../controller/api/cms/ApiHomepage";
 const Homepage = () => {
   const { data, isLoading } = useGetHomepageQuery();
 
+  console.log(data);
+
   // Optimize animation variants
   const fadeInUp = {
     hidden: { opacity: 0, y: 30 },
@@ -46,19 +48,20 @@ const Homepage = () => {
   return (
     <Fragment>
       <Header data={data} />
-      <section className='hero-container'>
-        <div className='hero-section'>
-          <div className='hero-overlay'></div>
+      <section className="hero-container">
+        <div className="hero-section">
+          <div className="hero-overlay"></div>
           <motion.div
-            className='hero-content'
-            initial='hidden'
-            whileInView='visible'
+            className="hero-content"
+            initial="hidden"
+            whileInView="visible"
             viewport={{ amount: 0.3, once: true }}
-            variants={staggerContainer}>
+            variants={staggerContainer}
+          >
             <motion.h1 variants={fadeInUp}>{data?.name}</motion.h1>
             <motion.p variants={fadeInUp}>{data?.tagline}</motion.p>
             <motion.button
-              className='btn'
+              className="btn"
               variants={fadeInUp}
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.98 }}
@@ -66,19 +69,21 @@ const Homepage = () => {
               style={{
                 backgroundColor: data?.primary_color,
                 color: data?.secondary_color,
-              }}>
+              }}
+            >
               Yuk, Daftar Sekarang!
             </motion.button>
           </motion.div>
         </div>
       </section>
 
-      <Suspense fallback={<div className='text-center py-5'>Loading...</div>}>
+      <Suspense fallback={<div className="text-center py-5">Loading...</div>}>
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
-          viewport={{ amount: 0.3, once: true }}>
+          viewport={{ amount: 0.3, once: true }}
+        >
           <AboutUs metrics={data} />
         </motion.div>
 
@@ -86,7 +91,8 @@ const Homepage = () => {
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
-          viewport={{ amount: 0.3, once: true }}>
+          viewport={{ amount: 0.3, once: true }}
+        >
           <Reason metrics={data} />
         </motion.div>
 
@@ -94,7 +100,8 @@ const Homepage = () => {
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
-          viewport={{ amount: 0.3, once: true }}>
+          viewport={{ amount: 0.3, once: true }}
+        >
           <Facilities metrics={data} />
         </motion.div>
 
@@ -102,7 +109,8 @@ const Homepage = () => {
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
-          viewport={{ amount: 0.3, once: true }}>
+          viewport={{ amount: 0.3, once: true }}
+        >
           <Infographic metrics={data} />
         </motion.div>
 
@@ -110,7 +118,8 @@ const Homepage = () => {
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
-          viewport={{ amount: 0.3, once: true }}>
+          viewport={{ amount: 0.3, once: true }}
+        >
           <Testimonials />
         </motion.div>
 

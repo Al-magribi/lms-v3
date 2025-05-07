@@ -42,6 +42,13 @@ export const ApiAnswer = createApi({
       }),
       providesTags: ["answer"],
     }),
+    getExamAnalysis: builder.query({
+      query: ({ exam, classid, page, limit, search }) => ({
+        url: "/get-exam-analysis",
+        params: { exam, classid, page, limit, search },
+      }),
+      providesTags: ["answer"],
+    }),
   }),
 });
 
@@ -51,4 +58,5 @@ export const {
   useGradeEssayMutation,
   useGetLineChartDataQuery,
   useGetExamScoreListQuery,
+  useGetExamAnalysisQuery,
 } = ApiAnswer;

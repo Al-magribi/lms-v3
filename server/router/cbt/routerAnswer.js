@@ -318,7 +318,7 @@ router.get(
             COUNT(*) as quantity
           FROM student_scores
           GROUP BY score_range
-          ORDER BY score_range
+          ORDER BY score_range ASC
         )
         SELECT 
           COALESCE(score_range, '0-10') as score,
@@ -426,7 +426,7 @@ router.get(
         counted_data AS (
           SELECT COUNT(*) OVER() as total_count, student_data.*
           FROM student_data
-          ORDER BY score DESC, CAST(student_class AS TEXT) ASC, student_name ASC
+          ORDER BY CAST(student_class AS TEXT) ASC, student_name ASC
           LIMIT $5 OFFSET $6
         )
         SELECT 
@@ -477,37 +477,204 @@ router.get(
   }
 );
 
+router.get(
+  "/get-exam-analysis",
+  authorize("admin", "teacher"),
+  async (req, res) => {
+    const client = await pool.connect();
+    try {
+      const { exam, classid, page = 1, limit = 10, search = "" } = req.query;
+      const offset = (page - 1) * limit;
+
+      const homebase = req.user.homebase;
+
+      const period = await client.query(
+        `SELECT * FROM a_periode WHERE homebase = $1 AND isactive = true`,
+        [homebase]
+      );
+
+      const activePeriod = period.rows[0].id;
+
+      // Get exam details and questions
+      const examQuery = `
+        WITH exam_details AS (
+          SELECT 
+            ce.id as exam_id,
+            ce.name as exam_name,
+            ce.token as exam_token,
+            ut.name as teacher_name
+          FROM c_exam ce
+          JOIN u_teachers ut ON ce.teacher = ut.id
+          WHERE ce.id = $1
+        ),
+        exam_questions AS (
+          SELECT 
+            cq.id,
+            cq.poin,
+            cq.qkey
+          FROM c_question cq
+          JOIN c_bank cb ON cq.bank = cb.id
+          JOIN c_ebank ce ON ce.bank = cb.id
+          WHERE ce.exam = $1 AND cq.qtype = 1
+          ORDER BY cq.id ASC
+        ),
+        student_answers AS (
+          SELECT 
+            ca.student,
+            ca.question,
+            ca.mc,
+            ca.point
+          FROM c_answer ca
+          WHERE ca.exam = $1 AND ca.essay IS NULL
+        ),
+        filtered_students AS (
+          SELECT 
+            us.id,
+            us.nis,
+            us.name,
+            ag.name as grade,
+            ac.name as class
+          FROM u_students us
+          JOIN cl_students cls ON us.id = cls.student
+          JOIN a_class ac ON cls.classid = ac.id
+          JOIN a_grade ag ON ac.grade = ag.id
+          JOIN c_class cc ON cc.exam = $1 AND cc.classid = cls.classid
+          WHERE ($2::integer IS NULL OR cls.classid = $2)
+          AND us.periode = $3
+          AND us.isactive = true
+          AND (
+            LOWER(us.name) LIKE LOWER($4) OR 
+            LOWER(us.nis) LIKE LOWER($4)
+          )
+        ),
+        student_data AS (
+          SELECT 
+            fs.*,
+            COUNT(CASE WHEN sa.point > 0 THEN 1 END) as correct,
+            COUNT(CASE WHEN sa.point = 0 THEN 1 END) as incorrect,
+            SUM(CASE WHEN sa.mc IS NOT NULL AND sa.point > 0 THEN sa.point ELSE 0 END) as mc_score,
+            (
+              SELECT json_agg(
+                json_build_object(
+                  'id', sa.question,
+                  'mc', sa.mc
+                )
+                ORDER BY sa.question ASC
+              )
+              FROM student_answers sa
+              WHERE sa.student = fs.id
+            ) as answers
+          FROM filtered_students fs
+          LEFT JOIN student_answers sa ON fs.id = sa.student
+          GROUP BY fs.id, fs.nis, fs.name, fs.grade, fs.class
+          ORDER BY fs.class ASC, fs.name ASC
+          LIMIT $5 OFFSET $6
+        ),
+        total_count AS (
+          SELECT COUNT(*) as total_count
+          FROM filtered_students
+        )
+        SELECT 
+          ed.*,
+          (SELECT json_agg(eq.*) FROM exam_questions eq) as questions,
+          (SELECT json_agg(sd.*) FROM student_data sd) as students,
+          (SELECT total_count FROM total_count) as total_count
+        FROM exam_details ed
+      `;
+
+      const searchPattern = `%${search}%`;
+      const result = await client.query(examQuery, [
+        exam,
+        classid || null,
+        activePeriod,
+        searchPattern,
+        limit,
+        offset,
+      ]);
+
+      res.status(200).json({
+        ...result.rows[0],
+        totalData: parseInt(result.rows[0].total_count),
+        totalPages: Math.ceil(parseInt(result.rows[0].total_count) / limit),
+      });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: error.message });
+    } finally {
+      client.release();
+    }
+  }
+);
+
 export default router;
+
+// const result = [
+//   {
+//     exam_name: "Nama ujian diambil dari c_exam",
+//     exam_token: "Token ujian diambil dari c_exam",
+//     teacher_name: "Nama guru diambil dari teacher di c_exam",
+//     homebase_name: "Nama sekolah diambil dari homebase di c_exam",
+//     mc_score: "presentase PG diambil dari c_exam.mc_score",
+//     essay_score: "presentase Essay diambil dari c_exam.essay_score",
+//     students: [
+//       {
+//         student_id: "Id siswa diambil dari u_students",
+//         student_nis: "NIS siswa diambil dari u_students",
+//         student_name: "Nama siswa diambil dari u_students",
+//         student_grade:
+//           "Tingkat kelas siswa diambil dari a_grade berdasarkan cl_students.grade",
+//         student_class:
+//           "Kelas siswa diambil dari a_class berdasarkan cl_students.classid",
+//         log_exam:
+//           "Tanggal ujian diambil dari log dengan kombinasi exam dan student",
+//         correct:
+//           "jumlah Jawaban benar diambil dari c_answer.point > 0 dan c_answer.essay null",
+//         incorrect:
+//           " jumlah Jawaban salah diambil dari c_answer.point = 0 dan c_answer.essay null",
+//         mc_score:
+//           "Jumlah PG benar diambil dari c_answer.point yang c_answer.mc tidak null",
+//         essay_score:
+//           "Nilai Essay diambil dari c_answer.point yang c_answer.essay tidak null",
+//         score:
+//           "pg_score dikali c_exam.mc_score ditambah essay_score dikali c_exam.essay_score, 2 angka dibelakang koma",
+//       },
+//     ],
+//   },
+// ];
 
 const result = [
   {
     exam_name: "Nama ujian diambil dari c_exam",
     exam_token: "Token ujian diambil dari c_exam",
     teacher_name: "Nama guru diambil dari teacher di c_exam",
-    homebase_name: "Nama sekolah diambil dari homebase di c_exam",
-    mc_score: "presentase PG diambil dari c_exam.mc_score",
-    essay_score: "presentase Essay diambil dari c_exam.essay_score",
+    questions: [
+      {
+        id: "id pertanyaan diambil dari c_question yang qtype = 1",
+        poin: "poin pertanyaan diambil dari c_question",
+        qkey: "jawaban benar diambil dari c_question",
+      },
+    ],
     students: [
       {
-        student_id: "Id siswa diambil dari u_students",
-        student_nis: "NIS siswa diambil dari u_students",
-        student_name: "Nama siswa diambil dari u_students",
-        student_grade:
-          "Tingkat kelas siswa diambil dari a_grade berdasarkan cl_students.grade",
-        student_class:
-          "Kelas siswa diambil dari a_class berdasarkan cl_students.classid",
-        log_exam:
-          "Tanggal ujian diambil dari log dengan kombinasi exam dan student",
+        id: "id siswa diambil dari u_students",
+        nis: "nis siswa diambil dari u_students",
+        name: "nama siswa diambil dari u_students",
+        grade:
+          "tingkat kelas siswa diambil dari a_grade berdasarkan cl_students.grade",
+        class:
+          "kelas siswa diambil dari a_class berdasarkan cl_students.classid",
         correct:
-          "jumlah Jawaban benar diambil dari c_answer.point > 0 dan c_answer.essay null",
+          "jumlah jawaban benar diambil dari c_answer.point > 0 dan c_answer.essay null",
         incorrect:
-          " jumlah Jawaban salah diambil dari c_answer.point = 0 dan c_answer.essay null",
+          "jumlah jawaban salah diambil dari c_answer.point = 0 dan c_answer.essay null",
         mc_score:
-          "Jumlah PG benar diambil dari c_answer.point yang c_answer.mc tidak null",
-        essay_score:
-          "Nilai Essay diambil dari c_answer.point yang c_answer.essay tidak null",
-        score:
-          "pg_score dikali c_exam.mc_score ditambah essay_score dikali c_exam.essay_score, 2 angka dibelakang koma",
+          "jumlah PG benar diambil dari c_answer.point yang c_answer.mc tidak null",
+        answer: [
+          {
+            id: "id question dari c_answer yang essay = null",
+            mc: "jawaban siswa diambil dari c_answer.mc",
+          },
+        ],
       },
     ],
   },
