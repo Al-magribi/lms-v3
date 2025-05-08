@@ -47,7 +47,7 @@ const StartPage = () => {
 
   // Check if exam has started
   useEffect(() => {
-    if (logError || !log) {
+    if (logError) {
       toast.error("Anda belum memulai ujian ini");
       navigate("/siswa-daftar-ujian");
     }

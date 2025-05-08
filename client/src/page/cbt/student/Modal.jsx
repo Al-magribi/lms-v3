@@ -21,29 +21,34 @@ const Modal = ({ exam, setExam }) => {
   const [addCbtLogs, { isLoading: logLoading }] = useAddCbtLogsMutation();
 
   const confirm = () => {
+    // 1. Check if exam exists
     if (!exam.id) {
       toast.error("Ujian tidak ditemukan");
       return;
     }
 
+    // 2. Check token
     if (token !== exam.token) {
       toast.error("Token Salah");
       setToken("");
       return;
     }
 
+    // 3. Check penalty
     if (log && log.ispenalty) {
       toast.error("Anda melanggar ketentuan");
       setToken("");
       return;
     }
 
+    // 4. Check if already active
     if (log && log.isactive) {
       toast.error("Anda sedang mengikuti ujian");
       setToken("");
       return;
     }
 
+    // 5. Check if already done
     if (log && log.isdone) {
       toast.error("Anda sudah mengikuti ujian");
       setToken("");
@@ -60,10 +65,11 @@ const Modal = ({ exam, setExam }) => {
     toast.promise(addCbtLogs(data).unwrap(), {
       loading: "Memuat...",
       success: (data) => {
+        // Only redirect on success
         setExam({});
         setToken("");
 
-        // Close modal using data-bs-dismiss
+        // Close modal
         const modalElement = document.getElementById("token");
         if (modalElement) {
           const closeButton = modalElement.querySelector(
@@ -81,6 +87,7 @@ const Modal = ({ exam, setExam }) => {
       },
       error: (error) => {
         console.log("Error starting exam:", error);
+        // Don't redirect on error, just show error message
         return error.data?.message || "Gagal memulai ujian";
       },
     });
