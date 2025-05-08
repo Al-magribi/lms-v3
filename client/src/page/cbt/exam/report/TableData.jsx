@@ -88,6 +88,8 @@ const TableData = forwardRef(({ classid, examid }, ref) => {
     }
   };
 
+  console.log(result);
+
   return (
     <>
       <Table

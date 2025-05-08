@@ -78,8 +78,6 @@ const Modal = ({ exam, setExam }) => {
 
         const name = exam.name.replace(/\s+/g, "-");
         window.location.href = `/siswa-cbt/${name}/${exam.id}/${exam.token}`;
-
-        return data.message || "Berhasil memulai ujian";
       },
       error: (error) => {
         console.log("Error starting exam:", error);
