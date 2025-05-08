@@ -120,11 +120,10 @@ const ReasonsPage = () => {
         <>
           Gunakan icon dari library{" "}
           <a
-            href="https://react-icons.github.io/react-icons/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary"
-          >
+            href='https://react-icons.github.io/react-icons/'
+            target='_blank'
+            rel='noopener noreferrer'
+            className='text-primary'>
             react-icons
           </a>{" "}
           FontAwesome 5 atau FontAwesome 6
@@ -134,28 +133,27 @@ const ReasonsPage = () => {
   ];
 
   return (
-    <Layout>
-      <div className="container-fluid py-3 py-md-4">
+    <Layout title='Alasan' levels={["cms"]}>
+      <div className='container-fluid py-3 py-md-4'>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="d-flex justify-content-between align-items-center mb-2">
-            <div className="d-flex align-items-center">
-              <div className="bg-primary bg-opacity-10 p-3 rounded me-3">
-                <i className="bi bi-lightbulb text-primary fs-4"></i>
+          transition={{ duration: 0.5 }}>
+          <div className='d-flex justify-content-between align-items-center mb-2'>
+            <div className='d-flex align-items-center'>
+              <div className='bg-primary bg-opacity-10 p-3 rounded me-3'>
+                <i className='bi bi-lightbulb text-primary fs-4'></i>
               </div>
-              <h4 className="mb-0">Alasan</h4>
+              <h4 className='mb-0'>Alasan</h4>
             </div>
-            <button className="btn btn-sm btn-primary" onClick={handleAdd}>
-              <i className="bi bi-plus-circle"></i>
-              <span className="ms-2">Tambah Alasan</span>
+            <button className='btn btn-sm btn-primary' onClick={handleAdd}>
+              <i className='bi bi-plus-circle'></i>
+              <span className='ms-2'>Tambah Alasan</span>
             </button>
           </div>
 
-          <div className="card border-0 shadow-sm">
-            <div className="card-body">
+          <div className='card border-0 shadow-sm'>
+            <div className='card-body'>
               <Table
                 isLoading={isLoading}
                 page={page}
@@ -164,16 +162,15 @@ const ReasonsPage = () => {
                 limit={limit}
                 setLimit={setLimit}
                 setSearch={setSearch}
-                totalData={totalData}
-              >
-                <table className="mb-0 table table-bordered table-striped table-hover">
+                totalData={totalData}>
+                <table className='mb-0 table table-bordered table-striped table-hover'>
                   <thead>
                     <tr>
-                      <th className="text-center align-middle">No</th>
-                      <th className="text-center align-middle">Icon</th>
-                      <th className="text-center align-middle">Alasan</th>
-                      <th className="text-center align-middle">Deskripsi</th>
-                      <th className="text-center align-middle">Aksi</th>
+                      <th className='text-center align-middle'>No</th>
+                      <th className='text-center align-middle'>Icon</th>
+                      <th className='text-center align-middle'>Alasan</th>
+                      <th className='text-center align-middle'>Deskripsi</th>
+                      <th className='text-center align-middle'>Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -185,29 +182,27 @@ const ReasonsPage = () => {
 
                       return (
                         <tr key={reason.id}>
-                          <td className="text-center align-middle">
+                          <td className='text-center align-middle'>
                             {(page - 1) * limit + index + 1}
                           </td>
-                          <td className="text-center align-middle">
-                            <div className="rounded-circle bg-primary bg-opacity-10 p-3 me-3 text-primary">
-                              <IconComponent className="fs-2" />
+                          <td className='text-center align-middle'>
+                            <div className='rounded-circle bg-primary bg-opacity-10 p-3 me-3 text-primary'>
+                              <IconComponent className='fs-2' />
                             </div>
                           </td>
-                          <td className="align-middle">{reason.name}</td>
-                          <td className="align-middle">{reason.description}</td>
-                          <td className="text-center align-middle">
-                            <div className="d-flex align-items-center justify-content-center gap-2">
+                          <td className='align-middle'>{reason.name}</td>
+                          <td className='align-middle'>{reason.description}</td>
+                          <td className='text-center align-middle'>
+                            <div className='d-flex align-items-center justify-content-center gap-2'>
                               <button
-                                className="btn btn-sm btn-warning"
-                                onClick={() => handleEdit(reason)}
-                              >
-                                <i className="bi bi-pencil-square"></i>
+                                className='btn btn-sm btn-warning'
+                                onClick={() => handleEdit(reason)}>
+                                <i className='bi bi-pencil-square'></i>
                               </button>
                               <button
-                                className="btn btn-sm btn-danger"
-                                onClick={() => handleDelete(reason.id)}
-                              >
-                                <i className="bi bi-trash"></i>
+                                className='btn btn-sm btn-danger'
+                                onClick={() => handleDelete(reason.id)}>
+                                <i className='bi bi-trash'></i>
                               </button>
                             </div>
                           </td>
@@ -225,8 +220,7 @@ const ReasonsPage = () => {
       <CmsModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        title={modalType === "add" ? "Tambah Alasan" : "Edit Alasan"}
-      >
+        title={modalType === "add" ? "Tambah Alasan" : "Edit Alasan"}>
         <CmsForm
           key={formKey}
           fields={formFields}
@@ -242,7 +236,7 @@ const ReasonsPage = () => {
           submitButtonText={
             modalType === "add" ? "Tambah Alasan" : "Ubah Alasan"
           }
-          cancelButtonText="Batal"
+          cancelButtonText='Batal'
           isLoading={addLoading}
         />
       </CmsModal>

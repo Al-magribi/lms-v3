@@ -155,8 +155,6 @@ router.put(
 router.get("/get-data", async (req, res) => {
   let client;
   try {
-    console.log("[get-data] Starting query execution");
-
     // Get client with retry mechanism
     let retries = 3;
     while (retries > 0) {
@@ -179,15 +177,13 @@ router.get("/get-data", async (req, res) => {
     }
 
     // First check if table exists
-    console.log("[get-data] Checking table existence");
+
     const tableCheck = await client.query(`
       SELECT EXISTS (
         SELECT FROM information_schema.tables 
         WHERE table_name = 'cms_homepage'
       )
     `);
-
-    console.log("[get-data] Table check result:", tableCheck.rows[0].exists);
 
     if (!tableCheck.rows[0].exists) {
       console.log("[get-data] Table not found");
@@ -197,9 +193,6 @@ router.get("/get-data", async (req, res) => {
         data: null,
       });
     }
-
-    // Get homepage data with prepared statement
-    console.log("[get-data] Executing main query");
 
     // Prepare the statement
     const statement = {
@@ -244,8 +237,6 @@ router.get("/get-data", async (req, res) => {
       `);
     }
 
-    console.log("[get-data] Query completed, rows found:", data.rows.length);
-
     if (!data.rows.length) {
       console.log("[get-data] No data found");
       return res.status(404).json({
@@ -255,7 +246,6 @@ router.get("/get-data", async (req, res) => {
       });
     }
 
-    console.log("[get-data] Sending response");
     res.status(200).json(data.rows[0]);
   } catch (error) {
     console.error("[get-data] Error details:", {
@@ -287,7 +277,6 @@ router.get("/get-data", async (req, res) => {
   } finally {
     if (client) {
       try {
-        console.log("[get-data] Releasing client connection");
         client.release();
       } catch (releaseError) {
         console.error("[get-data] Error releasing client:", releaseError);

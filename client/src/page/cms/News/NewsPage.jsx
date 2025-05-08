@@ -143,8 +143,8 @@ const NewsPage = () => {
       render: (value) => (
         <img
           src={value}
-          alt="News"
-          className="img-thumbnail"
+          alt='News'
+          className='img-thumbnail'
           style={{ width: "50px", height: "50px", objectFit: "cover" }}
         />
       ),
@@ -168,8 +168,7 @@ const NewsPage = () => {
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
-          }}
-        >
+          }}>
           {value}
         </div>
       ),
@@ -207,17 +206,16 @@ const NewsPage = () => {
   ];
 
   return (
-    <Layout>
+    <Layout title='Berita' levels={["cms"]}>
       <CmsPageLayout
-        title="News Management"
+        title='Berita'
         onAdd={handleAdd}
         onSearch={handleSearch}
-        searchPlaceholder="Search news..."
+        searchPlaceholder='Search news...'
         showFilter={true}
         filterOptions={filterOptions}
         activeFilter={activeFilter}
-        setActiveFilter={handleFilter}
-      >
+        setActiveFilter={handleFilter}>
         <CmsDataTable
           columns={columns}
           data={filteredNews}
@@ -232,8 +230,7 @@ const NewsPage = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={selectedNews ? "Edit News" : "Add News"}
-        size="lg"
-      >
+        size='lg'>
         <CmsForm
           fields={formFields}
           initialValues={selectedNews || {}}
@@ -246,31 +243,28 @@ const NewsPage = () => {
       <CmsModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
-        title="Confirm Delete"
-        size="sm"
+        title='Confirm Delete'
+        size='sm'
         footer={
           <>
             <motion.button
-              className="btn btn-secondary"
+              className='btn btn-secondary'
               onClick={() => setIsDeleteModalOpen(false)}
               whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
+              whileTap={{ scale: 0.95 }}>
               Cancel
             </motion.button>
             <motion.button
-              className="btn btn-danger"
+              className='btn btn-danger'
               onClick={confirmDelete}
               whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
+              whileTap={{ scale: 0.95 }}>
               Delete
             </motion.button>
           </>
-        }
-      >
+        }>
         <p>Are you sure you want to delete "{newsToDelete?.title}"?</p>
-        <p className="text-danger">This action cannot be undone.</p>
+        <p className='text-danger'>This action cannot be undone.</p>
       </CmsModal>
     </Layout>
   );

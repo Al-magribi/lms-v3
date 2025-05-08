@@ -246,7 +246,7 @@ const SettingsPage = () => {
   ];
 
   return (
-    <Layout>
+    <Layout title='Pengaturan' levels={["cms"]}>
       <div className='container-fluid py-3 py-md-4'>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -261,7 +261,7 @@ const SettingsPage = () => {
               className=' p-3 rounded me-3'>
               <FaCog className='fs-4' />
             </div>
-            <h4 className='mb-0'>Settings</h4>
+            <h4 className='mb-0'>Pengaturan</h4>
           </div>
 
           <div className='card border-0 shadow-sm'>

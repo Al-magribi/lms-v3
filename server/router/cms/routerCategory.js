@@ -70,9 +70,19 @@ router.delete("/delete-category", authorize("cms"), async (req, res) => {
   const client = await pool.connect();
   try {
     const { id } = req.query;
-    await client.query("DELETE FROM cms_category WHERE id = $1", [id]);
 
-    return res.status(200).json({ message: remove });
+    const check = await client.query(
+      "SELECT * FROM cms_category WHERE id = $1",
+      [id]
+    );
+
+    if (check.rows[0].name === "Kegiatan") {
+      return res.status(400).json({ message: "Data tidak bisa dihapus" });
+    } else {
+      await client.query("DELETE FROM cms_category WHERE id = $1", [id]);
+
+      return res.status(200).json({ message: remove });
+    }
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: error.message });

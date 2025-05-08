@@ -33,7 +33,8 @@ const CategoriesPage = () => {
     createCategory,
     { isLoading: addLoading, isSuccess, error, data: msg, reset },
   ] = useCreateCategoryMutation();
-  const [deleteCategory] = useDeleteCategoryMutation();
+  const [deleteCategory, { isLoading: delLoading }] =
+    useDeleteCategoryMutation();
 
   const handleAdd = () => {
     setModalType("add");
@@ -48,11 +49,16 @@ const CategoriesPage = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this category?")) {
+    if (window.confirm("Apakah anda yakin ingin menghapus kategori ini?")) {
       try {
-        await deleteCategory(id).unwrap();
-        toast.success("Category deleted successfully");
-        refetch();
+        const response = await deleteCategory(id).unwrap();
+        console.log(response);
+        if (response.status === 200) {
+          toast.success(response.message);
+          refetch();
+        } else {
+          toast.error(response.error?.data?.message);
+        }
       } catch (error) {
         toast.error(error.data?.message || "Failed to delete category");
       }
@@ -104,7 +110,7 @@ const CategoriesPage = () => {
   ];
 
   return (
-    <Layout>
+    <Layout title='Kategori' levels={["cms"]}>
       <div className='container-fluid py-3 py-md-4'>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -115,7 +121,7 @@ const CategoriesPage = () => {
               <div className='bg-primary bg-opacity-10 p-3 rounded me-3'>
                 <FaTags className='text-primary fs-4' />
               </div>
-              <h4 className='mb-0'>Categories</h4>
+              <h4 className='mb-0'>Kategori</h4>
             </div>
             <button className='btn btn-sm btn-primary' onClick={handleAdd}>
               <span className='bi bi-plus-circle'></span>
@@ -160,7 +166,8 @@ const CategoriesPage = () => {
                             </button>
                             <button
                               className='btn btn-sm btn-danger'
-                              onClick={() => handleDelete(category.id)}>
+                              onClick={() => handleDelete(category.id)}
+                              disabled={delLoading}>
                               <i className='bi bi-trash'></i>
                             </button>
                           </div>

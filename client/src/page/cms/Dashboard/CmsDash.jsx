@@ -103,32 +103,29 @@ const CmsDash = () => {
   ];
 
   return (
-    <Layout>
-      <div className="container-fluid py-3 py-md-4">
+    <Layout title='Dashboard' levels={["cms"]}>
+      <div className='container-fluid py-3 py-md-4'>
         <motion.div
-          className="row g-3 g-md-4"
-          initial="hidden"
-          animate="visible"
-          variants={containerVariants}
-        >
+          className='row g-3 g-md-4'
+          initial='hidden'
+          animate='visible'
+          variants={containerVariants}>
           {/* Stats Cards */}
           {statsData.map((stat) => (
             <motion.div
               key={stat.id}
-              className="col-12 col-sm-6 col-lg-3"
-              variants={itemVariants}
-            >
+              className='col-12 col-sm-6 col-lg-3'
+              variants={itemVariants}>
               <div
-                className={`card border-0 shadow-sm h-100 bg-${stat.color} bg-opacity-10`}
-              >
-                <div className="card-body">
-                  <div className="d-flex justify-content-between align-items-start">
+                className={`card border-0 shadow-sm h-100 bg-${stat.color} bg-opacity-10`}>
+                <div className='card-body'>
+                  <div className='d-flex justify-content-between align-items-start'>
                     <div>
-                      <h6 className="card-title text-muted mb-1">
+                      <h6 className='card-title text-muted mb-1'>
                         {stat.title}
                       </h6>
-                      <h2 className="mb-1 fs-3">{stat.value}</h2>
-                      <div className="small text-success">
+                      <h2 className='mb-1 fs-3'>{stat.value}</h2>
+                      <div className='small text-success'>
                         {stat.change} {stat.period}
                       </div>
                     </div>
@@ -142,33 +139,31 @@ const CmsDash = () => {
           ))}
 
           {/* Recent Activities */}
-          <motion.div className="col-12 col-lg-8" variants={itemVariants}>
-            <div className="card border-0 shadow-sm h-100">
-              <div className="card-body">
-                <div className="d-flex justify-content-between align-items-center mb-4">
-                  <h5 className="card-title mb-0">Recent Activities</h5>
+          <motion.div className='col-12 col-lg-8' variants={itemVariants}>
+            <div className='card border-0 shadow-sm h-100'>
+              <div className='card-body'>
+                <div className='d-flex justify-content-between align-items-center mb-4'>
+                  <h5 className='card-title mb-0'>Recent Activities</h5>
                   <Link
-                    to="/cms/news"
-                    className="btn btn-sm btn-outline-primary"
-                  >
+                    to='/cms/news'
+                    className='btn btn-sm btn-outline-primary'>
                     View All
                   </Link>
                 </div>
-                <div className="timeline">
+                <div className='timeline'>
                   {recentActivities.map((activity) => (
                     <div
                       key={activity.id}
-                      className="timeline-item mb-3 pb-3 border-bottom"
-                    >
-                      <div className="d-flex justify-content-between">
+                      className='timeline-item mb-3 pb-3 border-bottom'>
+                      <div className='d-flex justify-content-between'>
                         <div>
-                          <div className="text-muted small mb-1">
+                          <div className='text-muted small mb-1'>
                             {activity.action}
                           </div>
-                          <div className="fw-medium">{activity.title}</div>
+                          <div className='fw-medium'>{activity.title}</div>
                         </div>
-                        <div className="text-muted small">
-                          <FaClock className="me-1" />
+                        <div className='text-muted small'>
+                          <FaClock className='me-1' />
                           {activity.time}
                         </div>
                       </div>
@@ -180,30 +175,30 @@ const CmsDash = () => {
           </motion.div>
 
           {/* Quick Stats */}
-          <motion.div className="col-12 col-lg-4" variants={itemVariants}>
-            <div className="card border-0 shadow-sm h-100">
-              <div className="card-body">
-                <h5 className="card-title mb-4">Website Analytics</h5>
-                <div className="d-flex align-items-center mb-3">
-                  <div className="flex-shrink-0">
-                    <div className="bg-primary bg-opacity-10 p-3 rounded">
-                      <FaChartLine className="text-primary fs-4" />
+          <motion.div className='col-12 col-lg-4' variants={itemVariants}>
+            <div className='card border-0 shadow-sm h-100'>
+              <div className='card-body'>
+                <h5 className='card-title mb-4'>Website Analytics</h5>
+                <div className='d-flex align-items-center mb-3'>
+                  <div className='flex-shrink-0'>
+                    <div className='bg-primary bg-opacity-10 p-3 rounded'>
+                      <FaChartLine className='text-primary fs-4' />
                     </div>
                   </div>
-                  <div className="flex-grow-1 ms-3">
-                    <div className="text-muted small">Page Views</div>
-                    <div className="fs-5 fw-medium">5,678</div>
+                  <div className='flex-grow-1 ms-3'>
+                    <div className='text-muted small'>Page Views</div>
+                    <div className='fs-5 fw-medium'>5,678</div>
                   </div>
                 </div>
-                <div className="d-flex align-items-center mb-3">
-                  <div className="flex-shrink-0">
-                    <div className="bg-success bg-opacity-10 p-3 rounded">
-                      <FaUsers className="text-success fs-4" />
+                <div className='d-flex align-items-center mb-3'>
+                  <div className='flex-shrink-0'>
+                    <div className='bg-success bg-opacity-10 p-3 rounded'>
+                      <FaUsers className='text-success fs-4' />
                     </div>
                   </div>
-                  <div className="flex-grow-1 ms-3">
-                    <div className="text-muted small">Unique Visitors</div>
-                    <div className="fs-5 fw-medium">3,456</div>
+                  <div className='flex-grow-1 ms-3'>
+                    <div className='text-muted small'>Unique Visitors</div>
+                    <div className='fs-5 fw-medium'>3,456</div>
                   </div>
                 </div>
               </div>
