@@ -47,7 +47,7 @@ const StartPage = () => {
 
   // Check if exam has started
   useEffect(() => {
-    if (logError) {
+    if (logError || !log) {
       toast.error("Anda belum memulai ujian ini");
       navigate("/siswa-daftar-ujian");
     }
@@ -157,18 +157,18 @@ const StartPage = () => {
   if (isLoading) {
     return (
       <div
-        className='d-flex justify-content-center align-items-center'
+        className="d-flex justify-content-center align-items-center"
         style={{ height: "100vh" }}
       >
-        <div className='spinner-border text-primary' role='status'>
-          <span className='visually-hidden'>Loading...</span>
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ height: "100vh" }} className='bg-light'>
+    <div style={{ height: "100vh" }} className="bg-light">
       <Meta title={`Pertanyaan No ${currentPage}`} />
       <Header
         name={name}

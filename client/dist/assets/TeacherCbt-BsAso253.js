@@ -1,0 +1,2 @@
+import{j as s}from"./index-Dr1m1AHr.js";import{L as t}from"./Layout-CwdnQrlx.js";import{C as e}from"./CbtBank-DeWBCShB.js";import"./vendor-BYWiIb5-.js";import"./index-C-OX0RB-.js";import"./index-DLmIb9aI.js";import"./react-select.esm-4h58l94a.js";import"./Table-BRDJx_Jh.js";const r=()=>s.jsx(t,{title:"Guru Bank Soal",levels:["teacher"],children:s.jsx(e,{})});export{r as default};
+//# sourceMappingURL=TeacherCbt-BsAso253.js.map

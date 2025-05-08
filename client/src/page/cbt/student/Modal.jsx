@@ -81,7 +81,10 @@ const Modal = ({ exam, setExam }) => {
 
         return data.message || "Berhasil memulai ujian";
       },
-      error: (error) => error.data?.message || "Gagal memulai ujian",
+      error: (error) => {
+        console.log("Error starting exam:", error);
+        return error.data?.message || "Gagal memulai ujian";
+      },
     });
   };
 
