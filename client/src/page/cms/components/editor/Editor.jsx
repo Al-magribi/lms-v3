@@ -60,7 +60,7 @@ class Editor extends Component {
         formData.append("file", file);
 
         try {
-          const response = await fetch(`/api/bank/upload/image`, {
+          const response = await fetch(`/api/cms/news/upload/image`, {
             method: "POST",
             body: formData,
           });
@@ -70,8 +70,6 @@ class Editor extends Component {
           if (editor) {
             const range = editor.getSelection(true);
             editor.insertEmbed(range.index, "image", data.url);
-
-            console.log(data);
           }
         } catch (error) {
           console.error("Error uploading image:", error);
@@ -94,7 +92,7 @@ class Editor extends Component {
         formData.append("file", file);
 
         try {
-          const response = await fetch(`/api/bank/upload/audio`, {
+          const response = await fetch(`/api/cms/news/upload/audio`, {
             method: "POST",
             body: formData,
           });

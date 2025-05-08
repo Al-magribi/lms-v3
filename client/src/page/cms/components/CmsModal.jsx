@@ -100,7 +100,7 @@ const CmsModal = ({
             }}
           >
             <motion.div
-              className={`modal-dialog modal-dialog-centered ${getModalSize()}`}
+              className={`modal-dialog modal-dialog-centered modal-dialog-scrollable ${getModalSize()}`}
               initial="hidden"
               animate="visible"
               exit="exit"

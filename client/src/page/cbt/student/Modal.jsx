@@ -55,6 +55,8 @@ const Modal = ({ exam, setExam }) => {
       return;
     }
 
+    console.log(log);
+
     const data = {
       exam: exam.id,
       student: user.user_id,

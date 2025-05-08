@@ -9,13 +9,17 @@ import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import LoadingScreen from "./components/loader/LoadingScreen";
 import { useGetAppQuery } from "./controller/api/center/ApiApp";
+import Homepage from "./home/Homepage";
 
-const Index = lazy(() => import("./components/auth/Index"));
 // Otentikasi
 const Activation = lazy(() => import("./components/auth/Activation"));
+const Index = lazy(() => import("./components/auth/Index"));
+
+// Public
+const News = lazy(() => import("./home/news/News"));
+const Detail = lazy(() => import("./home/news/Detail"));
 
 // CMS
-const Homepage = lazy(() => import("./home/Homepage"));
 const CmsDash = lazy(() => import("./page/cms/Dashboard/CmsDash"));
 const CmsNews = lazy(() => import("./page/cms/News/NewsPage"));
 const CmsReasons = lazy(() => import("./page/cms/Reasons/ReasonsPage"));
@@ -172,10 +176,14 @@ function App() {
 
             <Route path="/" element={<Index />} />
 
-            <Route path="/signin" element={<Index />} />
+            <Route path="/berita" element={<News />} />
+
+            <Route path="/berita/:id" element={<Detail />} />
 
             {/* Otentikasi */}
             <Route path="/aktivasi-akun/:code" element={<Activation />} />
+
+            <Route path="/signin" element={<Index />} />
 
             {/* CMS */}
             <Route path="/homepage" element={<Homepage />} />

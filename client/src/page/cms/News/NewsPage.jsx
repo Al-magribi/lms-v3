@@ -1,270 +1,316 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { FaNewspaper, FaPlus } from "react-icons/fa";
+import { FaNewspaper } from "react-icons/fa";
 import Layout from "../layout/Layout";
-import CmsPageLayout from "../components/CmsPageLayout";
-import CmsDataTable from "../components/CmsDataTable";
 import CmsModal from "../components/CmsModal";
 import CmsForm from "../components/CmsForm";
+import Editor from "../components/editor/Editor";
+import Table from "../../../components/table/Table";
+import {
+  useGetNewsQuery,
+  useAddNewsMutation,
+  useDeleteNewsMutation,
+} from "../../../controller/api/cms/ApiNews";
+import { toast } from "react-hot-toast";
+import { useGetCategoryQuery } from "../../../controller/api/cms/ApiCategory";
+import DetailNews from "./DetailNews";
 
 const NewsPage = () => {
-  const [news, setNews] = useState([]);
-  const [filteredNews, setFilteredNews] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalType, setModalType] = useState("add");
   const [selectedNews, setSelectedNews] = useState(null);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [newsToDelete, setNewsToDelete] = useState(null);
-  const [categories, setCategories] = useState([]);
-  const [activeFilter, setActiveFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [search, setSearch] = useState("");
+  const [formKey, setFormKey] = useState(0);
+  const [content, setContent] = useState("");
+  const [showDetail, setShowDetail] = useState(false);
+  const [detailNews, setDetailNews] = useState(null);
 
-  // Mock data for demonstration
-  useEffect(() => {
-    // In a real app, this would be an API call
-    setNews([
-      {
-        id: 1,
-        title: "School Achieves Excellence Award",
-        category_id: 1,
-        description: "Our school has received an excellence award...",
-        image: "https://via.placeholder.com/150",
-        createdat: "2023-05-15",
-      },
-      {
-        id: 2,
-        title: "New Library Opening Ceremony",
-        category_id: 2,
-        description: "The new library will be opening next month...",
-        image: "https://via.placeholder.com/150",
-        createdat: "2023-05-10",
-      },
-      {
-        id: 3,
-        title: "Student Science Fair Winners",
-        category_id: 1,
-        description: "Congratulations to our science fair winners...",
-        image: "https://via.placeholder.com/150",
-        createdat: "2023-05-05",
-      },
-    ]);
+  const { data: categories } = useGetCategoryQuery({
+    page: "",
+    limit: "",
+    search: "",
+  });
 
-    setCategories([
-      { id: 1, name: "Achievements" },
-      { id: 2, name: "Events" },
-      { id: 3, name: "Announcements" },
-    ]);
-  }, []);
+  const { data, isLoading, refetch } = useGetNewsQuery({
+    page,
+    limit,
+    search,
+  });
 
-  useEffect(() => {
-    setFilteredNews(news);
-  }, [news]);
+  const { result: news, totalData, totalPage } = data || {};
 
-  const handleSearch = (searchTerm) => {
-    if (!searchTerm) {
-      setFilteredNews(news);
+  const [
+    addNews,
+    { isSuccess, error, isLoading: addLoading, data: msg, reset },
+  ] = useAddNewsMutation();
+  const [deleteNews] = useDeleteNewsMutation();
+
+  const handleAdd = () => {
+    setModalType("add");
+    setSelectedNews(null);
+    setContent("");
+    setIsModalOpen(true);
+  };
+
+  const handleEdit = (newsItem) => {
+    setModalType("edit");
+    setSelectedNews({
+      ...newsItem,
+      category: String(newsItem.category_id),
+      image: newsItem.image,
+    });
+    setContent(newsItem.content);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm("Apakah anda yakin ingin menghapus berita ini?")) {
+      try {
+        await deleteNews(id).unwrap();
+        toast.success("Berita berhasil dihapus");
+        refetch();
+      } catch (error) {
+        toast.error(error.data?.message || "Gagal menghapus berita");
+      }
+    }
+  };
+
+  const handleSubmit = async (formData) => {
+    const submitData = {
+      ...formData,
+      content,
+      id: selectedNews?.id,
+    };
+
+    // Validasi: hanya wajib gambar saat tambah
+    if (
+      !submitData.title ||
+      !submitData.category ||
+      !submitData.content ||
+      (!submitData.image && !selectedNews)
+    ) {
+      toast.error("Mohon lengkapi semua data");
       return;
     }
 
-    const filtered = news.filter(
-      (item) =>
-        item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.description.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const dataToSend = new FormData();
+    dataToSend.append("title", submitData.title);
+    dataToSend.append("category", submitData.category);
+    dataToSend.append("content", submitData.content);
+    if (submitData.id) dataToSend.append("id", submitData.id);
 
-    setFilteredNews(filtered);
-  };
+    if (submitData.image instanceof File) {
+      dataToSend.append("image", submitData.image);
+    } else if (typeof submitData.image === "string" && submitData.image) {
+      dataToSend.append("image", submitData.image);
+    }
 
-  const handleFilter = (categoryId) => {
-    setActiveFilter(categoryId);
-
-    if (categoryId === "all") {
-      setFilteredNews(news);
-    } else {
-      const filtered = news.filter(
-        (item) => item.category_id === parseInt(categoryId)
-      );
-      setFilteredNews(filtered);
+    try {
+      await addNews(dataToSend).unwrap();
+    } catch (error) {
+      toast.error(error.data?.message || "Gagal menyimpan berita");
     }
   };
 
-  const handleAdd = () => {
+  const handleCancel = () => {
     setSelectedNews(null);
-    setIsModalOpen(true);
-  };
-
-  const handleEdit = (item) => {
-    setSelectedNews(item);
-    setIsModalOpen(true);
-  };
-
-  const handleDelete = (item) => {
-    setNewsToDelete(item);
-    setIsDeleteModalOpen(true);
-  };
-
-  const handleView = (item) => {
-    // In a real app, this would navigate to a detail page
-    console.log("Viewing news item:", item);
-  };
-
-  const handleSave = (formData) => {
-    if (selectedNews) {
-      // Update existing news
-      const updatedNews = news.map((item) =>
-        item.id === selectedNews.id ? { ...item, ...formData } : item
-      );
-      setNews(updatedNews);
-    } else {
-      // Add new news
-      const newNewsItem = {
-        id: news.length + 1,
-        ...formData,
-        createdat: new Date().toISOString().split("T")[0],
-      };
-      setNews([...news, newNewsItem]);
-    }
-
+    setContent("");
     setIsModalOpen(false);
+    setFormKey((prev) => prev + 1);
   };
 
-  const confirmDelete = () => {
-    if (newsToDelete) {
-      const updatedNews = news.filter((item) => item.id !== newsToDelete.id);
-      setNews(updatedNews);
-      setIsDeleteModalOpen(false);
-      setNewsToDelete(null);
+  useEffect(() => {
+    if (isSuccess) {
+      toast.success(msg.message);
+      setIsModalOpen(false);
+      refetch();
+      setSelectedNews(null);
+      setContent("");
+      setFormKey((prev) => prev + 1);
+      reset();
     }
+    if (error) {
+      toast.error(error.data?.message);
+      reset();
+    }
+  }, [isSuccess, error, msg, reset, refetch]);
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedNews(null);
+    setContent("");
+    setFormKey((prev) => prev + 1);
   };
 
-  const columns = [
-    { key: "id", label: "ID" },
-    {
-      key: "image",
-      label: "Image",
-      render: (value) => (
-        <img
-          src={value}
-          alt='News'
-          className='img-thumbnail'
-          style={{ width: "50px", height: "50px", objectFit: "cover" }}
-        />
-      ),
-    },
-    { key: "title", label: "Title" },
-    {
-      key: "category_id",
-      label: "Category",
-      render: (value) => {
-        const category = categories.find((cat) => cat.id === value);
-        return category ? category.name : "Unknown";
-      },
-    },
-    {
-      key: "description",
-      label: "Description",
-      render: (value) => (
-        <div
-          style={{
-            maxWidth: "300px",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}>
-          {value}
-        </div>
-      ),
-    },
-    { key: "createdat", label: "Created At" },
-  ];
+  const handleView = (newsItem) => {
+    setDetailNews(newsItem);
+    setShowDetail(true);
+  };
+
+  const handleBack = () => {
+    setShowDetail(false);
+    setDetailNews(null);
+  };
 
   const formFields = [
-    { name: "title", label: "Title", type: "text", required: true },
     {
-      name: "category_id",
-      label: "Category",
-      type: "select",
+      name: "title",
+      label: "Judul",
+      type: "text",
       required: true,
-      options: categories.map((cat) => ({ value: cat.id, label: cat.name })),
+      placeholder: "Masukkan judul berita",
     },
     {
-      name: "description",
-      label: "Description",
-      type: "textarea",
+      name: "category",
+      label: "Kategori",
+      type: "select",
       required: true,
+      options: categories?.map((category) => ({
+        value: String(category.id),
+        label: category.name,
+      })),
     },
     {
       name: "image",
-      label: "Image",
+      label: "Gambar",
       type: "file",
       accept: "image/*",
-      helpText: "Upload an image for the news article",
+      required: !selectedNews,
+      helpText: "Upload gambar untuk berita",
     },
   ];
 
-  const filterOptions = [
-    { value: "all", label: "All Categories" },
-    ...categories.map((cat) => ({ value: cat.id, label: cat.name })),
-  ];
+  if (showDetail && detailNews) {
+    return <DetailNews news={detailNews} onBack={handleBack} />;
+  }
 
   return (
-    <Layout title='Berita' levels={["cms"]}>
-      <CmsPageLayout
-        title='Berita'
-        onAdd={handleAdd}
-        onSearch={handleSearch}
-        searchPlaceholder='Search news...'
-        showFilter={true}
-        filterOptions={filterOptions}
-        activeFilter={activeFilter}
-        setActiveFilter={handleFilter}>
-        <CmsDataTable
-          columns={columns}
-          data={filteredNews}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onView={handleView}
-        />
-      </CmsPageLayout>
+    <Layout title="Berita" levels={["cms"]}>
+      <div className="container-fluid py-3 py-md-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="d-flex justify-content-between align-items-center mb-2">
+            <div className="d-flex align-items-center">
+              <div className="bg-primary bg-opacity-10 p-3 rounded me-3">
+                <FaNewspaper className="text-primary fs-4" />
+              </div>
+              <h4 className="mb-0">Berita</h4>
+            </div>
+            <button className="btn btn-sm btn-primary" onClick={handleAdd}>
+              <i className="bi bi-plus-circle"></i>
+              <span className="ms-2">Tambah Berita</span>
+            </button>
+          </div>
 
-      {/* Add/Edit Modal */}
+          <div className="card border-0 shadow-sm">
+            <div className="card-body">
+              <Table
+                isLoading={isLoading}
+                page={page}
+                setPage={setPage}
+                totalPages={totalPage}
+                limit={limit}
+                setLimit={setLimit}
+                setSearch={setSearch}
+                totalData={totalData}
+              >
+                <table className="mb-0 table table-bordered table-striped table-hover">
+                  <thead>
+                    <tr>
+                      <th className="text-center align-middle">No</th>
+                      <th className="text-center align-middle">Judul</th>
+                      <th className="text-center align-middle">Kategori</th>
+                      <th className="text-center align-middle">
+                        Tanggal Dibuat
+                      </th>
+                      <th className="text-center align-middle">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {news?.map((item, index) => (
+                      <tr key={item.id}>
+                        <td className="text-center align-middle">
+                          {(page - 1) * limit + index + 1}
+                        </td>
+                        <td className="align-middle">{item.title}</td>
+                        <td className="text-center align-middle">
+                          {item.category_name}
+                        </td>
+                        <td className="text-center align-middle">
+                          {new Date(item.createdat).toLocaleDateString()}
+                        </td>
+                        <td className="text-center align-middle">
+                          <div className="d-flex align-items-center justify-content-center gap-2">
+                            <button
+                              className="btn btn-sm btn-info"
+                              title="Lihat Detail"
+                              onClick={() => handleView(item)}
+                            >
+                              <i className="bi bi-eye"></i>
+                            </button>
+                            <button
+                              className="btn btn-sm btn-warning"
+                              onClick={() => handleEdit(item)}
+                            >
+                              <i className="bi bi-pencil-square"></i>
+                            </button>
+                            <button
+                              className="btn btn-sm btn-danger"
+                              onClick={() => handleDelete(item.id)}
+                            >
+                              <i className="bi bi-trash"></i>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </Table>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+
       <CmsModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={selectedNews ? "Edit News" : "Add News"}
-        size='lg'>
+        onClose={handleCloseModal}
+        title={modalType === "add" ? "Tambah Berita" : "Edit Berita"}
+        size="lg"
+      >
         <CmsForm
+          key={formKey}
           fields={formFields}
-          initialValues={selectedNews || {}}
-          onSubmit={handleSave}
-          onCancel={() => setIsModalOpen(false)}
-        />
-      </CmsModal>
-
-      {/* Delete Confirmation Modal */}
-      <CmsModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        title='Confirm Delete'
-        size='sm'
-        footer={
-          <>
-            <motion.button
-              className='btn btn-secondary'
-              onClick={() => setIsDeleteModalOpen(false)}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}>
-              Cancel
-            </motion.button>
-            <motion.button
-              className='btn btn-danger'
-              onClick={confirmDelete}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}>
-              Delete
-            </motion.button>
-          </>
-        }>
-        <p>Are you sure you want to delete "{newsToDelete?.title}"?</p>
-        <p className='text-danger'>This action cannot be undone.</p>
+          initialValues={
+            selectedNews || {
+              title: "",
+              category: "",
+              image: "",
+            }
+          }
+          onSubmit={handleSubmit}
+          onCancel={handleCancel}
+          submitButtonText={
+            modalType === "add" ? "Tambah Berita" : "Ubah Berita"
+          }
+          cancelButtonText="Batal"
+          isLoading={addLoading}
+        >
+          <div className="mb-3">
+            <label className="form-label">Konten</label>
+            <Editor
+              value={content}
+              onChange={setContent}
+              placeholder="Masukkan konten berita..."
+              height="400px"
+            />
+          </div>
+        </CmsForm>
       </CmsModal>
     </Layout>
   );

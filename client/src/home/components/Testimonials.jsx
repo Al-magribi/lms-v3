@@ -11,9 +11,9 @@ const Testimonials = () => {
   const testimonials = data?.results || [];
 
   return (
-    <section className="bg-white py-5">
-      <div className="container position-relative">
-        <h2 className="text-center mb-5">Testimoni</h2>
+    <section className="bg-white py-4 py-md-5">
+      <div className="container position-relative px-3 px-md-4">
+        <h2 className="text-center mb-4 mb-md-5 fs-2 fs-md-1">Testimoni</h2>
         <div
           id="testimonialCarousel"
           className="carousel slide"
@@ -26,20 +26,20 @@ const Testimonials = () => {
                 className={`carousel-item ${index === 0 ? "active" : ""}`}
               >
                 <div className="row justify-content-center">
-                  <div className="col-md-8">
-                    <div className="card border shadow">
-                      <div className="card-body p-4">
-                        <div className="text-center mb-4">
+                  <div className="col-12 col-md-10 col-lg-8">
+                    <div className="card border shadow-sm">
+                      <div className="card-body p-3 p-md-4">
+                        <div className="text-center mb-3 mb-md-4">
                           <i className="fas fa-quote-left fa-2x text-primary"></i>
                         </div>
-                        <p className="card-text text-center mb-4">
+                        <p className="card-text text-center mb-3 mb-md-4 fs-6 fs-md-5">
                           {testimonial.testimonial}
                         </p>
                         <div className="text-center">
-                          <h5 className="card-title mb-1">
+                          <h5 className="card-title mb-1 fs-5 fs-md-4">
                             {testimonial.name}
                           </h5>
-                          <p className="text-muted mb-0">
+                          <p className="text-muted mb-0 small">
                             {testimonial.description}
                           </p>
                         </div>
@@ -51,7 +51,7 @@ const Testimonials = () => {
             ))}
           </div>
           <button
-            className="carousel-control-prev"
+            className="carousel-control-prev d-none d-md-flex"
             type="button"
             data-bs-target="#testimonialCarousel"
             data-bs-slide="prev"
@@ -62,7 +62,7 @@ const Testimonials = () => {
               borderRadius: "50%",
               top: "50%",
               transform: "translateY(-50%)",
-              left: "-50px",
+              left: "-20px",
             }}
           >
             <span
@@ -72,7 +72,7 @@ const Testimonials = () => {
             <span className="visually-hidden">Previous</span>
           </button>
           <button
-            className="carousel-control-next"
+            className="carousel-control-next d-none d-md-flex"
             type="button"
             data-bs-target="#testimonialCarousel"
             data-bs-slide="next"
@@ -83,7 +83,7 @@ const Testimonials = () => {
               borderRadius: "50%",
               top: "50%",
               transform: "translateY(-50%)",
-              right: "-50px",
+              right: "-20px",
             }}
           >
             <span

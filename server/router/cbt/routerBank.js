@@ -540,8 +540,7 @@ router.delete(
 // Upload image editor
 router.post("/upload/image", uploadImage.single("file"), (req, res) => {
   try {
-    const imageLink =
-      process.env.DOMAIN + "/assets/cbt/images/" + req.file.filename;
+    const imageLink = "/assets/cbt/images/" + req.file.filename;
 
     res.status(200).json({ url: imageLink });
   } catch (error) {
@@ -552,8 +551,7 @@ router.post("/upload/image", uploadImage.single("file"), (req, res) => {
 
 router.post("/upload/audio", uploadAudio.single("file"), (req, res) => {
   try {
-    const audioLink =
-      process.env.DOMAIN + "/assets/cbt/audios/" + req.file.filename;
+    const audioLink = "/assets/cbt/audios/" + req.file.filename;
 
     res.status(200).json({ url: audioLink });
   } catch (error) {

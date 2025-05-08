@@ -16,8 +16,6 @@ import { useGetHomepageQuery } from "../controller/api/cms/ApiHomepage";
 const Homepage = () => {
   const { data, isLoading } = useGetHomepageQuery();
 
-  console.log(data);
-
   // Optimize animation variants
   const fadeInUp = {
     hidden: { opacity: 0, y: 30 },
@@ -47,7 +45,7 @@ const Homepage = () => {
 
   return (
     <Fragment>
-      <Header data={data} />
+      <Header />
       <section className="hero-container">
         <div className="hero-section">
           <div className="hero-overlay"></div>

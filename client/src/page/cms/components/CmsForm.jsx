@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { FaUpload, FaTimes } from "react-icons/fa";
 
@@ -11,10 +11,17 @@ const CmsForm = ({
   cancelButtonText = "Batal",
   onCancel,
   layout = "vertical",
+  children,
 }) => {
   const [formData, setFormData] = useState(initialValues);
   const [errors, setErrors] = useState({});
   const [imagePreview, setImagePreview] = useState(null);
+
+  useEffect(() => {
+    if (typeof initialValues.image === "string" && initialValues.image) {
+      setImagePreview(initialValues.image);
+    }
+  }, [initialValues.image]);
 
   const handleChange = (e, field) => {
     const { name, value, type, files } = e.target;
@@ -223,6 +230,9 @@ const CmsForm = ({
           {renderField(field)}
         </motion.div>
       ))}
+
+      {/* Render custom children (e.g., Editor) here */}
+      {children}
 
       <div className="d-flex justify-content-end gap-2 mt-4">
         {onCancel && (
