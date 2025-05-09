@@ -359,7 +359,7 @@ router.get("/get-students", authorize("admin"), async (req, res) => {
       ),
       client.query(
         `SELECT cl_students.*, a_class.name AS class_name,
-				u_students.nis, 
+				u_students.nis, u_students.isactive, 
 				a_grade.name AS grade_name, a_major.name AS major_name
 				FROM cl_students
 				LEFT JOIN u_students ON cl_students.student = u_students.id

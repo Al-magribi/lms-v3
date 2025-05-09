@@ -71,21 +71,20 @@ const Upload = ({ classid }) => {
   }, [isSuccess, isError]);
 
   return (
-    <div className='d-flex gap-2'>
+    <div className='d-flex align-items-center gap-2'>
       <input
         ref={inputRef}
         type='file'
         name='file'
         id='file'
-        className='form-control shadow'
+        className='form-control'
         onChange={(e) => setFile(e.target.files[0])}
       />
 
       <button
-        className='btn btn-sm btn-success shadow'
+        className='btn btn-sm btn-outline-primary'
         disabled={isLoading}
-        onClick={uploadData}
-      >
+        onClick={uploadData}>
         Upload
       </button>
     </div>

@@ -35,6 +35,7 @@ import routerMajor from "./router/admin/routerMajor.js";
 import routerClass from "./router/admin/routerClass.js";
 import routerTeacher from "./router/admin/routerTeacher.js";
 import routerSubject from "./router/admin/routerSubject.js";
+import routerGraduation from "./router/admin/routerGraduation.js";
 
 // CBT
 import routerBank from "./router/cbt/routerBank.js";
@@ -91,7 +92,7 @@ app.use("/api/admin/student", routerStudent);
 app.use("/api/admin/class", routerClass);
 app.use("/api/admin/teacher", routerTeacher);
 app.use("/api/admin/subject", routerSubject);
-
+app.use("/api/admin/graduation", routerGraduation);
 app.use("/api/bank", routerBank);
 app.use("/api/exam", routerExam);
 app.use("/api/answer", routerAnswer);

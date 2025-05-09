@@ -51,28 +51,26 @@ const Form = ({ detail, setDetail }) => {
   return (
     <form
       onSubmit={addHandler}
-      className="rounded border p-2 d-flex flex-column gap-2 shadow bg-white"
-    >
-      <p className="m-0 h6">Satuan Pendidikan</p>
+      className='rounded border p-2 d-flex flex-column gap-2'>
+      <p className='m-0 h6'>Satuan Pendidikan</p>
 
       <input
-        type="text"
-        name="homebase"
-        className="form-control"
-        placeholder="SD / SMP / SMA / SMK / Sekolah"
+        type='text'
+        name='homebase'
+        className='form-control'
+        placeholder='SD / SMP / SMA / SMK / Sekolah'
         value={name || ""}
         onChange={(e) => setName(e.target.value)}
       />
 
-      <div className="d-flex justify-content-end gap-2">
+      <div className='d-flex justify-content-end gap-2'>
         <button
-          type="button"
-          className="btn btn-warning"
-          onClick={() => setDetail({})}
-        >
+          type='button'
+          className='btn btn-warning'
+          onClick={() => setDetail({})}>
           Batal
         </button>
-        <button type="submit" className="btn btn-success" disabled={isLoading}>
+        <button type='submit' className='btn btn-success' disabled={isLoading}>
           Simpan
         </button>
       </div>

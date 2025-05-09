@@ -25,6 +25,7 @@ import { ApiTeacher } from "./api/admin/ApiTeacher";
 import { ApiMajor } from "./api/admin/ApiMajor";
 import { ApiClass } from "./api/admin/ApiClass";
 import { ApiSubject } from "./api/admin/ApiSubject";
+import { ApiGraduation } from "./api/admin/ApiGraduation";
 
 // CBT
 import { ApiBank } from "./api/cbt/ApiBank";
@@ -75,6 +76,7 @@ const store = configureStore({
     [ApiMajor.reducerPath]: ApiMajor.reducer,
     [ApiClass.reducerPath]: ApiClass.reducer,
     [ApiSubject.reducerPath]: ApiSubject.reducer,
+    [ApiGraduation.reducerPath]: ApiGraduation.reducer,
 
     [ApiBank.reducerPath]: ApiBank.reducer,
     [ApiExam.reducerPath]: ApiExam.reducer,
@@ -119,6 +121,7 @@ const store = configureStore({
       ApiMajor.middleware,
       ApiClass.middleware,
       ApiSubject.middleware,
+      ApiGraduation.middleware,
 
       ApiBank.middleware,
       ApiExam.middleware,

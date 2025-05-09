@@ -24,6 +24,10 @@ export const ApiDashboard = createApi({
       query: () => "/infografis",
       providesTags: ["HomeInfografis"],
     }),
+    getCmsDashboard: builder.query({
+      query: () => "/cms-dashboard",
+      providesTags: ["CmsDash"],
+    }),
   }),
 });
 
@@ -33,4 +37,5 @@ export const {
   useGetStudentDashboardQuery,
   useGetCenterDashboardQuery,
   useGetHomeInfografisQuery,
+  useGetCmsDashboardQuery,
 } = ApiDashboard;

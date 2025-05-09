@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { useGetSubjectsOnClassQuery } from "../../../controller/api/lms/ApiLms";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 
 const ListSubjects = () => {
   const navigate = useNavigate();
@@ -28,36 +29,62 @@ const ListSubjects = () => {
     navigate(`/pelajaran/${formattedName}/${id}`);
   };
 
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const item = {
+    hidden: { y: 20, opacity: 0 },
+    show: { y: 0, opacity: 1 },
+  };
+
   return (
-    <div className='d-flex flex-column gap-2'>
-      <div className='input-group w-25'>
-        <span className='input-group-text bg-secondary text-white'>
-          <i className='bi bi-search'></i>
-        </span>
-        <input
-          type='text'
-          className='form-control'
-          placeholder='Cari mata pelajaran...'
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+    <div className='container-fluid'>
+      <div className='row mb-4'>
+        <div className='col-lg-4 col-md-6'>
+          <div className='input-group'>
+            <span className='input-group-text bg-white border-end-0'>
+              <i className='bi bi-search text-primary'></i>
+            </span>
+            <input
+              type='text'
+              className='form-control border-start-0 ps-0'
+              placeholder='Cari mata pelajaran...'
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
       </div>
 
-      <div className='row g-2'>
-        {isLoading ? (
-          <div className='col-12'>
-            <p className='m-0 h5 text-muted'>Memuat data...</p>
+      {isLoading ? (
+        <div className='text-center py-5'>
+          <div className='spinner-border text-primary' role='status'>
+            <span className='visually-hidden'>Loading...</span>
           </div>
-        ) : data?.length > 0 ? (
-          data.map((item) => (
-            <div key={item.id} className='col-lg-2 col-md-4 col-6'>
+          <p className='mt-3 text-muted'>Memuat data mata pelajaran...</p>
+        </div>
+      ) : data?.length > 0 ? (
+        <motion.div
+          className='row g-4'
+          variants={container}
+          initial='hidden'
+          animate='show'>
+          {data.map((item) => (
+            <motion.div
+              key={item.id}
+              className='col-xl-3 col-lg-4 col-md-6'
+              variants={item}>
               <div
-                className='card shadow pointer'
+                className='card h-100 shadow-sm border-0 hover-card'
                 onClick={() => goToLink(item.name, item.id)}>
-                <div className='card-header text-center bg-primary text-white'>
-                  {item.name}
-                </div>
-                <div className='card-body'>
+                <div className='position-relative'>
                   <img
                     src={
                       item.cover
@@ -65,39 +92,59 @@ const ListSubjects = () => {
                         : `/logo.png`
                     }
                     alt={item.name}
-                    className='w-100 object-fit-contain overflow-hidden'
-                    style={{ height: 220 }}
+                    className='card-img-top'
+                    style={{
+                      height: "400px",
+                      objectFit: "cover",
+                    }}
                   />
                 </div>
-              </div>
-            </div>
-          ))
-        ) : (
-          <div className='col-12'>
-            <p className='m-0 h5 text-muted'>
-              {searchTerm ? (
-                <div className='alert alert-danger' role='alert'>
-                  <h4 className='alert-heading'>Error!</h4>
-                  <p>Mata pelajaran tidak ditemukan</p>
-                  <hr />
-                  {isError && (
-                    <p className='mb-0'>Error details: {error?.message}</p>
-                  )}
+                <div className='card-body'>
+                  <div className='d-flex align-items-center text-muted mb-2'>
+                    <i className='bi bi-book me-2'></i>
+                    <span>Mata Pelajaran {item.name}</span>
+                  </div>
+                  <button
+                    className='btn btn-outline-primary btn-sm rounded-pill w-100'
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      goToLink(item.name, item.id);
+                    }}>
+                    <i className='bi bi-arrow-right-circle me-2'></i>
+                    Masuk Pelajaran
+                  </button>
                 </div>
-              ) : (
-                <div className='alert alert-danger' role='alert'>
-                  <h4 className='alert-heading'>Error!</h4>
-                  <p>Data belum tersedia</p>
-                  <hr />
-                  {isError && (
-                    <p className='mb-0'>Error details: {error?.message}</p>
-                  )}
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className='row justify-content-center'>
+          <div className='col-md-6 text-center'>
+            <div className='py-5'>
+              <i className='bi bi-journal-x display-1 text-muted mb-4'></i>
+              <h4 className='text-muted mb-3'>
+                {searchTerm
+                  ? "Mata Pelajaran Tidak Ditemukan"
+                  : "Data Belum Tersedia"}
+              </h4>
+              <p className='text-muted mb-0'>
+                {searchTerm
+                  ? "Maaf, tidak ada mata pelajaran yang sesuai dengan pencarian Anda"
+                  : "Belum ada mata pelajaran yang tersedia saat ini"}
+              </p>
+              {isError && (
+                <div className='alert alert-danger mt-3' role='alert'>
+                  <small>{error?.message}</small>
                 </div>
               )}
-            </p>
+            </div>
           </div>
-        )}
-      </div>
+        </motion.div>
+      )}
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { ApiClass } from "./ApiClass";
 
 export const ApiStudent = createApi({
   reducerPath: "ApiStudent",
@@ -48,6 +49,21 @@ export const ApiStudent = createApi({
       }),
       invalidatesTags: ["students"],
     }),
+    graduated: builder.mutation({
+      query: (classid) => ({
+        url: "/graduated",
+        method: "PUT",
+        params: { classid },
+      }),
+      async onQueryStarted(_, { dispatch, queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          dispatch(ApiClass.util.invalidateTags(["students", "class"]));
+        } catch {
+          // Handle error if needed
+        }
+      },
+    }),
     changePeriode: builder.mutation({
       query: (body) => ({
         url: "/change-periode",
@@ -64,5 +80,6 @@ export const {
   useDeleteStudentMutation,
   useUploadStudentsMutation,
   useChangeStatusMutation,
+  useGraduatedMutation,
   useChangePeriodeMutation,
 } = ApiStudent;

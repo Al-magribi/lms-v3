@@ -41,7 +41,7 @@ const StartPage = () => {
   useEffect(() => {
     if (error) {
       toast.error("Anda tidak memiliki akses ke ujian ini");
-      navigate("/");
+      navigate("/siswa-daftar-ujian");
     }
   }, [error, navigate]);
 
@@ -157,18 +157,17 @@ const StartPage = () => {
   if (isLoading) {
     return (
       <div
-        className="d-flex justify-content-center align-items-center"
-        style={{ height: "100vh" }}
-      >
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
+        className='d-flex justify-content-center align-items-center'
+        style={{ height: "100vh" }}>
+        <div className='spinner-border text-primary' role='status'>
+          <span className='visually-hidden'>Loading...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ height: "100vh" }} className="bg-light">
+    <div style={{ height: "100vh" }} className='bg-light'>
       <Meta title={`Pertanyaan No ${currentPage}`} />
       <Header
         name={name}

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import Layout from "../layout/Layout";
 import { motion } from "framer-motion";
 import {
@@ -10,97 +10,124 @@ import {
   FaEye,
   FaUsers,
   FaClock,
+  FaGlobe,
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import { useGetCmsDashboardQuery } from "../../../controller/api/dashboard/ApiDashboard";
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      type: "spring",
+      stiffness: 100,
+    },
+  },
+};
 
 const CmsDash = () => {
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  };
+  const {
+    data: cmsDashboardData,
+    isLoading,
+    error,
+  } = useGetCmsDashboardQuery();
 
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: {
-        type: "spring",
-        stiffness: 100,
-      },
-    },
-  };
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error.message}</div>;
+  }
 
   const statsData = [
     {
       id: "total_visitors",
-      title: "Total Visitors",
-      value: "1,234",
+      title: "Total Pengunjung",
+      value: cmsDashboardData?.stats?.total_visitors?.toLocaleString() || "0",
       icon: <FaEye />,
       color: "primary",
-      change: "+12%",
-      period: "vs last month",
+      change: `${
+        cmsDashboardData?.stats?.changes?.visitors?.value > 0 ? "+" : ""
+      }${cmsDashboardData?.stats?.changes?.visitors?.value}%`,
+      period:
+        cmsDashboardData?.stats?.changes?.visitors?.period || "vs Bulan lalu",
     },
     {
       id: "total_news",
-      title: "Published News",
-      value: "45",
+      title: "Berita Terbit",
+      value: cmsDashboardData?.stats?.total_news?.toLocaleString() || "0",
       icon: <FaNewspaper />,
       color: "success",
-      change: "+5",
-      period: "this month",
+      change: `+${cmsDashboardData?.stats?.changes?.news?.value || 0}`,
+      period: cmsDashboardData?.stats?.changes?.news?.period || "Bulan ini",
     },
     {
       id: "total_facilities",
-      title: "Facilities",
-      value: "12",
+      title: "Fasilitas",
+      value: cmsDashboardData?.stats?.total_facilities?.toLocaleString() || "0",
       icon: <FaBuilding />,
       color: "info",
-      change: "2",
-      period: "new added",
+      change: cmsDashboardData?.stats?.changes?.facilities?.value || 0,
+      period:
+        cmsDashboardData?.stats?.changes?.facilities?.period || "Bulan ini",
     },
     {
       id: "total_testimonials",
-      title: "Testimonials",
-      value: "89",
+      title: "Testimoni",
+      value:
+        cmsDashboardData?.stats?.total_testimonials?.toLocaleString() || "0",
       icon: <FaComments />,
       color: "warning",
-      change: "+8",
-      period: "this month",
+      change: `+${cmsDashboardData?.stats?.changes?.testimonials?.value || 0}`,
+      period:
+        cmsDashboardData?.stats?.changes?.testimonials?.period || "Bulan ini",
     },
   ];
 
-  const recentActivities = [
-    {
-      id: 1,
-      action: "New news article published",
-      title: "School Achievement in National Competition",
-      time: "2 hours ago",
-    },
-    {
-      id: 2,
-      action: "New testimonial added",
-      title: "Parent Feedback - Sarah Johnson",
-      time: "5 hours ago",
-    },
-    {
-      id: 3,
-      action: "Facility information updated",
-      title: "Science Laboratory Equipment",
-      time: "1 day ago",
-    },
-    {
-      id: 4,
-      action: "New category created",
-      title: "Academic Excellence",
-      time: "1 day ago",
-    },
-  ];
+  // Format daily trend data for the chart
+  const dailyTrendData = cmsDashboardData?.visitorStats?.daily_trend?.map(
+    (day) => ({
+      date: new Date(day.date).toLocaleDateString(),
+      visitors: day.unique_visitors,
+      visits: day.total_visits,
+    })
+  );
+
+  // Format country data for the chart
+  const countryData = cmsDashboardData?.visitorStats?.top_countries?.map(
+    (country) => ({
+      country: country.country,
+      visitors: country.count,
+    })
+  );
+
+  // Helper function to format time
+  const getTimeAgo = (timestamp) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const seconds = Math.floor((now - date) / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    if (days > 0) return `${days} day${days > 1 ? "s" : ""} ago`;
+    if (hours > 0) return `${hours} hour${hours > 1 ? "s" : ""} ago`;
+    if (minutes > 0) return `${minutes} minute${minutes > 1 ? "s" : ""} ago`;
+    return "just now";
+  };
 
   return (
     <Layout title='Dashboard' levels={["cms"]}>
@@ -143,15 +170,15 @@ const CmsDash = () => {
             <div className='card border-0 shadow-sm h-100'>
               <div className='card-body'>
                 <div className='d-flex justify-content-between align-items-center mb-4'>
-                  <h5 className='card-title mb-0'>Recent Activities</h5>
+                  <h5 className='card-title mb-0'>Aktivitas Terakhir</h5>
                   <Link
-                    to='/cms/news'
+                    to='/cms-news'
                     className='btn btn-sm btn-outline-primary'>
-                    View All
+                    Lihat Semua
                   </Link>
                 </div>
                 <div className='timeline'>
-                  {recentActivities.map((activity) => (
+                  {cmsDashboardData?.recentActivities?.map((activity) => (
                     <div
                       key={activity.id}
                       className='timeline-item mb-3 pb-3 border-bottom'>
@@ -164,7 +191,7 @@ const CmsDash = () => {
                         </div>
                         <div className='text-muted small'>
                           <FaClock className='me-1' />
-                          {activity.time}
+                          {getTimeAgo(activity.time)}
                         </div>
                       </div>
                     </div>
@@ -174,11 +201,11 @@ const CmsDash = () => {
             </div>
           </motion.div>
 
-          {/* Quick Stats */}
+          {/* Page Analytics */}
           <motion.div className='col-12 col-lg-4' variants={itemVariants}>
             <div className='card border-0 shadow-sm h-100'>
               <div className='card-body'>
-                <h5 className='card-title mb-4'>Website Analytics</h5>
+                <h5 className='card-title mb-4'>Analisis Halaman</h5>
                 <div className='d-flex align-items-center mb-3'>
                   <div className='flex-shrink-0'>
                     <div className='bg-primary bg-opacity-10 p-3 rounded'>
@@ -186,8 +213,11 @@ const CmsDash = () => {
                     </div>
                   </div>
                   <div className='flex-grow-1 ms-3'>
-                    <div className='text-muted small'>Page Views</div>
-                    <div className='fs-5 fw-medium'>5,678</div>
+                    <div className='text-muted small'>Total Halaman</div>
+                    <div className='fs-5 fw-medium'>
+                      {cmsDashboardData?.websiteAnalytics?.pageViews?.toLocaleString() ||
+                        "0"}
+                    </div>
                   </div>
                 </div>
                 <div className='d-flex align-items-center mb-3'>
@@ -197,8 +227,25 @@ const CmsDash = () => {
                     </div>
                   </div>
                   <div className='flex-grow-1 ms-3'>
-                    <div className='text-muted small'>Unique Visitors</div>
-                    <div className='fs-5 fw-medium'>3,456</div>
+                    <div className='text-muted small'>Pengunjung Unik</div>
+                    <div className='fs-5 fw-medium'>
+                      {cmsDashboardData?.websiteAnalytics?.uniqueVisitors?.toLocaleString() ||
+                        "0"}
+                    </div>
+                  </div>
+                </div>
+                <div className='d-flex align-items-center'>
+                  <div className='flex-shrink-0'>
+                    <div className='bg-info bg-opacity-10 p-3 rounded'>
+                      <FaGlobe className='text-info fs-4' />
+                    </div>
+                  </div>
+                  <div className='flex-grow-1 ms-3'>
+                    <div className='text-muted small'>Negara</div>
+                    <div className='fs-5 fw-medium'>
+                      {cmsDashboardData?.visitorStats?.top_countries?.length ||
+                        "0"}
+                    </div>
                   </div>
                 </div>
               </div>

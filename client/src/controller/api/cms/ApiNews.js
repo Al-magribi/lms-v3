@@ -3,7 +3,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 export const ApiNews = createApi({
   reducerPath: "ApiNews",
   baseQuery: fetchBaseQuery({ baseUrl: `/api/cms/news` }),
-  tagTypes: ["News"],
+  tagTypes: ["News", "Visitors"],
   endpoints: (builder) => ({
     getNews: builder.query({
       query: ({ page, limit, search }) => ({
@@ -33,6 +33,20 @@ export const ApiNews = createApi({
       }),
       invalidatesTags: ["News"],
     }),
+    trackVisitor: builder.mutation({
+      query: (data) => ({
+        url: "/track-visitor",
+        method: "POST",
+        body: data,
+      }),
+    }),
+    getVisitorStats: builder.query({
+      query: ({ startDate, endDate } = {}) => ({
+        url: "/visitor-stats",
+        params: { startDate, endDate },
+      }),
+      providesTags: ["Visitors"],
+    }),
   }),
 });
 
@@ -41,4 +55,6 @@ export const {
   useGetNewsByIdQuery,
   useAddNewsMutation,
   useDeleteNewsMutation,
+  useTrackVisitorMutation,
+  useGetVisitorStatsQuery,
 } = ApiNews;

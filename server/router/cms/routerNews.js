@@ -3,6 +3,7 @@ import { authorize } from "../../middleware/auth.js";
 import { pool } from "../../config/config.js";
 import multer from "multer";
 import path from "path";
+import geoip from "geoip-lite";
 
 const create = "Berhasil disimpan";
 const update = "Berhasil diubah";
@@ -206,6 +207,45 @@ router.post("/upload/audio", uploadAudio.single("file"), (req, res) => {
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: error });
+  }
+});
+
+// Add visitor tracking endpoint
+router.post("/track-visitor", async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { pageType, contentId } = req.body;
+    const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+
+    // Get country from IP using geoip-lite
+    const geo = geoip.lookup(ip);
+    const country = geo ? geo.country : "Unknown";
+
+    // Check if this IP has already visited today
+    const existingVisit = await client.query(
+      `SELECT id FROM cms_visitors 
+       WHERE ip_address = $1 
+       AND page_type = $2 
+       AND visit_date = CURRENT_DATE
+       AND (content_id = $3 OR ($3 IS NULL AND content_id IS NULL))`,
+      [ip, pageType, contentId]
+    );
+
+    if (existingVisit.rows.length === 0) {
+      // Insert new visit
+      await client.query(
+        `INSERT INTO cms_visitors (ip_address, country, page_type, content_id)
+         VALUES ($1, $2, $3, $4)`,
+        [ip, country, pageType, contentId]
+      );
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error tracking visitor:", error);
+    res.status(500).json({ message: "Internal server error" });
+  } finally {
+    client.release();
   }
 });
 

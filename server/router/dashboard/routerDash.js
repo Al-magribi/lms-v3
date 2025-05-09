@@ -1037,4 +1037,207 @@ router.get("/infografis", async (req, res) => {
   }
 });
 
+// CMS Dashboard
+
+router.get("/cms-dashboard", async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    // Get current month's start and end dates
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    // Get previous month's start and end dates
+    const firstDayOfPrevMonth = new Date(
+      now.getFullYear(),
+      now.getMonth() - 1,
+      1
+    );
+    const lastDayOfPrevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+
+    // Get visitor statistics
+    const visitorStats = await client.query(
+      `
+      WITH current_month_stats AS (
+        SELECT 
+          page_type,
+          COUNT(DISTINCT ip_address) as unique_visitors,
+          COUNT(*) as total_visits,
+          COUNT(DISTINCT country) as countries_count
+        FROM cms_visitors
+        WHERE visit_date BETWEEN $1 AND $2
+        GROUP BY page_type
+      ),
+      prev_month_stats AS (
+        SELECT 
+          page_type,
+          COUNT(DISTINCT ip_address) as unique_visitors
+        FROM cms_visitors
+        WHERE visit_date BETWEEN $3 AND $4
+        GROUP BY page_type
+      ),
+      country_stats AS (
+        SELECT 
+          country,
+          COUNT(DISTINCT ip_address) as visitor_count
+        FROM cms_visitors
+        WHERE visit_date BETWEEN $1 AND $2
+        GROUP BY country
+        ORDER BY visitor_count DESC
+        LIMIT 5
+      ),
+      daily_stats AS (
+        SELECT 
+          visit_date,
+          COUNT(DISTINCT ip_address) as unique_visitors,
+          COUNT(*) as total_visits
+        FROM cms_visitors
+        WHERE visit_date >= NOW() - INTERVAL '30 days'
+        GROUP BY visit_date
+        ORDER BY visit_date
+      )
+      SELECT json_build_object(
+        'current_month', (SELECT json_object_agg(page_type, json_build_object(
+          'unique_visitors', unique_visitors,
+          'total_visits', total_visits,
+          'countries_count', countries_count
+        )) FROM current_month_stats),
+        'prev_month', (SELECT json_object_agg(page_type, json_build_object(
+          'unique_visitors', unique_visitors
+        )) FROM prev_month_stats),
+        'top_countries', (SELECT json_agg(json_build_object(
+          'country', country,
+          'count', visitor_count
+        )) FROM country_stats),
+        'daily_trend', (SELECT json_agg(json_build_object(
+          'date', visit_date,
+          'unique_visitors', unique_visitors,
+          'total_visits', total_visits
+        )) FROM daily_stats)
+      ) as visitor_data
+    `,
+      [firstDayOfMonth, lastDayOfMonth, firstDayOfPrevMonth, lastDayOfPrevMonth]
+    );
+
+    // Get news stats
+    const newsStats = await pool.query(
+      `
+      SELECT 
+        (SELECT COUNT(*) FROM cms_news WHERE createdat >= $1 AND createdat <= $2) as current_month_news,
+        (SELECT COUNT(*) FROM cms_news WHERE createdat >= $3 AND createdat <= $4) as prev_month_news,
+        (SELECT COUNT(*) FROM cms_news) as total_news
+    `,
+      [firstDayOfMonth, lastDayOfMonth, firstDayOfPrevMonth, lastDayOfPrevMonth]
+    );
+
+    // Get facilities stats with recently added count
+    const facilityStats = await pool.query(`
+      SELECT 
+        (SELECT COUNT(*) FROM cms_facility WHERE createdat >= NOW() - INTERVAL '30 days') as recently_added,
+        (SELECT COUNT(*) FROM cms_facility) as total_facilities
+    `);
+
+    // Get testimonial stats
+    const testimonialStats = await pool.query(
+      `
+      SELECT 
+        (SELECT COUNT(*) FROM cms_testimony WHERE createdat >= $1 AND createdat <= $2) as current_month_testimonials,
+        (SELECT COUNT(*) FROM cms_testimony WHERE createdat >= $3 AND createdat <= $4) as prev_month_testimonials,
+        (SELECT COUNT(*) FROM cms_testimony) as total_testimonials
+    `,
+      [firstDayOfMonth, lastDayOfMonth, firstDayOfPrevMonth, lastDayOfPrevMonth]
+    );
+
+    // Get recent activities
+    const recentActivities = await pool.query(`
+      SELECT 
+        'news' as type,
+        title as action,
+        title as title,
+        createdat
+      FROM cms_news
+      UNION ALL
+      SELECT 
+        'testimonial' as type,
+        'New testimonial added' as action,
+        name as title,
+        createdat
+      FROM cms_testimony
+      ORDER BY createdat DESC
+      LIMIT 10
+    `);
+
+    res.json({
+      stats: {
+        total_visitors:
+          (visitorStats.rows[0].visitor_data.current_month?.homepage
+            ?.unique_visitors || 0) +
+          (visitorStats.rows[0].visitor_data.current_month?.news
+            ?.unique_visitors || 0),
+        total_news: newsStats.rows[0].total_news,
+        total_facilities: facilityStats.rows[0].total_facilities,
+        total_testimonials: testimonialStats.rows[0].total_testimonials,
+        changes: {
+          visitors: {
+            value: calculatePercentageChange(
+              (visitorStats.rows[0].visitor_data.prev_month?.homepage
+                ?.unique_visitors || 0) +
+                (visitorStats.rows[0].visitor_data.prev_month?.news
+                  ?.unique_visitors || 0),
+              (visitorStats.rows[0].visitor_data.current_month?.homepage
+                ?.unique_visitors || 0) +
+                (visitorStats.rows[0].visitor_data.current_month?.news
+                  ?.unique_visitors || 0)
+            ),
+            period: "vs Bulan lalu",
+          },
+          news: {
+            value: newsStats.rows[0].current_month_news,
+            period: "Bulan ini",
+          },
+          facilities: {
+            value: facilityStats.rows[0].recently_added,
+            period: "Bulan ini",
+          },
+          testimonials: {
+            value: testimonialStats.rows[0].current_month_testimonials,
+            period: "Bulan ini",
+          },
+        },
+      },
+      recentActivities: recentActivities.rows.map((activity) => ({
+        id: activity.type + "_" + activity.createdat,
+        action: activity.action,
+        title: activity.title,
+        time: activity.createdat,
+      })),
+      websiteAnalytics: {
+        pageViews:
+          (visitorStats.rows[0].visitor_data.current_month?.homepage
+            ?.total_visits || 0) +
+          (visitorStats.rows[0].visitor_data.current_month?.news
+            ?.total_visits || 0),
+        uniqueVisitors:
+          (visitorStats.rows[0].visitor_data.current_month?.homepage
+            ?.unique_visitors || 0) +
+          (visitorStats.rows[0].visitor_data.current_month?.news
+            ?.unique_visitors || 0),
+      },
+      visitorStats: visitorStats.rows[0].visitor_data,
+    });
+  } catch (error) {
+    console.error("Error fetching CMS dashboard:", error);
+    res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+// Helper function to calculate percentage change
+function calculatePercentageChange(oldValue, newValue) {
+  if (oldValue === 0) return newValue > 0 ? 100 : 0;
+  return Math.round(((newValue - oldValue) / oldValue) * 100);
+}
+
 export default router;

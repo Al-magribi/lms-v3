@@ -66,6 +66,14 @@ export const ApiAuth = createApi({
       }),
       invalidatesTags: ["User"],
     }),
+    updateStudentProfile: builder.mutation({
+      query: (body) => ({
+        url: "/student-update-profile",
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["User"],
+    }),
   }),
 });
 
@@ -77,4 +85,5 @@ export const {
   useUpdateAdminProfileMutation,
   useUpdateTeacherProfileMutation,
   useUpdateParentProfileMutation,
+  useUpdateStudentProfileMutation,
 } = ApiAuth;

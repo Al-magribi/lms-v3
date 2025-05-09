@@ -57,7 +57,7 @@ export const TeacherMenus = [
 export const StudentMenus = [
   { label: "Pelajaran", link: "/siswa-pelajaran", icon: <Gi.GiOpenFolder /> },
   { label: "Ujian", link: "/siswa-daftar-ujian", icon: <Bs.BsLaptopFill /> },
-  { label: "Profile", link: "/guru-profile", icon: <Fa.FaRegUser /> },
+  { label: "Profile", link: "/siswa-profile", icon: <Fa.FaRegUser /> },
 ];
 
 export const TahfizMenus = [

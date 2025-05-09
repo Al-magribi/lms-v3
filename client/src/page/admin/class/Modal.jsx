@@ -7,6 +7,7 @@ import {
 } from "../../../controller/api/admin/ApiClass";
 import Table from "../../../components/table/Table";
 import toast from "react-hot-toast";
+import { useGraduatedMutation } from "../../../controller/api/admin/ApiStudent";
 
 const Modal = ({ detail }) => {
   const [page, setPage] = useState(1);
@@ -22,9 +23,32 @@ const Modal = ({ detail }) => {
   const [deleteStudent, { isSuccess, isLoading, isError, reset }] =
     useDeleteStudentMutation();
 
+  const [
+    graduated,
+    {
+      isSuccess: isSuccessGraduated,
+      isLoading: isLoadingGraduated,
+      isError: isErrorGraduated,
+      reset: resetGraduated,
+    },
+  ] = useGraduatedMutation();
+
   const deleteHandler = (id) => {
     toast.promise(
       deleteStudent(id)
+        .unwrap()
+        .then((res) => res.message),
+      {
+        loading: "Memproses...",
+        success: (message) => message,
+        error: (err) => err.data.message,
+      }
+    );
+  };
+
+  const changeStatusHandler = () => {
+    toast.promise(
+      graduated(classid)
         .unwrap()
         .then((res) => res.message),
       {
@@ -45,6 +69,12 @@ const Modal = ({ detail }) => {
     }
   }, [isSuccess, isError]);
 
+  useEffect(() => {
+    if (isSuccessGraduated || isErrorGraduated) {
+      resetGraduated();
+    }
+  }, [isSuccessGraduated, isErrorGraduated]);
+
   return (
     <div
       className='modal fade'
@@ -53,9 +83,8 @@ const Modal = ({ detail }) => {
       data-bs-keyboard='false'
       tabIndex='-1'
       aria-labelledby='staticBackdropLabel'
-      aria-hidden='true'
-    >
-      <div className='modal-dialog modal-lg modal-dialog-scrollable'>
+      aria-hidden='true'>
+      <div className='modal-dialog modal-xl modal-dialog-scrollable'>
         <div className='modal-content'>
           <div className='modal-header'>
             <h1 className='modal-title fs-5' id='staticBackdropLabel'>
@@ -65,8 +94,7 @@ const Modal = ({ detail }) => {
               type='button'
               className='btn-close'
               data-bs-dismiss='modal'
-              aria-label='Close'
-            ></button>
+              aria-label='Close'></button>
           </div>
           <div className='modal-body bg-light d-flex flex-column gap-2'>
             <div className='row g-2'>
@@ -84,9 +112,8 @@ const Modal = ({ detail }) => {
               setLimit={setLimit}
               setSearch={setSearch}
               totalData={totalData}
-              totalPages={totalPages}
-            >
-              <table className='table table-bordered table-striped table-hover'>
+              totalPages={totalPages}>
+              <table className='mb-0 table table-bordered table-striped table-hover'>
                 <thead>
                   <tr>
                     <th className='text-center'>No</th>
@@ -94,6 +121,7 @@ const Modal = ({ detail }) => {
                     <th className='text-center'>Tingkat</th>
                     <th className='text-center'>NIS</th>
                     <th className='text-center'>Nama</th>
+                    <th className='text-center'>Status</th>
                     <th className='text-center'>Aksi</th>
                   </tr>
                 </thead>
@@ -115,19 +143,26 @@ const Modal = ({ detail }) => {
                         </td>
                         <td className='align-middle'>{student.student_name}</td>
                         <td className='text-center align-middle'>
+                          {student.isactive ? (
+                            <span className='badge bg-primary'>Aktif</span>
+                          ) : (
+                            <span className='badge bg-success'>Lulus</span>
+                          )}
+                        </td>
+                        <td className='text-center align-middle'>
                           <button
-                            className='btn btn-danger'
+                            className='btn btn-sm btn-danger'
                             disabled={isLoading}
-                            onClick={() => deleteHandler(student.id)}
-                          >
+                            onClick={() => deleteHandler(student.id)}>
                             <i className='bi bi-person-dash'></i>
+                            <span className='ms-2'>Hapus</span>
                           </button>
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={6}>Data tidak tersedia</td>
+                      <td colSpan={7}>Data tidak tersedia</td>
                     </tr>
                   )}
                 </tbody>
@@ -138,8 +173,11 @@ const Modal = ({ detail }) => {
             <button className='btn btn-sm btn-primary' onClick={download}>
               Template
             </button>
-            <button className='btn btn-sm btn-warning' onClick={refetch}>
-              SYNC
+            <button
+              className='btn btn-sm btn-success'
+              disabled={isLoadingGraduated}
+              onClick={changeStatusHandler}>
+              Luluskan
             </button>
           </div>
         </div>

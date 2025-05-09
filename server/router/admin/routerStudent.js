@@ -110,8 +110,6 @@ router.get("/get-students", authorize("admin"), async (req, res) => {
 
     const activePeriode = periode.rows[0].id;
 
-    console.log(activePeriode);
-
     const [count, data] = await Promise.all([
       client.query(
         `SELECT COUNT(*) FROM u_students
@@ -242,5 +240,32 @@ router.put(
     }
   }
 );
+
+router.put("/graduated", authorize("admin"), async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { classid } = req.query;
+
+    await client.query("BEGIN");
+
+    await client.query(
+      `UPDATE u_students SET isactive = false 
+       WHERE id IN (
+         SELECT student FROM cl_students 
+         WHERE classid = $1
+       )`,
+      [classid]
+    );
+
+    await client.query("COMMIT");
+    res.status(200).json({ message: "Berhasil meluluskan semua siswa" });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
+  }
+});
 
 export default router;

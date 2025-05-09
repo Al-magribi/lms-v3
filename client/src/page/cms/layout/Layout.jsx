@@ -63,7 +63,7 @@ const Layout = ({ children, title, desc, levels }) => {
     if (isSuccess) {
       reset();
       dispatch(setLogout());
-      window.location.href = "/";
+      window.location.href = "/signin";
     }
 
     if (error) {
@@ -75,9 +75,9 @@ const Layout = ({ children, title, desc, levels }) => {
     const timeout = setTimeout(() => {
       if (!user || !isSignin || !levels.includes(user?.level)) {
         if (user === null || (user && Object.keys(user).length === 0)) {
-          window.location.href = "/";
+          window.location.href = "/signin";
         } else {
-          window.location.href = "/";
+          window.location.href = "/signin";
         }
       }
     }, 500);
@@ -90,7 +90,7 @@ const Layout = ({ children, title, desc, levels }) => {
       id: "Dashboard",
       name: "Dashboard",
       icon: <FaHome />,
-      path: "/cms-Dashboard",
+      path: "/cms-dashboard",
     },
     {
       id: "reason",
