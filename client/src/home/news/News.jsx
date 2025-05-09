@@ -57,12 +57,12 @@ const News = () => {
   return (
     <Fragment>
       <Header />
-      <main className="container py-5">
-        <h1 className="mb-4">Latest News</h1>
+      <main style={{ marginTop: 40 }} className="container py-5">
+        <h1 className="mb-4">Berita Terbaru</h1>
 
-        <div className="row row-cols-1 row-cols-md-2 g-4">
+        <div className="row  g-4">
           {data?.result?.map((news) => (
-            <div key={news.id} className="col">
+            <div key={news.id} className="col-md-3 col-12">
               <div className="card h-100">
                 <img
                   src={news.image}
@@ -79,10 +79,10 @@ const News = () => {
                     {formatDate(news.createdat)}
                   </p>
                   <button
-                    className="btn btn-outline-primary mt-3"
+                    className="btn btn-outline-primary"
                     onClick={() => handleReadMore(news.id)}
                   >
-                    Read More
+                    Baca Selengkapnya
                   </button>
                 </div>
               </div>
@@ -92,14 +92,14 @@ const News = () => {
 
         {/* Pagination */}
         <nav className="mt-5">
-          <ul className="pagination justify-content-center">
+          <ul className="pagination pagination-sm justify-content-center">
             <li className={`page-item ${page === 1 ? "disabled" : ""}`}>
               <button
                 className="page-link"
                 onClick={() => setPage(page - 1)}
                 disabled={page === 1}
               >
-                Previous
+                <i className="bi bi-chevron-double-left"></i>
               </button>
             </li>
             {[...Array(data?.totalPage)].map((_, index) => (
@@ -121,11 +121,11 @@ const News = () => {
               }`}
             >
               <button
-                className="page-link"
+                className=" page-link"
                 onClick={() => setPage(page + 1)}
                 disabled={page === data?.totalPage}
               >
-                Next
+                <i className="bi bi-chevron-double-right"></i>
               </button>
             </li>
           </ul>

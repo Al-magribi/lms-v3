@@ -53,13 +53,6 @@ const Detail = () => {
       <main style={{ marginTop: 40 }} className="container py-5">
         <div className="row justify-content-center">
           <div className="col-lg-8">
-            <button
-              className="btn btn-outline-secondary mb-4"
-              onClick={() => navigate("/berita")}
-            >
-              ← Back to News
-            </button>
-
             <article>
               <h1 className="mb-3">{news.title}</h1>
               <div className="d-flex align-items-center mb-4">
@@ -69,22 +62,18 @@ const Detail = () => {
                 <span className="text-muted">{formatDate(news.createdat)}</span>
               </div>
 
-              <img
-                src={news.image}
-                alt={news.title}
-                className="img-fluid rounded mb-4"
-                style={{
-                  maxHeight: "400px",
-                  width: "100%",
-                  objectFit: "cover",
-                }}
-              />
-
               <div
                 className="news-content"
                 dangerouslySetInnerHTML={{ __html: news.content }}
               />
             </article>
+
+            <button
+              className="btn btn-outline-secondary mb-4"
+              onClick={() => navigate("/berita")}
+            >
+              ← Kembali
+            </button>
           </div>
         </div>
       </main>

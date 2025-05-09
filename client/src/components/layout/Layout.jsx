@@ -103,6 +103,10 @@ const Layout = ({ children, title, desc, levels }) => {
     navigate("/database");
   };
 
+  const goToGraduation = () => {
+    navigate("/admin-lulusan");
+  };
+
   const goToHomeroom = () => {
     navigate(
       `/guru-wali-kelas/${user?.class.replace(/\s+/g, "-")}/${user?.class_id}`
@@ -227,17 +231,33 @@ const Layout = ({ children, title, desc, levels }) => {
               )}
 
               {title === "Siswa" && (
-                <div>
+                <div className="d-flex gap-2">
                   <button
-                    className="btn btn-sm btn-info"
+                    className="btn btn-sm btn-outline-primary"
                     onClick={goToDatabase}
                   >
-                    <i className="bi bi-database"></i> Database
+                    <i className="bi bi-database"></i>
+                    <span className="ms-2">Database</span>
+                  </button>
+
+                  <button
+                    className="btn btn-sm btn-outline-success"
+                    onClick={goToGraduation}
+                  >
+                    <i className="bi bi-mortarboard-fill"></i>
+                    <span className="ms-2">Lulusan</span>
                   </button>
                 </div>
               )}
 
               {title === "Database" && (
+                <button className="btn btn-sm btn-info" onClick={goToStudent}>
+                  <Pi.PiStudentFill />
+                  <span className="ms-2">Siswa</span>
+                </button>
+              )}
+
+              {title === "Lulusan" && (
                 <button className="btn btn-sm btn-info" onClick={goToStudent}>
                   <Pi.PiStudentFill />
                   <span className="ms-2">Siswa</span>

@@ -55,6 +55,9 @@ const AdminDash = lazy(() => import("./page/admin/dashboard/AdminDash"));
 const AdminMajor = lazy(() => import("./page/admin/major/AdminMajor"));
 const AdminPeriode = lazy(() => import("./page/admin/periode/AdminPeriode"));
 const AdminGrade = lazy(() => import("./page/admin/grade/AdminGrade"));
+const AdminGraduation = lazy(() =>
+  import("./page/admin/graduation/AdminGraduation")
+);
 const AdminStudents = lazy(() => import("./page/admin/student/AdminStudents"));
 const AdminTeachers = lazy(() => import("./page/admin/teacher/AdminTeachers"));
 const AdminClass = lazy(() => import("./page/admin/class/AdminClass"));
@@ -227,6 +230,8 @@ function App() {
             <Route path="/admin-periode" element={<AdminPeriode />} />
 
             <Route path="/admin-tingkat" element={<AdminGrade />} />
+
+            <Route path="/admin-lulusan" element={<AdminGraduation />} />
 
             <Route path="/admin-siswa" element={<AdminStudents />} />
 
