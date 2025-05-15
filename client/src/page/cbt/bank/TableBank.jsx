@@ -56,44 +56,63 @@ const TableBank = ({ setDetail }) => {
       totalPages={totalPages}
       isLoading={dataLoading}
     >
-      <table className="table table-bordered table-striped table-hover m-0">
-        <thead>
-          <tr>
-            <th className="text-center">No</th>
-            <th className="text-center">Guru</th>
-            <th className="text-center">Mata Pelajaran</th>
-            <th className="text-center">Bank Soal</th>
-            <th className="text-center">Jenis</th>
-            <th className="text-center">Soal</th>
-            <th style={{ width: 250 }} className="text-center">
-              Aksi
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {banks?.length > 0 ? (
-            banks?.map((item, i) => (
-              <tr key={i}>
-                <td className="text-center align-middle">
-                  {(page - 1) * limit + i + 1}
-                </td>
-                <td className="align-middle">{item.teacher_name}</td>
-                <td className="align-middle">{item.subject_name}</td>
-                <td className="align-middle">{item.name}</td>
-                <td className="text-center align-middle">
-                  <p className="m-0 badge bg-success">
-                    {item.btype.toUpperCase()}
-                  </p>
-                </td>
-                <td className="text-center align-middle">
-                  <p className="m-0 badge bg-secondary">
-                    {`${item.question_count} Soal`}
-                  </p>
-                </td>
-                <td className="text-center align-middle">
-                  <div className="d-flex justify-content-center gap-1">
+      <div className="row g-4">
+        {banks?.length > 0 ? (
+          banks?.map((item, i) => (
+            <div key={i} className="col-12 col-md-6">
+              <div className="card shadow-sm h-100">
+                <div className="card-body">
+                  <div className="d-flex align-items-center mb-3">
+                    <span className="badge bg-primary me-3">
+                      {(page - 1) * limit + i + 1}
+                    </span>
+                    <div>
+                      <h5 className="card-title mb-1">{item.name}</h5>
+                      <p className="text-muted small mb-0">
+                        {item.subject_name}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="row g-3 mb-3">
+                    <div className="col-12">
+                      <div className="d-flex align-items-center">
+                        <i className="bi bi-person me-2 text-primary"></i>
+                        <div>
+                          <small className="text-muted d-block">Guru</small>
+                          <span className="fw-medium">{item.teacher_name}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="col-6">
+                      <div className="d-flex align-items-center">
+                        <i className="bi bi-tag me-2 text-primary"></i>
+                        <div>
+                          <small className="text-muted d-block">Jenis</small>
+                          <span className="badge bg-success">
+                            {item.btype.toUpperCase()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="col-6">
+                      <div className="d-flex align-items-center">
+                        <i className="bi bi-question-circle me-2 text-primary"></i>
+                        <div>
+                          <small className="text-muted d-block">
+                            Jumlah Soal
+                          </small>
+                          <span className="badge bg-secondary">
+                            {`${item.question_count} Soal`}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="d-flex gap-2 mt-auto pt-3 border-top">
                     <button
-                      className="btn btn-sm btn-primary"
+                      className="btn btn-sm btn-primary flex-grow-1"
                       onClick={() =>
                         goToLink(item.subject_name, item.name, item.id)
                       }
@@ -102,14 +121,14 @@ const TableBank = ({ setDetail }) => {
                       <span className="ms-2">Lihat</span>
                     </button>
                     <button
-                      className="btn btn-sm btn-warning"
+                      className="btn btn-sm btn-warning flex-grow-1"
                       onClick={() => setDetail(item)}
                     >
                       <i className="bi bi-pencil-square"></i>
-                      <span className="ms-2">Edit </span>
+                      <span className="ms-2">Edit</span>
                     </button>
                     <button
-                      className="btn btn-sm btn-danger"
+                      className="btn btn-sm btn-danger flex-grow-1"
                       disabled={isLoading}
                       onClick={() => deleteHandler(item.id)}
                     >
@@ -117,16 +136,16 @@ const TableBank = ({ setDetail }) => {
                       <span className="ms-2">Hapus</span>
                     </button>
                   </div>
-                </td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan={7}>Data belum tersedia</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="col-12">
+            <div className="alert alert-info mb-0">Data belum tersedia</div>
+          </div>
+        )}
+      </div>
     </Table>
   );
 };

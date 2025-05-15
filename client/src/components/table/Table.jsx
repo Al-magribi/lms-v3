@@ -123,7 +123,7 @@ const Table = ({
           </div>
         </div>
         {/* Table */}
-        <div className="table-responsive">
+        <div className="table-responsive p-3">
           {isLoading ? <TableLoader /> : children}
         </div>
 

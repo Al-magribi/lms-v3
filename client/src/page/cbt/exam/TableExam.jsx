@@ -9,7 +9,7 @@ import { toast } from "react-hot-toast";
 
 const TableExam = ({ setDetail }) => {
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useState(12);
   const [search, setSearch] = useState("");
 
   const { data: rawData = {}, isLoading: loading } = useGetExamsQuery({
@@ -90,129 +90,153 @@ const TableExam = ({ setDetail }) => {
       totalPages={totalPages}
       isLoading={loading}
     >
-      <table className="table table-striped table-bordered table-hover mb-0">
-        <thead>
-          <tr>
-            <th className="text-center">Guru</th>
-            <th className="text-center">Bank Soal</th>
-            <th className="text-center">Nama Ujian</th>
-            <th className="text-center">PG</th>
-            <th className="text-center">Essay</th>
-            <th className="text-center">Kelas</th>
-            <th className="text-center">Acak</th>
-            <th className="text-center">Durasi</th>
-            <th className="text-center">Status</th>
-            <th className="text-center">Token</th>
-            <th style={{ width: 280 }} className="text-center">
-              Aksi
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {exams?.length > 0 ? (
-            exams?.map((exam, i) => (
-              <tr key={i}>
-                <td className="align-middle">{exam.teacher_name}</td>
-                <td className="align-middle">
-                  {exam.banks.map((bank, i) => (
-                    <p key={i} className="m-0">
-                      {bank.type !== "paket"
-                        ? `${bank.name} - PG ${bank.pg} - Essay ${bank.essay}`
-                        : `${bank.name}`}
-                    </p>
-                  ))}
-                </td>
-                <td className="align-middle">{exam.name}</td>
-                <td className="text-center align-middle">
-                  <p className="m-0 badge bg-success">{`${exam.mc_score}%`}</p>
-                </td>
-                <td className="text-center align-middle">
-                  <p className="m-0 badge bg-success">{`${exam.essay_score}%`}</p>
-                </td>
-                <td className="align-middle">
-                  <div
-                    style={{ width: 100 }}
-                    className="d-flex align-items-center justify-content-center flex-wrap gap-2"
-                  >
-                    {exam.classes?.map((item, index) => (
-                      <span key={index} className="badge bg-primary">
-                        {item.name}
+      <div className="row g-4">
+        {exams?.length > 0 ? (
+          exams?.map((exam, i) => (
+            <div key={i} className="col-12 col-lg-4">
+              <div className="card shadow-sm h-100">
+                <div className="card-body d-flex flex-column h-100">
+                  <div className="d-flex align-items-start justify-content-between mb-3">
+                    <div className="d-flex align-items-center flex-wrap gap-2">
+                      <span className="badge bg-primary">{i + 1}</span>
+                      <span className="fw-bold lh-1">{exam.name}</span>
+                    </div>
+                    <div className="d-flex align-items-center gap-2">
+                      <div
+                        className="form-check form-switch pointer d-flex align-items-center m-0"
+                        onClick={() => changeStatusHandler(exam.id)}
+                      >
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          id={`flexSwitchCheckChecked-${i}`}
+                          checked={exam.isactive}
+                          readOnly
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mb-2 d-flex align-items-center gap-2">
+                    <i className="bi bi-person-badge-fill text-primary"></i>
+                    <div className="fw-medium">{exam.teacher_name}</div>
+                  </div>
+                  <div className="mb-2 d-flex align-items-center gap-2">
+                    <i className="bi bi-file-earmark-text-fill text-primary"></i>
+                    <div className="d-flex flex-column gap-1">
+                      {exam.banks.map((bank, idx) => (
+                        <span key={idx} className="fw-medium">
+                          {bank.type !== "paket"
+                            ? `${bank.name} - PG ${bank.pg} - Essay ${bank.essay}`
+                            : `${bank.name}`}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="mb-3">
+                    <div className="text-muted small mb-1">Kelas</div>
+                    <div className="d-flex flex-wrap gap-2">
+                      {exam.classes?.map((item, idx) => (
+                        <span key={idx} className="badge bg-primary">
+                          {item.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="row g-2 mb-3">
+                    <div className="col-6 col-sm-3">
+                      <div className="text-muted small">PG</div>
+                      <span className="badge bg-success">{exam.mc_score}%</span>
+                    </div>
+                    <div className="col-6 col-sm-3">
+                      <div className="text-muted small">Essay</div>
+                      <span className="badge bg-success">
+                        {exam.essay_score}%
                       </span>
-                    ))}
+                    </div>
+                    <div className="col-6 col-sm-3">
+                      <div className="text-muted small">Durasi</div>
+                      <span className="badge bg-primary">
+                        {exam.duration} Menit
+                      </span>
+                    </div>
+                    <div className="col-6 col-sm-3">
+                      <div className="text-muted small">Acak</div>
+                      {exam.isshuffle ? (
+                        <span className="badge bg-success">Ya</span>
+                      ) : (
+                        <span className="badge bg-danger">Tidak</span>
+                      )}
+                    </div>
                   </div>
-                </td>
-                <td className="text-center align-middle">
-                  {exam.isshuffle ? (
-                    <p className="m-0 badge bg-success">Ya</p>
-                  ) : (
-                    <p className="m-0 badge bg-danger">Tidak</p>
-                  )}
-                </td>
-                <td className="text-center align-middle">
-                  <p className="m-0 badge bg-primary">{`${exam.duration} Menit`}</p>
-                </td>
-                <td className="text-center align-middle">
-                  <div
-                    className="form-check form-switch pointer d-flex justify-content-center"
-                    onClick={() => changeStatusHandler(exam.id)}
-                  >
-                    <input
-                      className="form-check-input bg-success"
-                      type="checkbox"
-                      id="flexSwitchCheckChecked"
-                      checked={exam.isactive}
-                      readOnly
-                    />
+                  {/* Token & Dropdown Aksi */}
+                  <div className="mb-1 d-flex align-items-center justify-content-between gap-2 flex-wrap">
+                    <span
+                      className="badge bg-secondary pointer fs-6"
+                      data-toggle="tooltip"
+                      data-placement="top"
+                      title="Copy Token"
+                      onClick={() => copyTokenHandler(exam.token)}
+                    >
+                      {exam.token}
+                    </span>
+
+                    <button
+                      className="btn btn-secondary btn-sm dropdown-toggle"
+                      type="button"
+                      id={`dropdownMenuButton-${i}`}
+                      data-bs-toggle="dropdown"
+                      aria-expanded="false"
+                    >
+                      Pilihan Aksi
+                    </button>
+                    <ul
+                      className="dropdown-menu"
+                      aria-labelledby={`dropdownMenuButton-${i}`}
+                    >
+                      <li>
+                        <button
+                          className="dropdown-item d-flex align-items-center"
+                          onClick={() =>
+                            openNewTab(exam.name, exam.id, exam.token)
+                          }
+                        >
+                          <i className="bi bi-people me-2"></i>
+                          Lihat
+                        </button>
+                      </li>
+                      <li>
+                        <button
+                          className="dropdown-item d-flex align-items-center"
+                          data-bs-toggle="modal"
+                          data-bs-target="#addexam"
+                          onClick={() => setDetail(exam)}
+                        >
+                          <i className="bi bi-pencil-square me-2"></i>
+                          Edit
+                        </button>
+                      </li>
+                      <li>
+                        <button
+                          className="dropdown-item d-flex align-items-center text-danger"
+                          disabled={isLoading}
+                          onClick={() => deleteHandler(exam.id)}
+                        >
+                          <i className="bi bi-folder-x me-2"></i>
+                          Hapus
+                        </button>
+                      </li>
+                    </ul>
                   </div>
-                </td>
-                <td className="text-center align-middle">
-                  <p
-                    className="m-0 badge bg-secondary pointer"
-                    data-toggle="tooltip"
-                    data-placement="top"
-                    title="Copy Token"
-                    onClick={() => copyTokenHandler(exam.token)}
-                  >
-                    {exam.token}
-                  </p>
-                </td>
-                <td className="text-center align-middle">
-                  <div className="d-flex justify-content-center gap-2">
-                    <button
-                      className="btn btn-sm btn-primary"
-                      onClick={() => openNewTab(exam.name, exam.id, exam.token)}
-                    >
-                      <i className="bi bi-people"></i>
-                      <span className="ms-2">Lihat</span>
-                    </button>
-                    <button
-                      className="btn btn-sm btn-warning"
-                      data-bs-toggle="modal"
-                      data-bs-target="#addexam"
-                      onClick={() => setDetail(exam)}
-                    >
-                      <i className="bi bi-pencil-square"></i>
-                      <span className="ms-2">Edit</span>
-                    </button>
-                    <button
-                      className="btn btn-sm btn-danger"
-                      disabled={isLoading}
-                      onClick={() => deleteHandler(exam.id)}
-                    >
-                      <i className="bi bi-folder-x"></i>
-                      <span className="ms-2">Hapus</span>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan={11}>Data belum tersedia</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="col-12">
+            <div className="alert alert-info mb-0">Data belum tersedia</div>
+          </div>
+        )}
+      </div>
     </Table>
   );
 };

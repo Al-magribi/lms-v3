@@ -58,70 +58,108 @@ const TableData = ({ setDetail }) => {
       totalPages={totalPages}
       isLoading={dataLoading}
     >
-      <table className="m-0 table table-bordered table-striped table-hover">
-        <thead>
-          <tr>
-            <th className="text-center">No</th>
-            <th className="text-center">Satuan</th>
-            <th className="text-center">Username</th>
-            <th className="text-center">Nama</th>
-            <th className="text-center">Jenis Kelamin</th>
-            <th className="text-center">Mata Pelajaran</th>
-            <th className="text-center">Wali Kelas</th>
-            <th className="text-center">Aksi</th>
-          </tr>
-        </thead>
-        <tbody>
-          {teachers?.length > 0 ? (
-            teachers?.map((teacher, i) => (
-              <tr key={i}>
-                <td className="text-center align-middle">
-                  {(page - 1) * limit + i + 1}
-                </td>
-                <td className="text-center align-middle">{teacher.homebase}</td>
-                <td className="text-center align-middle">{teacher.username}</td>
-                <td className="align-middle">{teacher.name}</td>
-                <td className="text-center align-middle">
-                  {teacher.gender == "L" ? "Laki Laki" : "Perempuan"}
-                </td>
-                <td className="align-middle">
-                  {teacher.subjects?.map((item) => (
-                    <p key={item.id} className="m-0">
-                      {item.name}
-                    </p>
-                  ))}
-                </td>
-                <td className="text-center align-middle">
-                  {teacher.homeroom ? teacher.class_name : "-"}
-                </td>
-                <td className="text-cente align-middle">
-                  <div className="d-flex justify-content-center gap-2">
-                    <button
-                      className="btn btn-sm btn-warning"
-                      onClick={() => setDetail(teacher)}
-                    >
-                      <i className="bi bi-pencil-square"></i>
-                    </button>
-                    <button
-                      className="btn btn-sm btn-danger"
-                      disabled={isLoading}
-                      onClick={() => deleteHandler(teacher.id)}
-                    >
-                      <i className="bi bi-folder-minus"></i>
-                    </button>
+      <div className="row g-4">
+        {teachers?.length > 0 ? (
+          teachers?.map((teacher, i) => (
+            <div key={i} className="col-12 col-md-6">
+              <div className="card shadow-sm h-100">
+                <div className="card-body">
+                  <div className="d-flex justify-content-between align-items-start mb-3">
+                    <div className="d-flex align-items-center">
+                      <span className="badge bg-primary me-3">
+                        {(page - 1) * limit + i + 1}
+                      </span>
+                      <div>
+                        <h5 className="card-title mb-1">{teacher.name}</h5>
+                        <p className="text-muted small mb-0">
+                          @{teacher.username}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="d-flex gap-2">
+                      <button
+                        className="btn btn-sm btn-warning"
+                        onClick={() => setDetail(teacher)}
+                      >
+                        <i className="bi bi-pencil-square"></i>
+                      </button>
+                      <button
+                        className="btn btn-sm btn-danger"
+                        disabled={isLoading}
+                        onClick={() => deleteHandler(teacher.id)}
+                      >
+                        <i className="bi bi-folder-minus"></i>
+                      </button>
+                    </div>
                   </div>
-                </td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan={8} className="">
-                Data Belum tersedia
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+
+                  <div className="row g-3">
+                    <div className="col-6">
+                      <div className="d-flex align-items-center">
+                        <i className="bi bi-building me-2 text-primary"></i>
+                        <div>
+                          <small className="text-muted d-block">Satuan</small>
+                          <span className="fw-medium">{teacher.homebase}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="col-6">
+                      <div className="d-flex align-items-center">
+                        <i className="bi bi-gender-ambiguous me-2 text-primary"></i>
+                        <div>
+                          <small className="text-muted d-block">
+                            Jenis Kelamin
+                          </small>
+                          <span className="fw-medium">
+                            {teacher.gender === "L" ? "Laki-laki" : "Perempuan"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="col-12">
+                      <div className="d-flex align-items-start">
+                        <i className="bi bi-book me-2 text-primary mt-1"></i>
+                        <div>
+                          <small className="text-muted d-block">
+                            Mata Pelajaran
+                          </small>
+                          <div className="d-flex flex-wrap gap-2">
+                            {teacher.subjects?.map((item) => (
+                              <span
+                                key={item.id}
+                                className="badge bg-light text-dark"
+                              >
+                                {item.name}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="col-12">
+                      <div className="d-flex align-items-center">
+                        <i className="bi bi-mortarboard me-2 text-primary"></i>
+                        <div>
+                          <small className="text-muted d-block">
+                            Wali Kelas
+                          </small>
+                          <span className="fw-medium">
+                            {teacher.homeroom ? teacher.class_name : "-"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="col-12">
+            <div className="alert alert-info mb-0">Data Belum tersedia</div>
+          </div>
+        )}
+      </div>
     </Table>
   );
 };

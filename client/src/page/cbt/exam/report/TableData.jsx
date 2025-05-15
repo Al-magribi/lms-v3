@@ -180,49 +180,67 @@ const TableData = forwardRef(({ classid, examid }, ref) => {
                     )}
                   </td>
                   <td className="text-center align-middle">
-                    <div className="d-flex justify-content-center gap-2">
+                    <div className="dropdown">
                       <button
-                        className="btn btn-sm btn-primary"
-                        title="Lihat Detail"
-                        data-bs-toggle="modal"
-                        data-bs-target="#answerSheet"
-                        onClick={() => setDetail(item)}
+                        className="btn btn-primary btn-sm"
+                        type="button"
+                        id={`dropdownMenuButton-${index}`}
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
                       >
-                        <i className="bi bi-eye"></i>
-                        <span className="ms-2">Lihat</span>
+                        Pilihan Aksi
                       </button>
-
-                      <button
-                        className="btn btn-sm btn-warning"
-                        title="Izinkan Masuk"
-                        onClick={() => handleRejoin(item.log_id)}
-                        disabled={rejoinLoad || !item.isactive}
+                      <ul
+                        className="dropdown-menu"
+                        aria-labelledby={`dropdownMenuButton-${index}`}
                       >
-                        <i className="bi bi-arrow-repeat"></i>
-                        <span className="ms-2">Izinkan</span>
-                      </button>
-
-                      <button
-                        className="btn btn-sm btn-success"
-                        title="Selesaikan"
-                        onClick={() => hanldeFinish(item.log_id)}
-                        disabled={finishLoad || item.isdone || !item.isactive}
-                      >
-                        <i className="bi bi-check-circle"></i>
-                        <span className="ms-2">Selesaikan</span>
-                      </button>
-
-                      <button
-                        className="btn btn-sm btn-danger"
-                        title="Ulangi Ujian"
-                        onClick={() =>
-                          handleRetake(item.log_id, item.student_id)
-                        }
-                        disabled={retakeLoad || !item.isdone}
-                      >
-                        <i className="bi bi-recycle"></i>
-                        <span className="ms-2">Ulangi</span>
-                      </button>
+                        <li>
+                          <button
+                            className="dropdown-item d-flex align-items-center"
+                            title="Lihat Detail"
+                            data-bs-toggle="modal"
+                            data-bs-target="#answerSheet"
+                            onClick={() => setDetail(item)}
+                          >
+                            <i className="bi bi-eye me-2"></i> Lihat
+                          </button>
+                        </li>
+                        <li>
+                          <button
+                            className="dropdown-item d-flex align-items-center"
+                            title="Izinkan Masuk"
+                            onClick={() => handleRejoin(item.log_id)}
+                            disabled={rejoinLoad || !item.isactive}
+                          >
+                            <i className="bi bi-arrow-repeat me-2"></i> Izinkan
+                          </button>
+                        </li>
+                        <li>
+                          <button
+                            className="dropdown-item d-flex align-items-center"
+                            title="Selesaikan"
+                            onClick={() => hanldeFinish(item.log_id)}
+                            disabled={
+                              finishLoad || item.isdone || !item.isactive
+                            }
+                          >
+                            <i className="bi bi-check-circle me-2"></i>{" "}
+                            Selesaikan
+                          </button>
+                        </li>
+                        <li>
+                          <button
+                            className="dropdown-item d-flex align-items-center text-danger"
+                            title="Ulangi Ujian"
+                            onClick={() =>
+                              handleRetake(item.log_id, item.student_id)
+                            }
+                            disabled={retakeLoad || !item.isdone}
+                          >
+                            <i className="bi bi-recycle me-2"></i> Ulangi
+                          </button>
+                        </li>
+                      </ul>
                     </div>
                   </td>
                 </tr>

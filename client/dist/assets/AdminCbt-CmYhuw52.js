@@ -1,0 +1,2 @@
+import{j as s}from"./index-D_xLDGgb.js";import"./vendor-CnnDPxwB.js";import{L as t}from"./Layout-CeXxh9dB.js";import{C as e}from"./CbtBank-BF-8-dK1.js";import"./index-B8CuzAwO.js";import"./index-g0LoU_Ie.js";import"./react-select.esm-C351JJ6e.js";import"./Table-0OluQQdG.js";const o=()=>s.jsx(t,{title:"Daftar Bank Soal",levels:["admin"],children:s.jsx(e,{})});export{o as default};
+//# sourceMappingURL=AdminCbt-CmYhuw52.js.map
