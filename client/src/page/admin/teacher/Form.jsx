@@ -75,6 +75,8 @@ const Form = ({ detail, setDetail }) => {
     if (isSuccess) {
       reset();
       cancel();
+      const closeModal = document.querySelector("[data-bs-dismiss='modal']");
+      closeModal.click();
     }
     if (isError) {
       reset();
@@ -99,97 +101,145 @@ const Form = ({ detail, setDetail }) => {
     }
   }, [detail]);
 
+  useEffect(() => {
+    const modal = document.getElementById("addteacher");
+    if (!modal) return;
+    const handler = () => {
+      setFormData({
+        id: "",
+        username: "",
+        name: "",
+        homeroom: false,
+        classid: "",
+        gender: "",
+        subjects: [],
+      });
+    };
+    modal.addEventListener("hidden.bs.modal", handler);
+    return () => modal.removeEventListener("hidden.bs.modal", handler);
+  }, []);
+
   const subjectOptions =
     subjectsData?.map((item) => ({ value: item.id, label: item.name })) || [];
 
   return (
-    <form
-      onSubmit={addHandler}
-      className='rounded bg-white p-2 border d-flex flex-column gap-2'>
-      <p className='m-0 h6'>Guru</p>
-
-      <input
-        type='text'
-        name='username'
-        className='form-control'
-        placeholder='Username'
-        value={formData.username}
-        onChange={handleChange}
-      />
-
-      <input
-        type='text'
-        name='name'
-        className='form-control'
-        placeholder='Nama Guru'
-        value={formData.name}
-        onChange={handleChange}
-      />
-
-      <select
-        name='gender'
-        className='form-select'
-        value={formData.gender}
-        onChange={handleChange}>
-        <option value='' hidden>
-          Jenis Kelamin
-        </option>
-        <option value='L'>Laki Laki</option>
-        <option value='P'>Perempuan</option>
-      </select>
-
-      <Select
-        isMulti
-        options={subjectOptions}
-        value={formData.subjects}
-        onChange={handleSubjectsChange}
-        className='mb-2'
-        placeholder='Mata Pelajaran'
-      />
-
-      <div className='form-check'>
-        <input
-          type='checkbox'
-          name='homeroom'
-          className='form-check-input'
-          checked={formData.homeroom}
-          onChange={handleChange}
-        />
-        <label className='form-check-label'>Wali Kelas</label>
+    <div
+      className="modal fade"
+      id="addteacher"
+      data-bs-backdrop="static"
+      data-bs-keyboard="false"
+      tabIndex="-1"
+      aria-labelledby="teacherModalLabel"
+      aria-hidden="true"
+    >
+      <div className="modal-dialog modal-dialog-centered">
+        <div className="modal-content">
+          <div className="modal-header bg-primary text-white">
+            <h5 className="modal-title" id="teacherModalLabel">
+              {formData.id ? "Edit Guru" : "Tambah Guru"}
+            </h5>
+            <button
+              type="button"
+              className="btn-close btn-close-white"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+              onClick={cancel}
+            ></button>
+          </div>
+          <div className="modal-body p-4">
+            <form onSubmit={addHandler} className="d-flex flex-column gap-3">
+              <input
+                type="text"
+                name="username"
+                className="form-control"
+                placeholder="Username"
+                value={formData.username}
+                onChange={handleChange}
+                required
+              />
+              <input
+                type="text"
+                name="name"
+                className="form-control"
+                placeholder="Nama Guru"
+                value={formData.name}
+                onChange={handleChange}
+                required
+              />
+              <select
+                name="gender"
+                className="form-select"
+                value={formData.gender}
+                onChange={handleChange}
+                required
+              >
+                <option value="" hidden>
+                  Jenis Kelamin
+                </option>
+                <option value="L">Laki Laki</option>
+                <option value="P">Perempuan</option>
+              </select>
+              <Select
+                isMulti
+                options={subjectOptions}
+                value={formData.subjects}
+                onChange={handleSubjectsChange}
+                className="mb-2"
+                placeholder="Mata Pelajaran"
+              />
+              <div className="form-check">
+                <input
+                  type="checkbox"
+                  name="homeroom"
+                  className="form-check-input"
+                  checked={formData.homeroom}
+                  onChange={handleChange}
+                  id="homeroomCheck"
+                />
+                <label className="form-check-label" htmlFor="homeroomCheck">
+                  Wali Kelas
+                </label>
+              </div>
+              {formData.homeroom && (
+                <select
+                  name="classid"
+                  className="form-select"
+                  value={formData.classid}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="" hidden>
+                    Pilih Kelas
+                  </option>
+                  {data?.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <div className="d-flex justify-content-end gap-2 mt-2">
+                <button
+                  type="button"
+                  className="btn btn-sm btn-warning"
+                  data-bs-dismiss="modal"
+                  onClick={cancel}
+                >
+                  <i className="bi bi-x-lg me-1"></i>Batal
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-sm btn-success"
+                  disabled={isLoading}
+                >
+                  <i className="bi bi-save me-1"></i>Simpan
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
-
-      {formData.homeroom && (
-        <select
-          name='classid'
-          className='form-select'
-          value={formData.classid}
-          onChange={handleChange}>
-          <option value='' hidden>
-            Pilih Kelas
-          </option>
-          {data?.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.name}
-            </option>
-          ))}
-        </select>
-      )}
-
-      <div className='d-flex justify-content-end gap-2'>
-        <button
-          type='button'
-          className='btn btn-sm btn-warning'
-          onClick={cancel}>
-          Batal
-        </button>
-        <button
-          type='submit'
-          className='btn btn-sm btn-success'
-          disabled={isLoading}>
-          Simpan
-        </button>
-      </div>
-    </form>
+    </div>
   );
 };
 

@@ -57,57 +57,88 @@ const Form = ({ detail, setDetail }) => {
       setDetail({});
       setId("");
       setName("");
+
       if (inputRef.current) {
         inputRef.current.value = null;
       }
+
+      const closeModal = document.querySelector("[data-bs-dismiss='modal']");
+      closeModal.click();
     }
   }, [isSuccess, isError]);
 
   return (
-    <form
-      onSubmit={addHandler}
-      className='rounded border p-2 bg-white d-flex flex-column gap-2'>
-      <p className='m-0 h6'>Mata Pelajaran</p>
+    <div
+      className={`modal fade`}
+      id="addsubject"
+      data-bs-backdrop="static"
+      data-bs-keyboard="false"
+      tabIndex="-1"
+      aria-labelledby="subjectModalLabel"
+      aria-hidden={detail && detail.id ? "false" : "true"}
+    >
+      <div className="modal-dialog modal-dialog-centered">
+        <div className="modal-content">
+          <div className="modal-header">
+            <h5 className="modal-title" id="subjectModalLabel">
+              {id ? "Edit Mata Pelajaran" : "Tambah Mata Pelajaran"}
+            </h5>
+            <button
+              type="button"
+              className="btn-close"
+              aria-label="Close"
+              data-bs-dismiss="modal"
+              onClick={cancel}
+            ></button>
+          </div>
+          <div className="modal-body">
+            <form onSubmit={addHandler} className="d-flex flex-column gap-2">
+              <input
+                type="text"
+                name="name"
+                id="name"
+                className="form-control"
+                placeholder="Nama Mata Pelajaran"
+                value={name || ""}
+                onChange={(e) => setName(e.target.value)}
+              />
 
-      <input
-        type='text'
-        name='name'
-        id='name'
-        className='form-control'
-        placeholder='Nama Mata Pelajaran'
-        value={name || ""}
-        onChange={(e) => setName(e.target.value)}
-      />
+              <div className="input-group">
+                <input
+                  type="file"
+                  className="form-control"
+                  id="inputGroupFile02"
+                  ref={inputRef}
+                  onChange={(e) => setFile(e.target.files[0])}
+                />
+                <label className="input-group-text" htmlFor="inputGroupFile02">
+                  Cover
+                </label>
+              </div>
 
-      <div className='input-group'>
-        <input
-          type='file'
-          className='form-control'
-          id='inputGroupFile02'
-          ref={inputRef}
-          onChange={(e) => setFile(e.target.files[0])}
-        />
-        <label className='input-group-text' htmlFor='inputGroupFile02'>
-          Cover
-        </label>
+              <div className="d-flex justify-content-end gap-2 mt-2">
+                <button
+                  type="button"
+                  className="btn btn-sm btn-warning"
+                  data-bs-dismiss="modal"
+                  onClick={cancel}
+                >
+                  Batal
+                </button>
+
+                <button
+                  type="submit"
+                  className="btn btn-sm btn-success"
+                  disabled={isLoading}
+                >
+                  Simpan
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
-
-      <div className='d-flex justify-content-end gap-2'>
-        <button
-          type='button'
-          className='btn btn-sm btn-warning'
-          onClick={cancel}>
-          Batal
-        </button>
-
-        <button
-          type='submit'
-          className='btn btn-sm btn-success'
-          disabled={isLoading}>
-          Simpan
-        </button>
-      </div>
-    </form>
+    </div>
   );
 };
 

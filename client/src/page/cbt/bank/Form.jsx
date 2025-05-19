@@ -61,7 +61,6 @@ const Form = ({ detail, setDetail }) => {
 
   const addHandler = (e) => {
     e.preventDefault();
-
     toast.promise(
       addBank(formData)
         .unwrap()
@@ -95,8 +94,10 @@ const Form = ({ detail, setDetail }) => {
         name: "",
       });
       reset();
+      const closeModal = document.querySelector("[data-bs-dismiss='modal']");
+      closeModal.click();
     }
-  }, [isSuccess, isError, user]);
+  }, [isSuccess, isError, user, reset]);
 
   useEffect(() => {
     if (detail) {
@@ -110,68 +111,119 @@ const Form = ({ detail, setDetail }) => {
     }
   }, [detail, user]);
 
+  useEffect(() => {
+    const modal = document.getElementById("addbank");
+    if (!modal) return;
+    const handler = () => {
+      setFormData({
+        id: "",
+        teacher: user?.id || null,
+        subject: null,
+        btype: "",
+        name: "",
+      });
+    };
+    modal.addEventListener("hidden.bs.modal", handler);
+    return () => modal.removeEventListener("hidden.bs.modal", handler);
+  }, [user]);
+
   return (
-    <form
-      onSubmit={addHandler}
-      className='bg-white p-2 rounded d-flex flex-column gap-2 border'>
-      <p className='m-0 h6'>Bank Soal</p>
-
-      <Select
-        isClearable
-        isSearchable
-        placeholder='Cari Guru'
-        value={
-          teacherOptions?.find((opt) => opt.value === formData.teacher) || null
-        }
-        options={teacherOptions}
-        onChange={handleTeacherChange}
-      />
-
-      <Select
-        isClearable
-        isSearchable
-        placeholder='Pilih Mata Pelajaran'
-        value={
-          subjectOptions?.find((opt) => opt.value === formData.subject) || null
-        }
-        options={subjectOptions}
-        onChange={handleSubjectChange}
-        isDisabled={!formData.teacher}
-      />
-
-      <select
-        name='btype'
-        id='btype'
-        className='form-select'
-        value={formData.btype}
-        onChange={handleInputChange}>
-        <option value='' hidden>
-          Jenis Bank Soal
-        </option>
-        <option value='bank'>Bank</option>
-        <option value='paket'>Paket</option>
-      </select>
-
-      <input
-        name='name'
-        className='form-control'
-        placeholder='Nama Bank Soal'
-        value={formData.name}
-        onChange={handleInputChange}
-      />
-
-      <div className='d-flex justify-content-end gap-2'>
-        <button
-          type='button'
-          className='btn btn-sm btn-warning'
-          onClick={cancel}>
-          Batal
-        </button>
-        <button type='submit' className='btn btn-sm btn-success'>
-          Simpan
-        </button>
+    <div
+      className="modal fade"
+      id="addbank"
+      data-bs-backdrop="static"
+      data-bs-keyboard="false"
+      tabIndex="-1"
+      aria-labelledby="bankModalLabel"
+      aria-hidden="true"
+    >
+      <div className="modal-dialog modal-dialog-centered">
+        <div className="modal-content">
+          <div className="modal-header bg-primary text-white">
+            <h5 className="modal-title" id="bankModalLabel">
+              {formData.id ? "Edit Bank Soal" : "Tambah Bank Soal"}
+            </h5>
+            <button
+              type="button"
+              className="btn-close btn-close-white"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+              onClick={cancel}
+            ></button>
+          </div>
+          <div className="modal-body p-4">
+            <form onSubmit={addHandler} className="d-flex flex-column gap-3">
+              <Select
+                isClearable
+                isSearchable
+                placeholder="Cari Guru"
+                value={
+                  teacherOptions?.find(
+                    (opt) => opt.value === formData.teacher
+                  ) || null
+                }
+                options={teacherOptions}
+                onChange={handleTeacherChange}
+                className="mb-2"
+              />
+              <Select
+                isClearable
+                isSearchable
+                placeholder="Pilih Mata Pelajaran"
+                value={
+                  subjectOptions?.find(
+                    (opt) => opt.value === formData.subject
+                  ) || null
+                }
+                options={subjectOptions}
+                onChange={handleSubjectChange}
+                isDisabled={!formData.teacher}
+                className="mb-2"
+              />
+              <select
+                name="btype"
+                id="btype"
+                className="form-select"
+                value={formData.btype}
+                onChange={handleInputChange}
+                required
+              >
+                <option value="" hidden>
+                  Jenis Bank Soal
+                </option>
+                <option value="bank">Bank</option>
+                <option value="paket">Paket</option>
+              </select>
+              <input
+                name="name"
+                className="form-control"
+                placeholder="Nama Bank Soal"
+                value={formData.name}
+                onChange={handleInputChange}
+                required
+              />
+              <div className="d-flex justify-content-end gap-2 mt-2">
+                <button
+                  type="button"
+                  className="btn btn-sm btn-warning"
+                  data-bs-dismiss="modal"
+                  onClick={cancel}
+                >
+                  <i className="bi bi-x-lg me-1"></i>Batal
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-sm btn-success"
+                  disabled={isLoading}
+                >
+                  <i className="bi bi-save me-1"></i>Simpan
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
-    </form>
+    </div>
   );
 };
 

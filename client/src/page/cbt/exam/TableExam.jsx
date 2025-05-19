@@ -94,37 +94,118 @@ const TableExam = ({ setDetail }) => {
         {exams?.length > 0 ? (
           exams?.map((exam, i) => (
             <div key={i} className="col-12 col-lg-4">
-              <div className="card shadow-sm h-100">
-                <div className="card-body d-flex flex-column h-100">
-                  <div className="d-flex align-items-start justify-content-between mb-3">
-                    <div className="d-flex align-items-center flex-wrap gap-2">
-                      <span className="badge bg-primary">{i + 1}</span>
-                      <span className="fw-bold lh-1">{exam.name}</span>
-                    </div>
-                    <div className="d-flex align-items-center gap-2">
+              <div className="card  border-0 rounded-4 shadow-sm hover-shadow h-100 position-relative overflow-hidden">
+                <span
+                  className="position-absolute top-0 end-0 badge bg-primary rounded-pill m-2"
+                  style={{ fontSize: 13, zIndex: 2 }}
+                >
+                  #{(page - 1) * limit + i + 1}
+                </span>
+                <div className="card-body d-flex flex-column h-100 p-4 gap-2">
+                  <div className="d-flex justify-content-between">
+                    <div className="d-flex align-items-start justify-content-center flex-wrap gap-2">
                       <div
-                        className="form-check form-switch pointer d-flex align-items-center m-0"
-                        onClick={() => changeStatusHandler(exam.id)}
+                        className="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center"
+                        style={{ width: 48, height: 48 }}
                       >
-                        <input
-                          className="form-check-input"
-                          type="checkbox"
-                          id={`flexSwitchCheckChecked-${i}`}
-                          checked={exam.isactive}
-                          readOnly
-                        />
+                        <i className="bi bi-laptop text-primary fs-5"></i>
+                      </div>
+
+                      <div className="d-flex flex-column gap-2">
+                        <h4 className="fw-bold lh-1 fs-4 text-primary">
+                          {exam.name}
+                        </h4>
+                        <div className="d-flex gap-2">
+                          <span className="text-muted small">
+                            {exam.teacher_name}
+                          </span>
+                          <div className="vr" />
+                          <div className="d-flex flex-wrap gap-2">
+                            {exam.classes?.map((item, idx) => (
+                              <span
+                                key={idx}
+                                className="badge bg-primary bg-opacity-10 text-primary"
+                              >
+                                {item.name}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        <span
+                          className="badge bg-secondary pointer"
+                          data-toggle="tooltip"
+                          data-placement="top"
+                          title="Copy Token"
+                          onClick={() => copyTokenHandler(exam.token)}
+                          style={{ letterSpacing: 2 }}
+                        >
+                          {exam.token}
+                        </span>
                       </div>
                     </div>
+                    <div className="dropdown ms-2">
+                      <button
+                        className="btn btn-sm btn-light border dropdown-toggle"
+                        type="button"
+                        id={`dropdownMenuButton-${i}`}
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
+                      >
+                        <i className="bi bi-three-dots-vertical"></i>
+                      </button>
+                      <ul
+                        className="dropdown-menu dropdown-menu-end shadow"
+                        aria-labelledby={`dropdownMenuButton-${i}`}
+                      >
+                        <li>
+                          <button
+                            className="dropdown-item d-flex align-items-center"
+                            onClick={() =>
+                              openNewTab(exam.name, exam.id, exam.token)
+                            }
+                          >
+                            <i className="bi bi-people me-2"></i>
+                            Lihat
+                          </button>
+                        </li>
+                        <li>
+                          <button
+                            className="dropdown-item d-flex align-items-center"
+                            data-bs-toggle="modal"
+                            data-bs-target="#addexam"
+                            onClick={() => setDetail(exam)}
+                          >
+                            <i className="bi bi-pencil-square me-2"></i>
+                            Edit
+                          </button>
+                        </li>
+                        <li>
+                          <hr className="dropdown-divider" />
+                        </li>
+                        <li>
+                          <button
+                            className="dropdown-item d-flex align-items-center text-danger"
+                            disabled={isLoading}
+                            onClick={() => deleteHandler(exam.id)}
+                          >
+                            <i className="bi bi-folder-x me-2"></i>
+                            Hapus
+                          </button>
+                        </li>
+                      </ul>
+                    </div>
                   </div>
+
                   <div className="mb-2 d-flex align-items-center gap-2">
-                    <i className="bi bi-person-badge-fill text-primary"></i>
-                    <div className="fw-medium">{exam.teacher_name}</div>
-                  </div>
-                  <div className="mb-2 d-flex align-items-center gap-2">
-                    <i className="bi bi-file-earmark-text-fill text-primary"></i>
+                    <div
+                      className="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center"
+                      style={{ width: 48, height: 48 }}
+                    >
+                      <i className="bi bi-folder-fill text-primary fs-5"></i>
+                    </div>
                     <div className="d-flex flex-column gap-1">
                       {exam.banks.map((bank, idx) => (
-                        <span key={idx} className="fw-medium">
+                        <span key={idx} className="fs-5 fw-bold text-secondary">
                           {bank.type !== "paket"
                             ? `${bank.name} - PG ${bank.pg} - Essay ${bank.essay}`
                             : `${bank.name}`}
@@ -132,100 +213,34 @@ const TableExam = ({ setDetail }) => {
                       ))}
                     </div>
                   </div>
-                  <div className="mb-3">
-                    <div className="text-muted small mb-1">Kelas</div>
-                    <div className="d-flex flex-wrap gap-2">
-                      {exam.classes?.map((item, idx) => (
-                        <span key={idx} className="badge bg-primary">
-                          {item.name}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="row g-2 mb-3">
+
+                  <div className="row g-2">
                     <div className="col-6 col-sm-3">
                       <div className="text-muted small">PG</div>
-                      <span className="badge bg-success">{exam.mc_score}%</span>
+                      <span className="badge bg-success px-3 py-1">
+                        {exam.mc_score}%
+                      </span>
                     </div>
                     <div className="col-6 col-sm-3">
                       <div className="text-muted small">Essay</div>
-                      <span className="badge bg-success">
+                      <span className="badge bg-success px-3 py-1">
                         {exam.essay_score}%
                       </span>
                     </div>
                     <div className="col-6 col-sm-3">
                       <div className="text-muted small">Durasi</div>
-                      <span className="badge bg-primary">
+                      <span className="badge bg-info px-3 py-1">
                         {exam.duration} Menit
                       </span>
                     </div>
                     <div className="col-6 col-sm-3">
                       <div className="text-muted small">Acak</div>
                       {exam.isshuffle ? (
-                        <span className="badge bg-success">Ya</span>
+                        <span className="badge bg-success px-3 py-1">Ya</span>
                       ) : (
-                        <span className="badge bg-danger">Tidak</span>
+                        <span className="badge bg-danger px-3 py-1">Tidak</span>
                       )}
                     </div>
-                  </div>
-                  {/* Token & Dropdown Aksi */}
-                  <div className="mb-1 d-flex align-items-center justify-content-between gap-2 flex-wrap">
-                    <span
-                      className="badge bg-secondary pointer fs-6"
-                      data-toggle="tooltip"
-                      data-placement="top"
-                      title="Copy Token"
-                      onClick={() => copyTokenHandler(exam.token)}
-                    >
-                      {exam.token}
-                    </span>
-
-                    <button
-                      className="btn btn-secondary btn-sm dropdown-toggle"
-                      type="button"
-                      id={`dropdownMenuButton-${i}`}
-                      data-bs-toggle="dropdown"
-                      aria-expanded="false"
-                    >
-                      Pilihan Aksi
-                    </button>
-                    <ul
-                      className="dropdown-menu"
-                      aria-labelledby={`dropdownMenuButton-${i}`}
-                    >
-                      <li>
-                        <button
-                          className="dropdown-item d-flex align-items-center"
-                          onClick={() =>
-                            openNewTab(exam.name, exam.id, exam.token)
-                          }
-                        >
-                          <i className="bi bi-people me-2"></i>
-                          Lihat
-                        </button>
-                      </li>
-                      <li>
-                        <button
-                          className="dropdown-item d-flex align-items-center"
-                          data-bs-toggle="modal"
-                          data-bs-target="#addexam"
-                          onClick={() => setDetail(exam)}
-                        >
-                          <i className="bi bi-pencil-square me-2"></i>
-                          Edit
-                        </button>
-                      </li>
-                      <li>
-                        <button
-                          className="dropdown-item d-flex align-items-center text-danger"
-                          disabled={isLoading}
-                          onClick={() => deleteHandler(exam.id)}
-                        >
-                          <i className="bi bi-folder-x me-2"></i>
-                          Hapus
-                        </button>
-                      </li>
-                    </ul>
                   </div>
                 </div>
               </div>

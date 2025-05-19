@@ -68,74 +68,115 @@ const TableData = ({ setDetail }) => {
         {subjects?.length > 0 ? (
           subjects?.map((subject, i) => (
             <div key={i} className="col-12 col-md-6">
-              <div className="card shadow-sm h-100">
-                <div className="card-body">
-                  <div className="row align-items-center">
-                    <div className="col-auto">
-                      <div className="d-flex align-items-center">
-                        <span className="badge bg-primary me-3">
-                          {(page - 1) * limit + i + 1}
-                        </span>
-                        <img
-                          src={subject.cover ? subject.cover : app?.logo}
-                          alt={`cover-${subject.name}`}
-                          width={65}
-                          height={80}
-                          className="rounded"
-                          style={{ objectFit: "cover" }}
-                        />
+              <div className="card border-0 shadow-sm h-100 p-0 overflow-hidden">
+                <div className="d-flex flex-row h-100">
+                  <div
+                    className="d-flex flex-column align-items-center justify-content-center bg-light"
+                    style={{ minWidth: 110, maxWidth: 110 }}
+                  >
+                    <span
+                      className="badge bg-primary rounded-pill position-absolute mt-2 ms-2"
+                      style={{ zIndex: 2, fontSize: 14 }}
+                    >
+                      {(page - 1) * limit + i + 1}
+                    </span>
+                    <img
+                      src={subject.cover ? subject.cover : app?.logo}
+                      alt={`cover-${subject.name}`}
+                      width={80}
+                      height={100}
+                      className="rounded-3 shadow-sm mt-4 mb-4"
+                      style={{ objectFit: "cover" }}
+                    />
+                  </div>
+                  <div className="flex-grow-1 d-flex flex-column justify-content-between p-3">
+                    <div>
+                      <div className="d-flex align-items-center justify-content-between">
+                        <h5
+                          className="text-primary mb-2"
+                          style={{ fontSize: 20 }}
+                        >
+                          {subject.name}
+                        </h5>
+
+                        <div className="dropdown">
+                          <button
+                            className="btn btn-sm btn-warning dropdown-toggle"
+                            type="button"
+                            id={`dropdownMenuButton${subject.id}`}
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false"
+                          ></button>
+                          <ul
+                            className="dropdown-menu dropdown-menu-end"
+                            aria-labelledby={`dropdownMenuButton${subject.id}`}
+                          >
+                            <li>
+                              <button
+                                className="dropdown-item d-flex align-items-center gap-2"
+                                onClick={() =>
+                                  goToLink(subject.name, subject.id)
+                                }
+                              >
+                                <i className="bi bi-eye"></i> Detail
+                              </button>
+                            </li>
+                            <li>
+                              <button
+                                className="dropdown-item d-flex align-items-center gap-2"
+                                onClick={() => setDetail(subject)}
+                              >
+                                <i className="bi bi-pencil-square"></i> Edit
+                              </button>
+                            </li>
+                            <li>
+                              <button
+                                className="dropdown-item d-flex align-items-center gap-2 text-danger"
+                                disabled={isLoading}
+                                onClick={() => deleteHandler(subject.id)}
+                              >
+                                <i className="bi bi-folder-minus"></i> Hapus
+                              </button>
+                            </li>
+                          </ul>
+                        </div>
                       </div>
-                    </div>
-                    <div className="col">
-                      <h5 className="card-title mb-3">{subject.name}</h5>
-                      <div className="d-flex flex-column gap-3">
-                        {subject.teachers.map((teacher, i) => (
-                          <div key={i} className="d-flex flex-column">
-                            <p className="m-0 fw-medium">
-                              {teacher.name}{" "}
-                              <span className="text-secondary fw-normal">{`(${
-                                teacher.class?.length > 0
-                                  ? teacher.class
-                                      ?.map((item) => item.name)
-                                      .join(", ")
-                                  : "Data belum tersedia"
-                              })`}</span>
-                            </p>
-                            <div className="d-flex gap-3 text-secondary small">
-                              <p className="m-0">
-                                <i className="bi bi-book me-1"></i>
-                                {teacher.chapters} Chapter
-                              </p>
-                              <p className="m-0">
-                                <i className="bi bi-file-text me-1"></i>
-                                {teacher.contents} Materi
-                              </p>
+
+                      <div className="d-flex flex-column gap-2 mb-2">
+                        {subject.teachers.length > 0 ? (
+                          subject.teachers.map((teacher, i) => (
+                            <div key={i} className="d-flex flex-column">
+                              <div className="d-flex align-items-center gap-2">
+                                <span className="fw-medium text-dark">
+                                  {teacher.name}
+                                </span>
+                                <span className="text-secondary fw-normal small">
+                                  {`(${
+                                    teacher.class?.length > 0
+                                      ? teacher.class
+                                          ?.map((item) => item.name)
+                                          .join(", ")
+                                      : "Data belum tersedia"
+                                  })`}
+                                </span>
+                              </div>
+                              <div className="d-flex gap-4 text-secondary small mt-1">
+                                <div className="d-flex align-items-center">
+                                  <i className="bi bi-book me-2"></i>
+                                  <span>{teacher.chapters} Chapter</span>
+                                </div>
+                                <div className="d-flex align-items-center">
+                                  <i className="bi bi-file-text me-2"></i>
+                                  <span>{teacher.contents} Materi</span>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="col-auto">
-                      <div className="d-flex gap-2">
-                        <button
-                          className="btn btn-sm btn-primary"
-                          onClick={() => goToLink(subject.name, subject.id)}
-                        >
-                          <i className="bi bi-three-dots-vertical"></i>
-                        </button>
-                        <button
-                          className="btn btn-sm btn-warning"
-                          onClick={() => setDetail(subject)}
-                        >
-                          <i className="bi bi-pencil-square"></i>
-                        </button>
-                        <button
-                          className="btn btn-sm btn-danger"
-                          disabled={isLoading}
-                          onClick={() => deleteHandler(subject.id)}
-                        >
-                          <i className="bi bi-folder-minus"></i>
-                        </button>
+                          ))
+                        ) : (
+                          <span className="text-secondary fw-normal small">
+                            Data belum tersedia
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -145,7 +186,10 @@ const TableData = ({ setDetail }) => {
           ))
         ) : (
           <div className="col-12">
-            <div className="alert alert-info mb-0">Data tidak tersedia</div>
+            <div className="alert alert-info d-flex align-items-center gap-2 mb-0">
+              <i className="bi bi-info-circle-fill"></i>
+              <span>Data tidak tersedia</span>
+            </div>
           </div>
         )}
       </div>

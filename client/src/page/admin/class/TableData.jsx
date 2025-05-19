@@ -9,7 +9,7 @@ import Modal from "./Modal";
 
 const TableData = ({ setDetail }) => {
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useState(12);
   const [search, setSearch] = useState("");
   const [selectedClass, setClass] = useState({});
 
@@ -44,7 +44,6 @@ const TableData = ({ setDetail }) => {
     if (isSuccess) {
       reset();
     }
-
     if (error) {
       reset();
     }
@@ -60,58 +59,103 @@ const TableData = ({ setDetail }) => {
       totalPages={totalPages}
       isLoading={dataLoading}
     >
-      <table className="table table-bordered table-striped table-hover">
-        <thead>
-          <tr>
-            <th className="text-center">No</th>
-            <th className="text-center">Jurusan</th>
-            <th className="text-center">Tingkat</th>
-            <th className="text-center">Nama Kelas</th>
-            <th className="text-center">Siswa</th>
-            <th className="text-center">Aksi</th>
-          </tr>
-        </thead>
-        <tbody>
-          {classes?.map((item, i) => (
-            <tr key={i}>
-              <td className="text-center align-middle">
-                {(page - 1) * limit + i + 1}
-              </td>
-              <td className="align-middle">{item.major_name}</td>
-              <td className="text-center align-middle">{item.grade_name}</td>
-              <td className="text-center align-middle">{item.name}</td>
-              <td className="text-center align-middle">{item.students}</td>
-              <td className="text-center align-middle">
-                <div className="d-flex justify-content-center gap-2">
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-primary"
-                    data-bs-toggle="modal"
-                    data-bs-target="#modal-add"
-                    onClick={() => setClass(item)}
-                  >
-                    <i className="bi bi-folder-plus"></i>
-                  </button>
-                  <button
-                    className="btn btn-sm btn-warning"
-                    onClick={() => setDetail(item)}
-                  >
-                    <i className="bi bi-pencil-square"></i>
-                  </button>
-                  <button
-                    className="btn btn-sm btn-danger"
-                    disabled={isLoading}
-                    onClick={() => deleteHandler(item.id)}
-                  >
-                    <i className="bi bi-folder-minus"></i>
-                  </button>
+      <div className="row g-4">
+        {classes.length > 0 ? (
+          classes.map((item, i) => (
+            <div key={i} className="col-12 col-md-2">
+              <div className="card bg-white border-0 rounded-4 shadow-sm hover-shadow h-100 position-relative overflow-hidden">
+                <span
+                  className="position-absolute top-0 end-0 badge bg-primary rounded-pill m-2"
+                  style={{ fontSize: 13, zIndex: 2 }}
+                >
+                  #{(page - 1) * limit + i + 1}
+                </span>
+                <div className="card-body p-4 d-flex flex-column h-100">
+                  <div className="d-flex align-items-start justify-content-between">
+                    <div className="d-flex flex-column gap-2">
+                      <h4
+                        className="fw-bold text-primary mb-1"
+                        style={{ fontSize: 22 }}
+                      >
+                        {item.name}
+                      </h4>
+                      <div className="d-flex align-items-center gap-2">
+                        <i className="bi bi-mortarboard text-success"></i>
+                        <span className="text-muted small">
+                          {item.major_name}
+                        </span>
+                      </div>
+                      <div className="d-flex align-items-center gap-2">
+                        <i className="bi bi-bar-chart text-info"></i>
+                        <span className="text-muted small">
+                          Tingkat: {item.grade_name}
+                        </span>
+                      </div>
+                      <div className="d-flex align-items-center gap-2">
+                        <i className="bi bi-people text-primary"></i>
+                        <span className="text-muted small">
+                          {item.students} Siswa
+                        </span>
+                      </div>
+                    </div>
+                    <div className="dropdown ms-2">
+                      <button
+                        className="btn btn-sm btn-light border dropdown-toggle"
+                        type="button"
+                        id={`dropdownMenuButton-${i}`}
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
+                      >
+                        <i className="bi bi-three-dots-vertical"></i>
+                      </button>
+                      <ul
+                        className="dropdown-menu dropdown-menu-end shadow"
+                        aria-labelledby={`dropdownMenuButton-${i}`}
+                      >
+                        <li>
+                          <button
+                            type="button"
+                            className="dropdown-item d-flex align-items-center gap-2"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modal-add"
+                            onClick={() => setClass(item)}
+                          >
+                            <i className="bi bi-folder-plus"></i> Tambah Siswa
+                          </button>
+                        </li>
+                        <li>
+                          <button
+                            className="dropdown-item d-flex align-items-center gap-2"
+                            onClick={() => setDetail(item)}
+                          >
+                            <i className="bi bi-pencil-square"></i> Edit
+                          </button>
+                        </li>
+                        <li>
+                          <hr className="dropdown-divider" />
+                        </li>
+                        <li>
+                          <button
+                            className="dropdown-item d-flex align-items-center gap-2 text-danger"
+                            disabled={isLoading}
+                            onClick={() => deleteHandler(item.id)}
+                          >
+                            <i className="bi bi-folder-minus"></i> Hapus
+                          </button>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="col-12">
+            <div className="alert alert-info mb-0">Data belum tersedia</div>
+          </div>
+        )}
+      </div>
       <Modal detail={selectedClass} />
     </Table>
   );

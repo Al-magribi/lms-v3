@@ -64,47 +64,86 @@ const Upload = () => {
     if (isSuccess) {
       inputRef.current.value = null;
       reset();
+      const closeModal = document.querySelector("[data-bs-dismiss='modal']");
+      closeModal.click();
     }
-
     if (isError) {
       reset();
       inputRef.current.value = null;
     }
   }, [isSuccess, isError]);
 
+  useEffect(() => {
+    const modal = document.getElementById("uploadteacher");
+    if (!modal) return;
+    const handler = () => {
+      setFile(null);
+      if (inputRef.current) inputRef.current.value = null;
+    };
+    modal.addEventListener("hidden.bs.modal", handler);
+    return () => modal.removeEventListener("hidden.bs.modal", handler);
+  }, []);
+
   return (
-    <form
-      onSubmit={uploadData}
-      className='rounded bg-white p-2 border shadow d-flex flex-column gap-2 mt-2'
+    <div
+      className="modal fade"
+      id="uploadteacher"
+      data-bs-backdrop="static"
+      data-bs-keyboard="false"
+      tabIndex="-1"
+      aria-labelledby="uploadTeacherModalLabel"
+      aria-hidden="true"
     >
-      <p className='m-0 h6'>Upload Guru</p>
-
-      <input
-        ref={inputRef}
-        type='file'
-        name='students'
-        id='student'
-        className='form-control'
-        onChange={(e) => setFile(e.target.files[0])}
-      />
-
-      <div className='d-flex justify-content-end gap-2'>
-        <button
-          type='button'
-          className='btn btn-sm btn-primary'
-          onClick={download}
-        >
-          Template
-        </button>
-        <button
-          type='submit'
-          className='btn btn-sm btn-success'
-          disabled={isLoading}
-        >
-          Upload Data
-        </button>
+      <div className="modal-dialog modal-dialog-centered">
+        <div className="modal-content">
+          <div className="modal-header bg-success text-white">
+            <h5 className="modal-title" id="uploadTeacherModalLabel">
+              <i className="bi bi-file-earmark-arrow-up-fill me-2"></i>Upload
+              Guru
+            </h5>
+            <button
+              type="button"
+              className="btn-close btn-close-white"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div className="modal-body p-4">
+            <form onSubmit={uploadData} className="d-flex flex-column gap-3">
+              <div className="alert alert-info py-2 d-flex align-items-center gap-2">
+                <i className="bi bi-info-circle-fill"></i>
+                Upload file Excel sesuai template yang disediakan.
+              </div>
+              <input
+                ref={inputRef}
+                type="file"
+                name="teachers"
+                id="teacher"
+                className="form-control"
+                onChange={(e) => setFile(e.target.files[0])}
+                required
+              />
+              <div className="d-flex justify-content-end gap-2 mt-2">
+                <button
+                  type="button"
+                  className="btn btn-sm btn-primary"
+                  onClick={download}
+                >
+                  <i className="bi bi-download me-1"></i>Template
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-sm btn-success"
+                  disabled={isLoading}
+                >
+                  <i className="bi bi-upload me-1"></i>Upload Data
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
-    </form>
+    </div>
   );
 };
 

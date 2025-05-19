@@ -11,7 +11,7 @@ const TableBank = ({ setDetail }) => {
   const navigate = useNavigate();
 
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useState(12);
   const [search, setSearch] = useState("");
 
   const { data: rawData = {}, isLoading: dataLoading } = useGetBankQuery({
@@ -59,37 +59,85 @@ const TableBank = ({ setDetail }) => {
       <div className="row g-4">
         {banks?.length > 0 ? (
           banks?.map((item, i) => (
-            <div key={i} className="col-12 col-md-6">
-              <div className="card shadow-sm h-100">
-                <div className="card-body">
-                  <div className="d-flex align-items-center mb-3">
-                    <span className="badge bg-primary me-3">
-                      {(page - 1) * limit + i + 1}
-                    </span>
-                    <div>
-                      <h5 className="card-title mb-1">{item.name}</h5>
-                      <p className="text-muted small mb-0">
-                        {item.subject_name}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="row g-3 mb-3">
-                    <div className="col-12">
-                      <div className="d-flex align-items-center">
-                        <i className="bi bi-person me-2 text-primary"></i>
-                        <div>
-                          <small className="text-muted d-block">Guru</small>
-                          <span className="fw-medium">{item.teacher_name}</span>
-                        </div>
+            <div key={i} className="col-12 col-md-6 col-lg-4">
+              <div className="card bg-white border-0 rounded-4 shadow-sm hover-shadow h-100">
+                <span
+                  className="position-absolute top-0 end-0 badge bg-primary rounded-pill m-2"
+                  style={{ fontSize: 13, zIndex: 2 }}
+                >
+                  #{(page - 1) * limit + i + 1}
+                </span>
+                <div className="card-body p-4 d-flex flex-column h-100">
+                  <div className="d-flex align-items-center justify-content-between mb-3">
+                    <div className="d-flex gap-3 align-items-center">
+                      <div
+                        className="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center"
+                        style={{ width: 48, height: 48 }}
+                      >
+                        <i className="bi bi-person text-primary fs-4"></i>
+                      </div>
+                      <div className="d-flex flex-column">
+                        <h5
+                          className="fw-bold text-primary mb-1"
+                          style={{ fontSize: 18 }}
+                        >
+                          {item.teacher_name}
+                        </h5>
+                        <span className="text-muted small">
+                          {item.subject_name}
+                        </span>
                       </div>
                     </div>
+                    <div className="dropdown">
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-light border dropdown-toggle"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
+                      >
+                        <i className="bi bi-three-dots-vertical"></i>
+                      </button>
+                      <ul className="dropdown-menu dropdown-menu-end shadow">
+                        <li>
+                          <button
+                            className="dropdown-item d-flex align-items-center gap-2"
+                            onClick={() =>
+                              goToLink(item.subject_name, item.name, item.id)
+                            }
+                          >
+                            <i className="bi bi-folder-fill"></i> Lihat
+                          </button>
+                        </li>
+                        <li>
+                          <button
+                            className="dropdown-item d-flex align-items-center gap-2"
+                            onClick={() => setDetail(item)}
+                          >
+                            <i className="bi bi-pencil-square"></i> Edit
+                          </button>
+                        </li>
+                        <li>
+                          <hr className="dropdown-divider" />
+                        </li>
+                        <li>
+                          <button
+                            className="dropdown-item d-flex align-items-center gap-2 text-danger"
+                            disabled={isLoading}
+                            onClick={() => deleteHandler(item.id)}
+                          >
+                            <i className="bi bi-folder-minus"></i> Hapus
+                          </button>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div className="row g-3 mb-3">
                     <div className="col-6">
                       <div className="d-flex align-items-center">
-                        <i className="bi bi-tag me-2 text-primary"></i>
+                        <i className="bi bi-tag me-2 text-success fs-5"></i>
                         <div>
                           <small className="text-muted d-block">Jenis</small>
-                          <span className="badge bg-success">
+                          <span className="badge bg-success bg-opacity-75 px-3 py-1">
                             {item.btype.toUpperCase()}
                           </span>
                         </div>
@@ -97,44 +145,17 @@ const TableBank = ({ setDetail }) => {
                     </div>
                     <div className="col-6">
                       <div className="d-flex align-items-center">
-                        <i className="bi bi-question-circle me-2 text-primary"></i>
+                        <i className="bi bi-question-circle me-2 text-info fs-5"></i>
                         <div>
                           <small className="text-muted d-block">
                             Jumlah Soal
                           </small>
-                          <span className="badge bg-secondary">
+                          <span className="badge bg-info bg-opacity-75 px-3 py-1">
                             {`${item.question_count} Soal`}
                           </span>
                         </div>
                       </div>
                     </div>
-                  </div>
-
-                  <div className="d-flex gap-2 mt-auto pt-3 border-top">
-                    <button
-                      className="btn btn-sm btn-primary flex-grow-1"
-                      onClick={() =>
-                        goToLink(item.subject_name, item.name, item.id)
-                      }
-                    >
-                      <i className="bi bi-folder-fill"></i>
-                      <span className="ms-2">Lihat</span>
-                    </button>
-                    <button
-                      className="btn btn-sm btn-warning flex-grow-1"
-                      onClick={() => setDetail(item)}
-                    >
-                      <i className="bi bi-pencil-square"></i>
-                      <span className="ms-2">Edit</span>
-                    </button>
-                    <button
-                      className="btn btn-sm btn-danger flex-grow-1"
-                      disabled={isLoading}
-                      onClick={() => deleteHandler(item.id)}
-                    >
-                      <i className="bi bi-folder-minus"></i>
-                      <span className="ms-2">Hapus</span>
-                    </button>
                   </div>
                 </div>
               </div>

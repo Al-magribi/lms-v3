@@ -26,8 +26,8 @@ export const AdminMenus = [
   { label: "Jurusan", link: "/admin-jurusan", icon: <Fa.FaCodeBranch /> },
   { label: "Periode", link: "/admin-periode", icon: <Fa.FaRegCalendar /> },
   { label: "Tingkat", link: "/admin-tingkat", icon: <Fa.FaSchool /> },
-  { label: "Siswa", link: "/admin-siswa", icon: <Pi.PiStudentFill /> },
   { label: "Kelas", link: "/admin-kelas", icon: <Fa6.FaFolderTree /> },
+  { label: "Siswa", link: "/admin-siswa", icon: <Pi.PiStudentFill /> },
   { label: "Mata Pelajaran", link: "/admin-mapel", icon: <Gi.GiOpenFolder /> },
   { label: "Guru", link: "/admin-guru", icon: <Fa.FaChalkboardTeacher /> },
   {

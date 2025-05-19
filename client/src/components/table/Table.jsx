@@ -80,62 +80,68 @@ const Table = ({
     return pages;
   };
   return (
-    <div className="p-2 rounded border bg-white">
-      <div style={{ height: height }} className="d-flex flex-column gap-2">
-        <div className="d-flex flex-wrap align-items-center justify-content-between">
-          <input
-            className="form-control"
-            name="search"
-            id="search"
-            placeholder="Ketikan di sini..."
-            style={{ width: 250 }}
-            value={searchValue}
-            onChange={handleSearchChange}
-          />
+    <div className="rounded-lg  no-overflow-x">
+      <div style={{ height: height }} className="d-flex flex-column gap-4">
+        <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
+          <div className="position-relative">
+            <input
+              className="form-control ps-4"
+              name="search"
+              id="search"
+              placeholder="Cari data..."
+              style={{ width: 280, borderRadius: "8px" }}
+              value={searchValue}
+              onChange={handleSearchChange}
+            />
+          </div>
 
-          <div className="d-flex gap-2">
+          <div className="d-flex gap-3">
             <select
-              style={{ width: 100 }}
+              style={{ width: 120, borderRadius: "8px" }}
               name="limit"
               id="limit"
               className="form-select"
               value={limitValue || ""}
               onChange={handleLimit}
             >
-              <option value="10">10</option>
-              <option value="20">20</option>
-              <option value="50">50</option>
-              <option value="100">100</option>
-              <option value="200">200</option>
-              <option value="500">500</option>
-              <option value="1000">1000</option>
+              <option value="10">10 per halaman</option>
+              <option value="20">20 per halaman</option>
+              <option value="50">50 per halaman</option>
+              <option value="100">100 per halaman</option>
+              <option value="200">200 per halaman</option>
+              <option value="500">500 per halaman</option>
+              <option value="1000">1000 per halaman</option>
             </select>
 
             {id && (
               <button
                 data-bs-toggle="modal"
                 data-bs-target={`#${id}`}
-                className="btn btn-success"
+                className="btn btn-primary d-flex align-items-center gap-2"
+                style={{ borderRadius: "8px" }}
               >
-                Tambah
+                <Md.MdAdd size={20} />
+                Tambah Data
               </button>
             )}
           </div>
         </div>
+
         {/* Table */}
-        <div className="table-responsive p-3">
+        <div className="rounded-lg">
           {isLoading ? <TableLoader /> : children}
         </div>
 
-        {/* fungsi */}
-        <div className="d-flex align-items-center justify-content-between flex-wrap">
+        {/* Pagination and Info */}
+        <div className="d-flex align-items-center justify-content-between flex-wrap gap-3">
           <nav aria-label="Page navigation example" className="m-0">
             <ul className="pagination pagination-sm mb-0">
               <li className={`page-item ${page === 1 ? "disabled" : ""}`}>
                 <button
-                  className="page-link"
+                  className="page-link border-0"
                   aria-label="Previous"
                   onClick={() => handlePageChange(page - 1)}
+                  style={{ borderRadius: "6px", margin: "0 2px" }}
                 >
                   <span aria-hidden="true">&laquo;</span>
                 </button>
@@ -148,8 +154,15 @@ const Table = ({
                   }`}
                 >
                   <button
-                    className="page-link"
+                    className="page-link border-0"
                     onClick={() => handlePageChange(pageNumber)}
+                    style={{
+                      borderRadius: "6px",
+                      margin: "0 2px",
+                      backgroundColor:
+                        page === pageNumber ? "#0d6efd" : "transparent",
+                      color: page === pageNumber ? "white" : "inherit",
+                    }}
                   >
                     {pageNumber}
                   </button>
@@ -160,9 +173,10 @@ const Table = ({
                 className={`page-item ${page === totalPages ? "disabled" : ""}`}
               >
                 <button
-                  className="page-link"
+                  className="page-link border-0"
                   aria-label="Next"
                   onClick={() => handlePageChange(page + 1)}
+                  style={{ borderRadius: "6px", margin: "0 2px" }}
                 >
                   <span aria-hidden="true">&raquo;</span>
                 </button>
@@ -170,10 +184,12 @@ const Table = ({
             </ul>
           </nav>
 
-          <p className="m-0">
-            Total Data{" "}
-            <span>{parseFloat(totalData).toLocaleString("id-ID")}</span>
-          </p>
+          <div className="d-flex align-items-center gap-2">
+            <span className="text-muted">Total Data:</span>
+            <span className="fw-semibold">
+              {parseFloat(totalData).toLocaleString("id-ID")}
+            </span>
+          </div>
         </div>
       </div>
     </div>
