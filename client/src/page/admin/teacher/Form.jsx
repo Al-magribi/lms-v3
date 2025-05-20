@@ -132,112 +132,111 @@ const Form = ({ detail, setDetail }) => {
       aria-labelledby="teacherModalLabel"
       aria-hidden="true"
     >
-      <div className="modal-dialog modal-dialog-centered">
-        <div className="modal-content">
-          <div className="modal-header bg-primary text-white">
+      <div className="modal-dialog">
+        <form onSubmit={addHandler} className="modal-content p-3">
+          <div className="modal-header">
             <h5 className="modal-title" id="teacherModalLabel">
               {formData.id ? "Edit Guru" : "Tambah Guru"}
             </h5>
             <button
               type="button"
-              className="btn-close btn-close-white"
+              className="btn-close"
               data-bs-dismiss="modal"
               aria-label="Close"
               onClick={cancel}
             ></button>
           </div>
-          <div className="modal-body p-4">
-            <form onSubmit={addHandler} className="d-flex flex-column gap-3">
+          <div className="modal-body d-flex flex-column gap-3">
+            <input
+              type="text"
+              name="username"
+              className="form-control"
+              placeholder="Username"
+              value={formData.username}
+              onChange={handleChange}
+              required
+            />
+            <input
+              type="text"
+              name="name"
+              className="form-control"
+              placeholder="Nama Guru"
+              value={formData.name}
+              onChange={handleChange}
+              required
+            />
+            <select
+              name="gender"
+              className="form-select"
+              value={formData.gender}
+              onChange={handleChange}
+              required
+            >
+              <option value="" hidden>
+                Jenis Kelamin
+              </option>
+              <option value="L">Laki Laki</option>
+              <option value="P">Perempuan</option>
+            </select>
+            <Select
+              isMulti
+              options={subjectOptions}
+              value={formData.subjects}
+              onChange={handleSubjectsChange}
+              className="mb-2"
+              placeholder="Mata Pelajaran"
+            />
+            <div className="form-check">
               <input
-                type="text"
-                name="username"
-                className="form-control"
-                placeholder="Username"
-                value={formData.username}
+                type="checkbox"
+                name="homeroom"
+                className="form-check-input"
+                checked={formData.homeroom}
                 onChange={handleChange}
-                required
+                id="homeroomCheck"
               />
-              <input
-                type="text"
-                name="name"
-                className="form-control"
-                placeholder="Nama Guru"
-                value={formData.name}
-                onChange={handleChange}
-                required
-              />
+              <label className="form-check-label" htmlFor="homeroomCheck">
+                Wali Kelas
+              </label>
+            </div>
+            {formData.homeroom && (
               <select
-                name="gender"
+                name="classid"
                 className="form-select"
-                value={formData.gender}
+                value={formData.classid}
                 onChange={handleChange}
                 required
               >
                 <option value="" hidden>
-                  Jenis Kelamin
+                  Pilih Kelas
                 </option>
-                <option value="L">Laki Laki</option>
-                <option value="P">Perempuan</option>
-              </select>
-              <Select
-                isMulti
-                options={subjectOptions}
-                value={formData.subjects}
-                onChange={handleSubjectsChange}
-                className="mb-2"
-                placeholder="Mata Pelajaran"
-              />
-              <div className="form-check">
-                <input
-                  type="checkbox"
-                  name="homeroom"
-                  className="form-check-input"
-                  checked={formData.homeroom}
-                  onChange={handleChange}
-                  id="homeroomCheck"
-                />
-                <label className="form-check-label" htmlFor="homeroomCheck">
-                  Wali Kelas
-                </label>
-              </div>
-              {formData.homeroom && (
-                <select
-                  name="classid"
-                  className="form-select"
-                  value={formData.classid}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="" hidden>
-                    Pilih Kelas
+                {data?.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
                   </option>
-                  {data?.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-              )}
-              <div className="d-flex justify-content-end gap-2 mt-2">
-                <button
-                  type="button"
-                  className="btn btn-sm btn-warning"
-                  data-bs-dismiss="modal"
-                  onClick={cancel}
-                >
-                  <i className="bi bi-x-lg me-1"></i>Batal
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-sm btn-success"
-                  disabled={isLoading}
-                >
-                  <i className="bi bi-save me-1"></i>Simpan
-                </button>
-              </div>
-            </form>
+                ))}
+              </select>
+            )}
           </div>
-        </div>
+
+          <div className="modal-footer">
+            <button
+              type="button"
+              className="btn btn-warning"
+              data-bs-dismiss="modal"
+              onClick={cancel}
+            >
+              <i className="bi bi-x-lg me-1"></i>Batal
+            </button>
+            <button
+              type="submit"
+              className="btn btn-success"
+              disabled={isLoading}
+            >
+              <i className="bi bi-save me-1"></i>Simpan
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

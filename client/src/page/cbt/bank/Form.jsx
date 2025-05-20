@@ -137,91 +137,88 @@ const Form = ({ detail, setDetail }) => {
       aria-labelledby="bankModalLabel"
       aria-hidden="true"
     >
-      <div className="modal-dialog modal-dialog-centered">
-        <div className="modal-content">
-          <div className="modal-header bg-primary text-white">
+      <div className="modal-dialog">
+        <form onSubmit={addHandler} className="modal-content p-3">
+          <div className="modal-header">
             <h5 className="modal-title" id="bankModalLabel">
               {formData.id ? "Edit Bank Soal" : "Tambah Bank Soal"}
             </h5>
             <button
               type="button"
-              className="btn-close btn-close-white"
+              className="btn-close"
               data-bs-dismiss="modal"
               aria-label="Close"
               onClick={cancel}
             ></button>
           </div>
-          <div className="modal-body p-4">
-            <form onSubmit={addHandler} className="d-flex flex-column gap-3">
-              <Select
-                isClearable
-                isSearchable
-                placeholder="Cari Guru"
-                value={
-                  teacherOptions?.find(
-                    (opt) => opt.value === formData.teacher
-                  ) || null
-                }
-                options={teacherOptions}
-                onChange={handleTeacherChange}
-                className="mb-2"
-              />
-              <Select
-                isClearable
-                isSearchable
-                placeholder="Pilih Mata Pelajaran"
-                value={
-                  subjectOptions?.find(
-                    (opt) => opt.value === formData.subject
-                  ) || null
-                }
-                options={subjectOptions}
-                onChange={handleSubjectChange}
-                isDisabled={!formData.teacher}
-                className="mb-2"
-              />
-              <select
-                name="btype"
-                id="btype"
-                className="form-select"
-                value={formData.btype}
-                onChange={handleInputChange}
-                required
-              >
-                <option value="" hidden>
-                  Jenis Bank Soal
-                </option>
-                <option value="bank">Bank</option>
-                <option value="paket">Paket</option>
-              </select>
-              <input
-                name="name"
-                className="form-control"
-                placeholder="Nama Bank Soal"
-                value={formData.name}
-                onChange={handleInputChange}
-                required
-              />
-              <div className="d-flex justify-content-end gap-2 mt-2">
-                <button
-                  type="button"
-                  className="btn btn-sm btn-warning"
-                  data-bs-dismiss="modal"
-                  onClick={cancel}
-                >
-                  <i className="bi bi-x-lg me-1"></i>Batal
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-sm btn-success"
-                  disabled={isLoading}
-                >
-                  <i className="bi bi-save me-1"></i>Simpan
-                </button>
-              </div>
-            </form>
+          <div className="modal-body d-flex flex-column gap-3">
+            <Select
+              isClearable
+              isSearchable
+              placeholder="Cari Guru"
+              value={
+                teacherOptions?.find((opt) => opt.value === formData.teacher) ||
+                null
+              }
+              options={teacherOptions}
+              onChange={handleTeacherChange}
+              className="mb-2"
+            />
+            <Select
+              isClearable
+              isSearchable
+              placeholder="Pilih Mata Pelajaran"
+              value={
+                subjectOptions?.find((opt) => opt.value === formData.subject) ||
+                null
+              }
+              options={subjectOptions}
+              onChange={handleSubjectChange}
+              isDisabled={!formData.teacher}
+              className="mb-2"
+            />
+            <select
+              name="btype"
+              id="btype"
+              className="form-select"
+              value={formData.btype}
+              onChange={handleInputChange}
+              required
+            >
+              <option value="" hidden>
+                Jenis Bank Soal
+              </option>
+              <option value="bank">Bank</option>
+              <option value="paket">Paket</option>
+            </select>
+            <input
+              name="name"
+              className="form-control"
+              placeholder="Nama Bank Soal"
+              value={formData.name}
+              onChange={handleInputChange}
+              required
+            />
           </div>
-        </div>
+
+          <div className="modal-footer">
+            <button
+              type="button"
+              className="btn btn-warning"
+              data-bs-dismiss="modal"
+              onClick={cancel}
+            >
+              <i className="bi bi-x-lg me-1"></i>Batal
+            </button>
+            <button
+              type="submit"
+              className="btn btn-success"
+              disabled={isLoading}
+            >
+              <i className="bi bi-save me-1"></i>Simpan
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

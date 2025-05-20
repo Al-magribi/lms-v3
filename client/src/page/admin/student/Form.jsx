@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useGetPeriodesQuery } from "../../../controller/api/admin/ApiPeriode";
 import { useAddStudentMutation } from "../../../controller/api/admin/ApiStudent";
 import { toast } from "react-hot-toast";
+import { useGetClassQuery } from "../../../controller/api/admin/ApiClass";
 
 const inputs = [
   { id: "nis", name: "nis", placeholder: "NIS" },
@@ -16,12 +17,14 @@ const Form = ({ detail, setDetail }) => {
   const [formData, setFormData] = useState({
     id: "",
     entry: "",
+    classid: "",
     nis: "",
     name: "",
     gender: "",
   });
 
   const { data } = useGetPeriodesQuery({ page, limit, search });
+  const { data: classes } = useGetClassQuery({ page, limit, search });
   const [addStudent, { isSuccess, isLoading, isError, reset }] =
     useAddStudentMutation();
 
@@ -46,14 +49,28 @@ const Form = ({ detail, setDetail }) => {
 
   const cancel = () => {
     setDetail({});
-    setFormData({ id: "", entry: "", nis: "", name: "", gender: "" });
+    setFormData({
+      id: "",
+      entry: "",
+      classid: "",
+      nis: "",
+      name: "",
+      gender: "",
+    });
   };
 
   useEffect(() => {
     if (isSuccess) {
       reset();
       setDetail({});
-      setFormData({ id: "", entry: "", nis: "", name: "", gender: "" });
+      setFormData({
+        id: "",
+        entry: "",
+        classid: "",
+        nis: "",
+        name: "",
+        gender: "",
+      });
 
       const closeModal = document.querySelector("[data-bs-dismiss='modal']");
       closeModal.click();
@@ -68,6 +85,7 @@ const Form = ({ detail, setDetail }) => {
       setFormData({
         id: detail.id || "",
         entry: detail.entry_id || "",
+        classid: detail.classid || "",
         name: detail.name || "",
         nis: detail.nis || "",
         gender: detail.gender || "",
@@ -80,7 +98,14 @@ const Form = ({ detail, setDetail }) => {
     const modal = document.getElementById("addstudent");
     if (!modal) return;
     const handler = () => {
-      setFormData({ id: "", entry: "", nis: "", name: "", gender: "" });
+      setFormData({
+        id: "",
+        entry: "",
+        classid: "",
+        nis: "",
+        name: "",
+        gender: "",
+      });
       if (document.activeElement) document.activeElement.blur();
     };
     modal.addEventListener("hidden.bs.modal", handler);
@@ -97,89 +122,105 @@ const Form = ({ detail, setDetail }) => {
       aria-labelledby="studentModalLabel"
       aria-hidden="true"
     >
-      <div className="modal-dialog modal-dialog-centered">
-        <div className="modal-content">
-          <div className="modal-header bg-primary text-white">
+      <div className="modal-dialog ">
+        <form onSubmit={addHandler} className="modal-content p-3">
+          <div className="modal-header">
             <h5 className="modal-title" id="studentModalLabel">
               {formData.id ? "Edit Siswa" : "Tambah Siswa"}
             </h5>
             <button
               type="button"
-              className="btn-close btn-close-white"
+              className="btn-close"
               data-bs-dismiss="modal"
               aria-label="Close"
               onClick={cancel}
             ></button>
           </div>
-          <div className="modal-body p-4">
-            <form onSubmit={addHandler} className="d-flex flex-column gap-3">
-              <select
-                name="entry"
-                id="entry"
-                className="form-select"
-                value={formData.entry}
-                onChange={handleChange}
-                required
-              >
-                <option value="" hidden>
-                  Tahun Masuk
+          <div className="modal-body d-flex flex-column gap-3">
+            <select
+              name="entry"
+              id="entry"
+              className="form-select"
+              value={formData.entry}
+              onChange={handleChange}
+              required
+            >
+              <option value="" hidden>
+                Tahun Masuk
+              </option>
+              {data?.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
                 </option>
-                {data?.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-
-              {inputs?.map((item, i) => (
-                <input
-                  key={i}
-                  type="text"
-                  className="form-control"
-                  placeholder={item.placeholder}
-                  name={item.name}
-                  id={item.name}
-                  value={formData[item.name] || ""}
-                  onChange={handleChange}
-                  required
-                />
               ))}
+            </select>
 
-              <select
-                name="gender"
-                id="gender"
-                className="form-select"
-                value={formData.gender}
+            <select
+              name="classid"
+              id="classid"
+              className="form-select"
+              value={formData.classid}
+              onChange={handleChange}
+              required
+            >
+              <option value="" hidden>
+                Kelas
+              </option>
+              {classes?.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+
+            {inputs?.map((item, i) => (
+              <input
+                key={i}
+                type="text"
+                className="form-control"
+                placeholder={item.placeholder}
+                name={item.name}
+                id={item.name}
+                value={formData[item.name] || ""}
                 onChange={handleChange}
                 required
-              >
-                <option value="" hidden>
-                  Jenis Kelamin
-                </option>
-                <option value="L">Laki Laki</option>
-                <option value="P">Perempuan</option>
-              </select>
+              />
+            ))}
 
-              <div className="d-flex justify-content-end gap-2 mt-2">
-                <button
-                  type="button"
-                  className="btn btn-sm btn-warning"
-                  data-bs-dismiss="modal"
-                  onClick={cancel}
-                >
-                  <i className="bi bi-x-lg me-1"></i>Batal
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-sm btn-success"
-                  disabled={isLoading}
-                >
-                  <i className="bi bi-save me-1"></i>Simpan
-                </button>
-              </div>
-            </form>
+            <select
+              name="gender"
+              id="gender"
+              className="form-select"
+              value={formData.gender}
+              onChange={handleChange}
+              required
+            >
+              <option value="" hidden>
+                Jenis Kelamin
+              </option>
+              <option value="L">Laki Laki</option>
+              <option value="P">Perempuan</option>
+            </select>
           </div>
-        </div>
+
+          <div className="modal-footer">
+            <button
+              type="button"
+              className="btn  btn-warning"
+              data-bs-dismiss="modal"
+              onClick={cancel}
+            >
+              <i className="bi bi-x-lg me-1"></i>Batal
+            </button>
+            <button
+              type="submit"
+              className="btn btn-success"
+              disabled={isLoading}
+            >
+              <i className="bi bi-save me-1"></i>Simpan
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

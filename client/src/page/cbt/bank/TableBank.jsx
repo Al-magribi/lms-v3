@@ -60,7 +60,7 @@ const TableBank = ({ setDetail }) => {
         {banks?.length > 0 ? (
           banks?.map((item, i) => (
             <div key={i} className="col-12 col-md-6 col-lg-4">
-              <div className="card bg-white border-0 rounded-4 shadow-sm hover-shadow h-100">
+              <div className="card bg-white rounded-4 shadow-sm hover-shadow h-100">
                 <span
                   className="position-absolute top-0 end-0 badge bg-primary rounded-pill m-2"
                   style={{ fontSize: 13, zIndex: 2 }}
@@ -81,17 +81,26 @@ const TableBank = ({ setDetail }) => {
                           className="fw-bold text-primary mb-1"
                           style={{ fontSize: 18 }}
                         >
-                          {item.teacher_name}
+                          {item.name}
                         </h5>
-                        <span className="text-muted small">
-                          {item.subject_name}
-                        </span>
+
+                        <div className="d-flex gap-2 align-items-center">
+                          <span className="text-muted small">
+                            {item.teacher_name}
+                          </span>
+
+                          <div className="vr"></div>
+
+                          <span className="text-muted small">
+                            {item.subject_name}
+                          </span>
+                        </div>
                       </div>
                     </div>
                     <div className="dropdown">
                       <button
                         type="button"
-                        className="btn btn-sm btn-light border dropdown-toggle"
+                        className="btn btn-sm btn-outline-primary"
                         data-bs-toggle="dropdown"
                         aria-expanded="false"
                       >
@@ -112,6 +121,8 @@ const TableBank = ({ setDetail }) => {
                           <button
                             className="dropdown-item d-flex align-items-center gap-2"
                             onClick={() => setDetail(item)}
+                            data-bs-toggle="modal"
+                            data-bs-target="#addbank"
                           >
                             <i className="bi bi-pencil-square"></i> Edit
                           </button>

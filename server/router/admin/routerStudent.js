@@ -12,7 +12,7 @@ const router = express.Router();
 router.post("/add-student", authorize("admin"), async (req, res) => {
   const client = await pool.connect();
   try {
-    const { id, entry, nis, name, gender } = req.body;
+    const { id, entry, nis, name, gender, classid } = req.body;
     const homebase = req.user.homebase;
     const password = "12345678";
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -43,11 +43,28 @@ router.post("/add-student", authorize("admin"), async (req, res) => {
 				SET name = $1, nis = $2, gender = $3 WHERE id = $4`,
         [name, nis, gender, id]
       );
-    } else {
+
       await client.query(
+        `UPDATE cl_students SET classid = $1 WHERE student = $2`,
+        [classid, id]
+      );
+    } else {
+      const student = await client.query(
         `INSERT INTO u_students(entry, nis, name, password, homebase, gender, periode)
-				VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+				VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, name`,
         [entry, nis, name, hashedPassword, homebase, gender, activePeriode]
+      );
+
+      await client.query(
+        `INSERT INTO cl_students(periode, classid, student, student_name, homebase)
+            VALUES($1, $2, $3, $4, $5)`,
+        [
+          activePeriode,
+          classid,
+          student.rows[0].id,
+          student.rows[0].name,
+          homebase,
+        ]
       );
     }
 
@@ -126,11 +143,15 @@ router.get("/get-students", authorize("admin"), async (req, res) => {
         entry_periode.name AS entry,
 				periode_periode.id AS periode_id,
         periode_periode.name AS periode_name,
+        cl_students.classid AS classid,
+        a_class.name AS classname,
 				a_homebase.name AS homebase
 				FROM u_students
 				LEFT JOIN a_periode AS entry_periode ON u_students.entry = entry_periode.id
 				LEFT JOIN a_periode AS periode_periode ON u_students.periode = periode_periode.id
 				LEFT JOIN a_homebase ON u_students.homebase = a_homebase.id
+				LEFT JOIN cl_students ON u_students.id = cl_students.student
+				LEFT JOIN a_class ON cl_students.classid = a_class.id
 				WHERE u_students.homebase = $1
 				AND (u_students.name ILIKE $2 OR u_students.nis ILIKE $2) 
 				AND u_students.periode = $3

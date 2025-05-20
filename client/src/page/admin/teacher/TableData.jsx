@@ -62,7 +62,7 @@ const TableData = ({ setDetail }) => {
         {teachers?.length > 0 ? (
           teachers?.map((teacher, i) => (
             <div key={i} className="col-12 col-md-6 col-lg-4">
-              <div className="card shadow-sm h-100">
+              <div className="card shadow-sm hover-shadow h-100">
                 <div className="card-body">
                   <div className="d-flex justify-content-between align-items-start mb-3">
                     <div className="d-flex align-items-center">
@@ -85,19 +85,39 @@ const TableData = ({ setDetail }) => {
                       </div>
                     </div>
                     <div className="d-flex gap-2">
-                      <button
-                        className="btn btn-sm btn-warning"
-                        onClick={() => setDetail(teacher)}
-                      >
-                        <i className="bi bi-pencil-square"></i>
-                      </button>
-                      <button
-                        className="btn btn-sm btn-danger"
-                        disabled={isLoading}
-                        onClick={() => deleteHandler(teacher.id)}
-                      >
-                        <i className="bi bi-folder-minus"></i>
-                      </button>
+                      <div className="dropdown">
+                        <button
+                          className="btn btn-sm btn-outline-primary"
+                          type="button"
+                          data-bs-toggle="dropdown"
+                          aria-expanded="false"
+                        >
+                          <i className="bi bi-three-dots-vertical"></i>
+                        </button>
+                        <ul className="dropdown-menu dropdown-menu-end">
+                          <li>
+                            <button
+                              className="dropdown-item"
+                              onClick={() => setDetail(teacher)}
+                              data-bs-toggle="modal"
+                              data-bs-target="#addteacher"
+                            >
+                              <i className="bi bi-pencil-square me-2"></i>
+                              Edit
+                            </button>
+                          </li>
+                          <li>
+                            <button
+                              className="dropdown-item text-danger"
+                              disabled={isLoading}
+                              onClick={() => deleteHandler(teacher.id)}
+                            >
+                              <i className="bi bi-folder-minus me-2"></i>
+                              Hapus
+                            </button>
+                          </li>
+                        </ul>
+                      </div>
                     </div>
                   </div>
 

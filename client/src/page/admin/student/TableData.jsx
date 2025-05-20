@@ -109,8 +109,8 @@ const TableData = ({ setDetail }) => {
       <div className="row g-4">
         {students.length > 0 ? (
           students.map((student, i) => (
-            <div key={i} className="col-12 col-md-6 col-lg-4">
-              <div className="card border-0 shadow-sm hover-shadow h-100 p-0 overflow-hidden position-relative">
+            <div key={i} className="col-12 col-md-6 col-lg-4 col-xl-3">
+              <div className="card border shadow-sm hover-shadow h-100 p-0 overflow-hidden position-relative rounded-4">
                 <div className="card-body p-4 d-flex flex-column h-100">
                   <div className="d-flex align-items-start justify-content-between mb-2">
                     <div>
@@ -120,13 +120,26 @@ const TableData = ({ setDetail }) => {
                       >
                         {student.name}
                       </h5>
+
                       <span className="badge bg-secondary mb-2">
                         NIS: {student.nis}
+                      </span>
+
+                      <span
+                        className={`badge ms-2 ${
+                          student.isactive
+                            ? "bg-success bg-opacity-10 text-success"
+                            : "bg-danger bg-opacity-10 text-danger"
+                        } pointer`}
+                        style={{ cursor: "pointer" }}
+                        onClick={() => changeHandler(student.id)}
+                      >
+                        {student.isactive ? "Aktif" : "Nonaktif"}
                       </span>
                     </div>
                     <div className="dropdown">
                       <button
-                        className="btn btn-sm btn-light border dropdown-toggle"
+                        className="btn btn-sm btn-outline-primary"
                         type="button"
                         id={`dropdownMenuButton${student.id}`}
                         data-bs-toggle="dropdown"
@@ -135,12 +148,14 @@ const TableData = ({ setDetail }) => {
                         <i className="bi bi-three-dots-vertical"></i>
                       </button>
                       <ul
-                        className="dropdown-menu dropdown-menu-end"
+                        className="dropdown-menu dropdown-menu-end shadow"
                         aria-labelledby={`dropdownMenuButton${student.id}`}
                       >
                         <li>
                           <button
                             className="dropdown-item d-flex align-items-center gap-2"
+                            data-bs-target="#addstudent"
+                            data-bs-toggle="modal"
                             onClick={() => setDetail(student)}
                           >
                             <i className="bi bi-pencil-square"></i> Edit
@@ -158,50 +173,51 @@ const TableData = ({ setDetail }) => {
                       </ul>
                     </div>
                   </div>
-                  <div className="mb-2">
-                    <div className="d-flex align-items-center gap-2 mb-1">
-                      <i className="bi bi-calendar-event text-primary"></i>
-                      <span className="small">
-                        Tahun Ajaran: <b>{student.periode_name}</b>
-                      </span>
+                  <div>
+                    <div className="d-flex flex-wrap gap-2 align-items-center mb-1">
+                      <div className="d-flex align-items-center gap-2">
+                        <i className="bi bi-calendar-event text-primary"></i>
+                        <span className="small">
+                          Tahun Ajaran: <b>{student.periode_name}</b>
+                        </span>
+                      </div>
+                      <div className="d-flex align-items-center gap-2">
+                        <i className="bi bi-calendar-plus text-primary"></i>
+                        <span className="small">
+                          Tahun Masuk: <b>{student.entry}</b>
+                        </span>
+                      </div>
                     </div>
-                    <div className="d-flex align-items-center gap-2 mb-1">
-                      <i className="bi bi-calendar-plus text-primary"></i>
-                      <span className="small">
-                        Tahun Masuk: <b>{student.entry}</b>
-                      </span>
-                    </div>
-                    <div className="d-flex align-items-center gap-2 mb-1">
-                      <i className="bi bi-building text-primary"></i>
-                      <span className="small">
-                        Satuan: <b>{student.homebase}</b>
-                      </span>
+
+                    <div className="d-flex flex-wrap gap-2 align-items-center mb-1">
+                      <div className="d-flex align-items-center gap-2">
+                        <i className="bi bi-building text-primary"></i>
+                        <span className="small">
+                          Satuan: <b>{student.homebase}</b>
+                        </span>
+                      </div>
+                      <div className="d-flex align-items-center gap-2">
+                        <i className="bi bi-mortarboard-fill text-primary"></i>
+                        <span className="small">
+                          Kelas: <b>{student.classname}</b>
+                        </span>
+                      </div>
                     </div>
 
                     <div className="d-flex align-items-center gap-2 mb-1">
-                      <i className="bi bi-gender-ambiguous text-primary"></i>
+                      <i
+                        className={`bi ${
+                          student.gender === "L"
+                            ? "bi-gender-male"
+                            : "bi-gender-female"
+                        } text-primary`}
+                      ></i>
                       <span className="small">
-                        Gender: <b>{student.gender}</b>
+                        Gender:{" "}
+                        <b>
+                          {student.gender === "L" ? "Laki-laki" : "Perempuan"}
+                        </b>
                       </span>
-                    </div>
-                  </div>
-                  <div className="d-flex align-items-center gap-2 mt-auto">
-                    <span
-                      className={`badge ${
-                        student.isactive ? "bg-success" : "bg-danger"
-                      }`}
-                    >
-                      {student.isactive ? "Aktif" : "Nonaktif"}
-                    </span>
-                    <div className="form-check form-switch ms-2">
-                      <input
-                        className="form-check-input pointer"
-                        type="checkbox"
-                        role="switch"
-                        id={`flexSwitchCheckChecked${student.id}`}
-                        checked={student.isactive}
-                        onChange={() => changeHandler(student.id)}
-                      />
                     </div>
                   </div>
                 </div>
@@ -216,9 +232,9 @@ const TableData = ({ setDetail }) => {
           ))
         ) : (
           <div className="col-12">
-            <div className="alert alert-info d-flex align-items-center gap-2 mb-0">
-              <i className="bi bi-info-circle-fill"></i>
-              <span>Data tidak tersedia</span>
+            <div className="d-flex flex-column align-items-center justify-content-center py-5 text-muted gap-2">
+              <i className="bi bi-inbox fs-1"></i>
+              <span className="fs-5">Data tidak tersedia</span>
             </div>
           </div>
         )}
@@ -241,12 +257,12 @@ const TableData = ({ setDetail }) => {
           ))}
         </select>
         <button
-          className="btn btn-sm btn-success"
+          className="btn btn-success"
           onClick={handleSavePeriode}
           disabled={isChanging || !selectedPeriode}
         >
-          <i className="bi bi-save"></i>
-          <span className="ms-2">{isChanging ? "Menyimpan..." : "Simpan"}</span>
+          <i className="bi bi-save me-2"></i>
+          {isChanging ? "Menyimpan..." : "Simpan"}
         </button>
       </div> */}
     </Table>

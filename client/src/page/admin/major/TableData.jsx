@@ -65,8 +65,8 @@ const TableData = ({ setDetail }) => {
       totalPages={totalPages}
       isLoading={dataLoading}
     >
-      <table className="table table-bordered table-striped table-hover">
-        <thead>
+      <table className="table table-striped table-hover mb-0">
+        <thead className="table-primary align-middle">
           <tr>
             {columns.map((item) => (
               <th key={item.label} className="text-center">
@@ -82,7 +82,6 @@ const TableData = ({ setDetail }) => {
                 <td className="text-center align-middle">
                   {(page - 1) * limit + i + 1}
                 </td>
-
                 <td className="align-middle">{item.homebase}</td>
                 <td className="align-middle">{item.name}</td>
                 <td className="text-center align-middle">
@@ -106,7 +105,9 @@ const TableData = ({ setDetail }) => {
             ))
           ) : (
             <tr>
-              <td colSpan={4}>Data tidak tersedia</td>
+              <td colSpan={4} className="text-center text-muted py-3">
+                Data tidak tersedia
+              </td>
             </tr>
           )}
         </tbody>

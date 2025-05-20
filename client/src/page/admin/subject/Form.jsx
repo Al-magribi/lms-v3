@@ -77,8 +77,8 @@ const Form = ({ detail, setDetail }) => {
       aria-labelledby="subjectModalLabel"
       aria-hidden={detail && detail.id ? "false" : "true"}
     >
-      <div className="modal-dialog modal-dialog-centered">
-        <div className="modal-content">
+      <div className="modal-dialog">
+        <form onSubmit={addHandler} className="modal-content p-3">
           <div className="modal-header">
             <h5 className="modal-title" id="subjectModalLabel">
               {id ? "Edit Mata Pelajaran" : "Tambah Mata Pelajaran"}
@@ -91,52 +91,50 @@ const Form = ({ detail, setDetail }) => {
               onClick={cancel}
             ></button>
           </div>
-          <div className="modal-body">
-            <form onSubmit={addHandler} className="d-flex flex-column gap-2">
+          <div className="modal-body d-flex flex-column gap-3">
+            <input
+              type="text"
+              name="name"
+              id="name"
+              className="form-control"
+              placeholder="Nama Mata Pelajaran"
+              value={name || ""}
+              onChange={(e) => setName(e.target.value)}
+            />
+
+            <div className="input-group">
               <input
-                type="text"
-                name="name"
-                id="name"
+                type="file"
                 className="form-control"
-                placeholder="Nama Mata Pelajaran"
-                value={name || ""}
-                onChange={(e) => setName(e.target.value)}
+                id="inputGroupFile02"
+                ref={inputRef}
+                onChange={(e) => setFile(e.target.files[0])}
               />
-
-              <div className="input-group">
-                <input
-                  type="file"
-                  className="form-control"
-                  id="inputGroupFile02"
-                  ref={inputRef}
-                  onChange={(e) => setFile(e.target.files[0])}
-                />
-                <label className="input-group-text" htmlFor="inputGroupFile02">
-                  Cover
-                </label>
-              </div>
-
-              <div className="d-flex justify-content-end gap-2 mt-2">
-                <button
-                  type="button"
-                  className="btn btn-sm btn-warning"
-                  data-bs-dismiss="modal"
-                  onClick={cancel}
-                >
-                  Batal
-                </button>
-
-                <button
-                  type="submit"
-                  className="btn btn-sm btn-success"
-                  disabled={isLoading}
-                >
-                  Simpan
-                </button>
-              </div>
-            </form>
+              <label className="input-group-text" htmlFor="inputGroupFile02">
+                Cover
+              </label>
+            </div>
           </div>
-        </div>
+
+          <div className="modal-footer">
+            <button
+              type="button"
+              className="btn btn-warning"
+              data-bs-dismiss="modal"
+              onClick={cancel}
+            >
+              Batal
+            </button>
+
+            <button
+              type="submit"
+              className="btn btn-success"
+              disabled={isLoading}
+            >
+              Simpan
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

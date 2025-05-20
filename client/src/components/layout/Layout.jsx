@@ -266,15 +266,6 @@ const Layout = ({ children, title, desc, levels }) => {
                     <i className="bi bi-plus-lg"></i>
                     <span className="ms-2">Siswa</span>
                   </button>
-
-                  <button
-                    className="btn btn-sm btn-outline-success"
-                    data-bs-toggle="modal"
-                    data-bs-target="#uploadstudent"
-                  >
-                    <i className="bi bi-file-earmark-arrow-up-fill"></i>
-                    <span className="ms-2">Upload</span>
-                  </button>
                 </div>
               )}
 
@@ -290,17 +281,34 @@ const Layout = ({ children, title, desc, levels }) => {
               )}
 
               {title === "Database" && (
-                <button className="btn btn-sm btn-info" onClick={goToStudent}>
+                <button
+                  className="btn btn-sm btn-outline-info"
+                  onClick={goToStudent}
+                >
                   <Pi.PiStudentFill />
                   <span className="ms-2">Siswa</span>
                 </button>
               )}
 
               {title === "Lulusan" && (
-                <button className="btn btn-sm btn-info" onClick={goToStudent}>
-                  <Pi.PiStudentFill />
-                  <span className="ms-2">Siswa</span>
-                </button>
+                <div className="d-flex align-items-center gap-2">
+                  <button
+                    className="btn btn-sm btn-outline-info"
+                    onClick={goToStudent}
+                  >
+                    <Pi.PiStudentFill />
+                    <span className="ms-2">Siswa</span>
+                  </button>
+
+                  <button
+                    className="btn btn-sm btn-outline-success"
+                    data-bs-toggle="modal"
+                    data-bs-target="#addgraduation"
+                  >
+                    <i className="bi bi-plus-lg"></i>
+                    <span className="ms-2">Lulusan</span>
+                  </button>
+                </div>
               )}
 
               {title === "Guru" && (

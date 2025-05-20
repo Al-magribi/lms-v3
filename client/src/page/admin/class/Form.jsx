@@ -51,6 +51,11 @@ const Form = ({ detail, setDetail }) => {
       setId("");
       setGradeId("");
       setMajorId("");
+
+      const closeMoadal = document.querySelector('[data-bs-dismiss="modal"]');
+      if (closeMoadal) {
+        closeMoadal.click();
+      }
     }
 
     if (error) {
@@ -90,84 +95,83 @@ const Form = ({ detail, setDetail }) => {
       aria-labelledby="classModalLabel"
       aria-hidden="true"
     >
-      <div className="modal-dialog modal-dialog-centered">
-        <div className="modal-content">
-          <div className="modal-header bg-primary text-white">
+      <div className="modal-dialog ">
+        <form onSubmit={addHandler} className="modal-content p-3">
+          <div className="modal-header">
             <h5 className="modal-title" id="classModalLabel">
               {id ? "Edit Kelas" : "Tambah Kelas"}
             </h5>
             <button
               type="button"
-              className="btn-close btn-close-white"
+              className="btn-close"
               data-bs-dismiss="modal"
               aria-label="Close"
               onClick={cancel}
             ></button>
           </div>
-          <div className="modal-body p-4">
-            <form onSubmit={addHandler} className="d-flex flex-column gap-3">
-              {majors?.length > 0 && (
-                <select
-                  className="form-select"
-                  value={majorId || ""}
-                  onChange={(e) => setMajorId(e.target.value)}
-                  required
-                >
-                  <option value="" hidden>
-                    Pilih Jurusan
-                  </option>
-                  {majors?.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-              )}
+          <div className="modal-body d-flex flex-column gap-3">
+            {majors?.length > 0 && (
               <select
                 className="form-select"
-                value={gradeId || ""}
-                onChange={(e) => setGradeId(e.target.value)}
+                value={majorId || ""}
+                onChange={(e) => setMajorId(e.target.value)}
                 required
               >
                 <option value="" hidden>
-                  Pilih Tingkat
+                  Pilih Jurusan
                 </option>
-                {grades?.map((item) => (
+                {majors?.map((item) => (
                   <option key={item.id} value={item.id}>
                     {item.name}
                   </option>
                 ))}
               </select>
-              <input
-                type="text"
-                name="class"
-                id="class"
-                className="form-control"
-                placeholder="Nama Kelas"
-                value={name || ""}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
-              <div className="d-flex justify-content-end gap-2 mt-2">
-                <button
-                  type="button"
-                  className="btn btn-sm btn-warning"
-                  data-bs-dismiss="modal"
-                  onClick={cancel}
-                >
-                  <i className="bi bi-x-lg me-1"></i>Batal
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-sm btn-success"
-                  disabled={isLoading}
-                >
-                  <i className="bi bi-save me-1"></i>Simpan
-                </button>
-              </div>
-            </form>
+            )}
+            <select
+              className="form-select"
+              value={gradeId || ""}
+              onChange={(e) => setGradeId(e.target.value)}
+              required
+            >
+              <option value="" hidden>
+                Pilih Tingkat
+              </option>
+              {grades?.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+            <input
+              type="text"
+              name="class"
+              id="class"
+              className="form-control"
+              placeholder="Nama Kelas"
+              value={name || ""}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
           </div>
-        </div>
+
+          <div className="modal-footer">
+            <button
+              type="button"
+              className="btn btn-sm btn-warning"
+              data-bs-dismiss="modal"
+              onClick={cancel}
+            >
+              <i className="bi bi-x-lg me-1"></i>Batal
+            </button>
+            <button
+              type="submit"
+              className="btn btn-sm btn-success"
+              disabled={isLoading}
+            >
+              <i className="bi bi-save me-1"></i>Simpan
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

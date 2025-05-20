@@ -68,18 +68,12 @@ const TableData = ({ setDetail }) => {
         {subjects?.length > 0 ? (
           subjects?.map((subject, i) => (
             <div key={i} className="col-12 col-md-6">
-              <div className="card border-0 shadow-sm h-100 p-0 overflow-hidden">
+              <div className="card border shadow-sm hover-shadow h-100 p-0 overflow-hidden">
                 <div className="d-flex flex-row h-100">
                   <div
                     className="d-flex flex-column align-items-center justify-content-center bg-light"
                     style={{ minWidth: 110, maxWidth: 110 }}
                   >
-                    <span
-                      className="badge bg-primary rounded-pill position-absolute mt-2 ms-2"
-                      style={{ zIndex: 2, fontSize: 14 }}
-                    >
-                      {(page - 1) * limit + i + 1}
-                    </span>
                     <img
                       src={subject.cover ? subject.cover : app?.logo}
                       alt={`cover-${subject.name}`}
@@ -101,12 +95,14 @@ const TableData = ({ setDetail }) => {
 
                         <div className="dropdown">
                           <button
-                            className="btn btn-sm btn-warning dropdown-toggle"
+                            className="btn btn-sm btn-outline-primary"
                             type="button"
                             id={`dropdownMenuButton${subject.id}`}
                             data-bs-toggle="dropdown"
                             aria-expanded="false"
-                          ></button>
+                          >
+                            <i className="bi bi-three-dots-vertical"></i>
+                          </button>
                           <ul
                             className="dropdown-menu dropdown-menu-end"
                             aria-labelledby={`dropdownMenuButton${subject.id}`}
@@ -125,6 +121,8 @@ const TableData = ({ setDetail }) => {
                               <button
                                 className="dropdown-item d-flex align-items-center gap-2"
                                 onClick={() => setDetail(subject)}
+                                data-bs-toggle="modal"
+                                data-bs-target="#addsubject"
                               >
                                 <i className="bi bi-pencil-square"></i> Edit
                               </button>

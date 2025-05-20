@@ -94,13 +94,7 @@ const TableExam = ({ setDetail }) => {
         {exams?.length > 0 ? (
           exams?.map((exam, i) => (
             <div key={i} className="col-12 col-lg-4">
-              <div className="card  border-0 rounded-4 shadow-sm hover-shadow h-100 position-relative overflow-hidden">
-                <span
-                  className="position-absolute top-0 end-0 badge bg-primary rounded-pill m-2"
-                  style={{ fontSize: 13, zIndex: 2 }}
-                >
-                  #{(page - 1) * limit + i + 1}
-                </span>
+              <div className="card rounded-4 shadow-sm hover-shadow h-100 overflow-hidden">
                 <div className="card-body d-flex flex-column h-100 p-4 gap-2">
                   <div className="d-flex justify-content-between">
                     <div className="d-flex align-items-start justify-content-center flex-wrap gap-2">
@@ -112,9 +106,20 @@ const TableExam = ({ setDetail }) => {
                       </div>
 
                       <div className="d-flex flex-column gap-2">
-                        <h4 className="fw-bold lh-1 fs-4 text-primary">
-                          {exam.name}
-                        </h4>
+                        <div className="d-flex flex-column align-items-start">
+                          <h4 className="lh-1 text-primary m-0">{exam.name}</h4>
+
+                          <span
+                            className="badge bg-secondary pointer"
+                            data-toggle="tooltip"
+                            data-placement="top"
+                            title="Copy Token"
+                            onClick={() => copyTokenHandler(exam.token)}
+                          >
+                            {exam.token}
+                          </span>
+                        </div>
+
                         <div className="d-flex gap-2">
                           <span className="text-muted small">
                             {exam.teacher_name}
@@ -131,21 +136,11 @@ const TableExam = ({ setDetail }) => {
                             ))}
                           </div>
                         </div>
-                        <span
-                          className="badge bg-secondary pointer"
-                          data-toggle="tooltip"
-                          data-placement="top"
-                          title="Copy Token"
-                          onClick={() => copyTokenHandler(exam.token)}
-                          style={{ letterSpacing: 2 }}
-                        >
-                          {exam.token}
-                        </span>
                       </div>
                     </div>
                     <div className="dropdown ms-2">
                       <button
-                        className="btn btn-sm btn-light border dropdown-toggle"
+                        className="btn btn-sm btn-outline-primary"
                         type="button"
                         id={`dropdownMenuButton-${i}`}
                         data-bs-toggle="dropdown"

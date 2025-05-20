@@ -28,8 +28,8 @@ const Upload = ({ classid }) => {
         // Filter data to only include columns A, B and rows that are not null
         const filteredData = jsonData
           .map((row) => {
-            const [colA, colB] = row;
-            return [colA, colB];
+            const [colA, colB, colC, colD] = row;
+            return [colA, colB, colC, colD];
           })
           .filter((row) =>
             row.every((cell) => cell !== null && cell !== undefined)
@@ -71,20 +71,21 @@ const Upload = ({ classid }) => {
   }, [isSuccess, isError]);
 
   return (
-    <div className='d-flex align-items-center gap-2'>
+    <div className="d-flex align-items-center gap-2">
       <input
         ref={inputRef}
-        type='file'
-        name='file'
-        id='file'
-        className='form-control'
+        type="file"
+        name="file"
+        id="file"
+        className="form-control"
         onChange={(e) => setFile(e.target.files[0])}
       />
 
       <button
-        className='btn btn-sm btn-outline-primary'
+        className="btn btn-sm btn-outline-primary"
         disabled={isLoading}
-        onClick={uploadData}>
+        onClick={uploadData}
+      >
         Upload
       </button>
     </div>

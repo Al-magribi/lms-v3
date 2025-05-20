@@ -62,8 +62,8 @@ const TableData = ({ setDetail }) => {
       <div className="row g-4">
         {classes.length > 0 ? (
           classes.map((item, i) => (
-            <div key={i} className="col-12 col-md-2">
-              <div className="card bg-white border-0 rounded-4 shadow-sm hover-shadow h-100 position-relative overflow-hidden">
+            <div key={i} className="col-12 col-md-6 col-lg-4 col-xl-3">
+              <div className="card bg-white border rounded-4 shadow-sm hover-shadow h-100 position-relative">
                 <span
                   className="position-absolute top-0 end-0 badge bg-primary rounded-pill m-2"
                   style={{ fontSize: 13, zIndex: 2 }}
@@ -71,7 +71,7 @@ const TableData = ({ setDetail }) => {
                   #{(page - 1) * limit + i + 1}
                 </span>
                 <div className="card-body p-4 d-flex flex-column h-100">
-                  <div className="d-flex align-items-start justify-content-between">
+                  <div className="d-flex align-items-start justify-content-between mb-3">
                     <div className="d-flex flex-column gap-2">
                       <h4
                         className="fw-bold text-primary mb-1"
@@ -100,7 +100,7 @@ const TableData = ({ setDetail }) => {
                     </div>
                     <div className="dropdown ms-2">
                       <button
-                        className="btn btn-sm btn-light border dropdown-toggle"
+                        className="btn btn-sm btn-outline-primary"
                         type="button"
                         id={`dropdownMenuButton-${i}`}
                         data-bs-toggle="dropdown"
@@ -120,12 +120,14 @@ const TableData = ({ setDetail }) => {
                             data-bs-target="#modal-add"
                             onClick={() => setClass(item)}
                           >
-                            <i className="bi bi-folder-plus"></i> Tambah Siswa
+                            <i className="bi bi-folder-plus"></i> Siswa
                           </button>
                         </li>
                         <li>
                           <button
                             className="dropdown-item d-flex align-items-center gap-2"
+                            data-bs-toggle="modal"
+                            data-bs-target="#addclass"
                             onClick={() => setDetail(item)}
                           >
                             <i className="bi bi-pencil-square"></i> Edit
@@ -152,7 +154,10 @@ const TableData = ({ setDetail }) => {
           ))
         ) : (
           <div className="col-12">
-            <div className="alert alert-info mb-0">Data belum tersedia</div>
+            <div className="d-flex flex-column align-items-center justify-content-center py-5 text-muted gap-2">
+              <i className="bi bi-inbox fs-1"></i>
+              <span className="fs-5">Data belum tersedia</span>
+            </div>
           </div>
         )}
       </div>
