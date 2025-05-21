@@ -1,14 +1,18 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import * as XLSX from "xlsx";
 import { useUploadStudentsMutation } from "../../../controller/api/admin/ApiClass";
 import { toast } from "react-hot-toast";
-import * as XLSX from "xlsx";
 
-const Upload = ({ classid }) => {
+const Upload = () => {
   const [file, setFile] = useState(null);
   const inputRef = useRef(null);
 
   const [uploadStudents, { isSuccess, isLoading, isError, reset }] =
     useUploadStudentsMutation();
+
+  const download = () => {
+    window.open("/temp/template_siswa.xlsx", "_blank");
+  };
 
   const uploadData = (e) => {
     e.preventDefault();
@@ -25,11 +29,11 @@ const Upload = ({ classid }) => {
           range: 1,
         });
 
-        // Filter data to only include columns A, B and rows that are not null
+        // Filter data to only include columns A, B, C, D, E and rows that are not null
         const filteredData = jsonData
           .map((row) => {
-            const [colA, colB, colC, colD] = row;
-            return [colA, colB, colC, colD];
+            const [colA, colB, colC, colD, colE] = row;
+            return [colA, colB, colC, colD, colE];
           })
           .filter((row) =>
             row.every((cell) => cell !== null && cell !== undefined)
@@ -40,10 +44,8 @@ const Upload = ({ classid }) => {
           ? filteredData
           : [filteredData];
 
-        const formData = { students: filteredData, classid };
-
         toast.promise(
-          uploadStudents(formData)
+          uploadStudents(result)
             .unwrap()
             .then((res) => res.message),
           {
@@ -60,8 +62,10 @@ const Upload = ({ classid }) => {
 
   useEffect(() => {
     if (isSuccess) {
-      reset();
       inputRef.current.value = null;
+      reset();
+      const closeModal = document.querySelector("[data-bs-dismiss='modal']");
+      closeModal.click();
     }
 
     if (isError) {
@@ -70,24 +74,76 @@ const Upload = ({ classid }) => {
     }
   }, [isSuccess, isError]);
 
-  return (
-    <div className="d-flex align-items-center gap-2">
-      <input
-        ref={inputRef}
-        type="file"
-        name="file"
-        id="file"
-        className="form-control"
-        onChange={(e) => setFile(e.target.files[0])}
-      />
+  useEffect(() => {
+    const modal = document.getElementById("uploadstudents");
+    if (!modal) return;
+    const handler = () => {
+      // Reset state/input jika perlu
+      setFile(null);
+      if (inputRef.current) inputRef.current.value = null;
+    };
+    modal.addEventListener("hidden.bs.modal", handler);
+    return () => modal.removeEventListener("hidden.bs.modal", handler);
+  }, []);
 
-      <button
-        className="btn btn-sm btn-outline-primary"
-        disabled={isLoading}
-        onClick={uploadData}
-      >
-        Upload
-      </button>
+  return (
+    <div
+      className="modal fade"
+      id="uploadstudents"
+      data-bs-backdrop="static"
+      data-bs-keyboard="false"
+      tabIndex="-1"
+      aria-labelledby="uploadStudentModalLabel"
+      aria-hidden="true"
+    >
+      <div className="modal-dialog">
+        <form onSubmit={uploadData} className="modal-content p-3">
+          <div className="modal-header">
+            <h5 className="modal-title" id="uploadStudentModalLabel">
+              <i className="bi bi-file-earmark-arrow-up-fill me-2"></i>Upload
+              Siswa
+            </h5>
+            <button
+              type="button"
+              className="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div className="modal-body d-flex flex-column gap-3">
+            <div className="alert alert-info py-2 d-flex align-items-center gap-2">
+              <i className="bi bi-info-circle-fill"></i>
+              Upload file Excel sesuai template yang disediakan.
+            </div>
+            <input
+              ref={inputRef}
+              type="file"
+              name="students"
+              id="student"
+              className="form-control"
+              onChange={(e) => setFile(e.target.files[0])}
+              required
+            />
+          </div>
+
+          <div className="modal-footer">
+            <button
+              type="button"
+              className="btn btn-sm btn-primary"
+              onClick={download}
+            >
+              <i className="bi bi-download me-1"></i>Template
+            </button>
+            <button
+              type="submit"
+              className="btn btn-sm btn-success"
+              disabled={isLoading}
+            >
+              <i className="bi bi-upload me-1"></i>Upload Data
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };

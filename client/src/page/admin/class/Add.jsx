@@ -37,22 +37,23 @@ const Add = ({ classid }) => {
     }
   }, [isSuccess, isError]);
   return (
-    <form onSubmit={addHandler} className='d-flex align-items-center gap-2'>
+    <form onSubmit={addHandler} className="d-flex align-items-center gap-2">
       <input
-        type='text'
-        name='nis'
-        id='nis'
-        className='form-control'
-        placeholder='NIS'
+        type="text"
+        name="nis"
+        id="nis"
+        className="form-control"
+        placeholder="NIS"
         required
         value={nis || ""}
         onChange={(e) => setNis(e.target.value)}
       />
 
       <button
-        type='submit'
-        className='btn btn-sm btn-outline-primary'
-        disabled={isLoading}>
+        type="submit"
+        className="btn btn-sm btn-outline-primary"
+        disabled={isLoading}
+      >
         Simpan
       </button>
     </form>

@@ -87,12 +87,12 @@ const Modal = ({ detail }) => {
     >
       <div className="modal-dialog modal-xl modal-dialog-scrollable">
         <div className="modal-content">
-          <div className="modal-header border-bottom">
+          <div className="modal-header border-bottom bg-white py-3 px-4">
             <h1
-              className="modal-title fs-5 d-flex align-items-center gap-2"
+              className="modal-title fs-5 d-flex align-items-center gap-2 fw-bold"
               id="staticBackdropLabel"
             >
-              <i className="bi bi-mortarboard-fill text-primary"></i>
+              <i className="bi bi-mortarboard-fill text-primary fs-4"></i>
               Kelas <span className="text-primary">{detail?.name}</span>
             </h1>
             <button
@@ -102,27 +102,15 @@ const Modal = ({ detail }) => {
               aria-label="Close"
             ></button>
           </div>
-          <div className="modal-body bg-light d-flex flex-column gap-3">
-            <div className="row g-3">
-              <div className="col-lg-6 col-12">
-                <div className="card shadow-sm h-100">
-                  <div className="card-body">
-                    <h6 className="card-title mb-3">Tambah Siswa</h6>
-                    <Add classid={detail.id} />
-                  </div>
-                </div>
-              </div>
-              <div className="col-lg-6 col-12">
-                <div className="card shadow-sm h-100">
-                  <div className="card-body">
-                    <h6 className="card-title mb-3">Upload Siswa</h6>
-                    <Upload classid={detail.id} />
-                  </div>
-                </div>
+          <div className="modal-body bg-light d-flex flex-column gap-3 px-4 py-3">
+            <div className="card shadow-sm h-100 border-0">
+              <div className="card-body">
+                <h6 className="card-title mb-3 fw-semibold">Tambah Siswa</h6>
+                <Add classid={detail.id} />
               </div>
             </div>
 
-            <div className="card shadow-sm">
+            <div className="card shadow-sm border-0">
               <div className="card-body">
                 <Table
                   page={page}
@@ -133,7 +121,7 @@ const Modal = ({ detail }) => {
                   totalPages={totalPages}
                 >
                   <div className="table-responsive">
-                    <table className="table table-hover align-middle mb-0">
+                    <table className="table table-hover table-striped table-bordered align-middle mb-0">
                       <thead className="bg-light">
                         <tr>
                           <th className="text-center" style={{ width: "60px" }}>
@@ -169,19 +157,26 @@ const Modal = ({ detail }) => {
                               <td>{student.student_name}</td>
                               <td className="text-center">
                                 {student.isactive ? (
-                                  <span className="badge bg-primary bg-opacity-10 text-primary">
+                                  <span className="badge rounded-pill bg-primary bg-opacity-25 text-primary px-3 py-2 fw-normal">
                                     Aktif
                                   </span>
                                 ) : (
-                                  <span className="badge bg-success bg-opacity-10 text-success">
+                                  <span className="badge rounded-pill bg-success bg-opacity-25 text-success px-3 py-2 fw-normal">
                                     Lulus
                                   </span>
                                 )}
                               </td>
                               <td className="text-center">
                                 <button
-                                  className="btn btn-sm btn-outline-danger"
+                                  className="btn btn-sm btn-outline-danger d-flex align-items-center justify-content-center gap-1"
                                   disabled={isLoading}
+                                  style={{ transition: "0.2s" }}
+                                  onMouseOver={(e) =>
+                                    e.currentTarget.classList.add("shadow")
+                                  }
+                                  onMouseOut={(e) =>
+                                    e.currentTarget.classList.remove("shadow")
+                                  }
                                   onClick={() => deleteHandler(student.id)}
                                 >
                                   <i className="bi bi-person-dash"></i>
@@ -206,17 +201,20 @@ const Modal = ({ detail }) => {
               </div>
             </div>
           </div>
-          <div className="modal-footer border-top">
-            <button className="btn btn-outline-primary" onClick={download}>
-              <i className="bi bi-download me-2"></i>
+          <div className="modal-footer border-top bg-white px-4 py-3 d-flex justify-content-between align-items-center">
+            <button
+              className="btn btn-outline-primary d-flex align-items-center gap-2"
+              onClick={download}
+            >
+              <i className="bi bi-download"></i>
               Template
             </button>
             <button
-              className="btn btn-success"
+              className="btn btn-success d-flex align-items-center gap-2"
               disabled={isLoadingGraduated}
               onClick={changeStatusHandler}
             >
-              <i className="bi bi-mortarboard me-2"></i>
+              <i className="bi bi-mortarboard"></i>
               Luluskan
             </button>
           </div>

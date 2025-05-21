@@ -79,39 +79,6 @@ router.post("/add-student", authorize("admin"), async (req, res) => {
   }
 });
 
-router.post("/upload-students", authorize("admin"), async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const students = req.body;
-    const password = "12345678";
-    const hash = await bcrypt.hash(password, 10);
-    const homebase = req.user.homebase;
-
-    await client.query("BEGIN");
-
-    await Promise.all(
-      students.map(async (student) => {
-        await client.query(
-          `INSERT INTO u_students(homebase, entry, nis, name, gender, password)
-					VALUES($1, $2, $3, $4, $5, $6)`,
-          [homebase, student[0], student[1], student[2], student[3], hash]
-        );
-      })
-    );
-
-    await client.query("COMMIT");
-    res
-      .status(200)
-      .json({ message: `${students?.length} Siswa berhasil disimpan` });
-  } catch (error) {
-    await client.query("ROLLBACK");
-    console.log(error);
-    res.status(500).json({ message: error.message });
-  } finally {
-    client.release();
-  }
-});
-
 router.get("/get-students", authorize("admin"), async (req, res) => {
   const client = await pool.connect();
   try {

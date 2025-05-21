@@ -2,15 +2,12 @@ import React, { useState } from "react";
 import Layout from "../../../components/layout/Layout";
 import Form from "./Form";
 import TableData from "./TableData";
-import Upload from "./Upload";
 
 const AdminStudents = () => {
   const [detail, setDetail] = useState("");
   return (
     <Layout title={"Siswa"} levels={["admin"]}>
       <Form detail={detail} setDetail={setDetail} />
-
-      <Upload />
 
       <TableData setDetail={setDetail} />
     </Layout>

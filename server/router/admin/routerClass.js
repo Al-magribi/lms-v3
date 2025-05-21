@@ -250,7 +250,7 @@ router.post("/add-student", authorize("admin"), async (req, res) => {
 router.post("/upload-students", authorize("admin"), async (req, res) => {
   const client = await pool.connect();
   try {
-    const { students, classid } = req.body;
+    const students = req.body;
     const homebase = req.user.homebase;
     const password = "12345678";
     const hash = await bcrypt.hash(password, 10);
@@ -263,118 +263,95 @@ router.post("/upload-students", authorize("admin"), async (req, res) => {
     );
     const periodeid = periode.rows[0].id;
 
-    // Cek duplikasi NIS
-    const duplicateList = [];
-    await Promise.all(
-      students.map(async (student) => {
-        const nis = student[1];
-        const name = student[2];
-        const check = await client.query(
-          `SELECT id FROM u_students WHERE nis = $1 AND homebase = $2`,
-          [nis, homebase]
+    // Prepare result containers
+    const duplicatedNIS = [];
+    const alreadyRegistered = [];
+    const uploaded = [];
+    const invalidData = [];
+
+    // 1. Cek dan insert ke u_students jika belum ada
+    for (const student of students) {
+      // student: [entry, nis, name, gender, classid]
+      const entry = student[0];
+      const nis = student[1];
+      const name = student[2];
+      const gender = student[3];
+      const classid = student[4];
+
+      // Basic validation
+      if (!nis || !name || !gender || !classid) {
+        invalidData.push({ nis, name, reason: "Data tidak lengkap" });
+        continue;
+      }
+
+      // Cek duplikasi di u_students
+      const check = await client.query(
+        `SELECT id FROM u_students WHERE nis = $1 AND homebase = $2`,
+        [nis, homebase]
+      );
+      let studentId;
+      if (check.rowCount > 0) {
+        studentId = check.rows[0].id;
+        duplicatedNIS.push({ nis, name });
+      } else {
+        // Insert ke u_students
+        const insert = await client.query(
+          `INSERT INTO u_students(homebase, entry, nis, name, gender, password, periode)
+            VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+          [homebase, entry, nis, name, gender, hash, periodeid]
         );
-        if (check.rowCount > 0) {
-          duplicateList.push({ nis, name });
-        }
-      })
-    );
-    if (duplicateList.length > 0) {
-      await client.query("ROLLBACK");
-      const duplicateMsg = duplicateList
-        .map((d) => `${d.nis} (${d.name})`)
-        .join(", ");
-      return res.status(400).json({
-        message: `Terdapat NIS duplikat, data berikut sudah terdaftar: ${duplicateMsg}`,
-      });
+        studentId = insert.rows[0].id;
+      }
+
+      // 2. Cek apakah sudah terdaftar di cl_students
+      const checkStudent = await client.query(
+        `SELECT classid FROM cl_students WHERE student = $1 AND homebase = $2`,
+        [studentId, homebase]
+      );
+      if (checkStudent.rowCount > 0) {
+        // Sudah terdaftar di kelas mana
+        const checkClass = await client.query(
+          `SELECT name FROM a_class WHERE id = $1 AND homebase = $2`,
+          [checkStudent.rows[0].classid, homebase]
+        );
+        alreadyRegistered.push({
+          nis,
+          name,
+          className: checkClass.rows[0].name,
+        });
+        continue;
+      }
+
+      // 3. Insert ke cl_students pakai classid dari array
+      await client.query(
+        `INSERT INTO cl_students(periode, classid, student, student_name, homebase)
+          VALUES($1, $2, $3, $4, $5)`,
+        [periodeid, classid, studentId, name, homebase]
+      );
+      uploaded.push({ nis, name });
     }
-
-    // 1. Insert ke u_students jika belum ada
-    await Promise.all(
-      students.map(async (student) => {
-        // student: [entry, nis, name, gender]
-        const entry = student[0];
-        const nis = student[1];
-        const name = student[2];
-        const gender = student[3];
-        const check = await client.query(
-          `SELECT id FROM u_students WHERE nis = $1 AND homebase = $2`,
-          [nis, homebase]
-        );
-        if (check.rowCount === 0) {
-          await client.query(
-            `INSERT INTO u_students(homebase, entry, nis, name, gender, password, periode)
-              VALUES($1, $2, $3, $4, $5, $6, $7)`,
-            [homebase, entry, nis, name, gender, hash, periodeid]
-          );
-        }
-      })
-    );
-
-    // 2. Ambil data siswa dari u_students
-    const studentData = await Promise.all(
-      students.map(async (student) => {
-        const nis = student[1];
-        const user = await client.query(
-          `SELECT id, name FROM u_students WHERE nis = $1 AND homebase = $2`,
-          [nis, homebase]
-        );
-        return user.rowCount > 0
-          ? { id: user.rows[0].id, name: user.rows[0].name }
-          : null;
-      })
-    );
-    const validStudents = studentData.filter((student) => student !== null);
-
-    // 3. Cek apakah siswa sudah terdaftar di cl_students
-    const alreadyRegistered = await Promise.all(
-      validStudents.map(async (student) => {
-        const checkStudent = await client.query(
-          `SELECT classid FROM cl_students WHERE student = $1 AND homebase = $2`,
-          [student.id, homebase]
-        );
-        if (checkStudent.rowCount > 0) {
-          const checkClass = await client.query(
-            `SELECT name FROM a_class WHERE id = $1 AND homebase = $2`,
-            [checkStudent.rows[0].classid, homebase]
-          );
-          return {
-            studentName: student.name,
-            className: checkClass.rows[0].name,
-          };
-        }
-        return null;
-      })
-    );
-    const registeredStudents = alreadyRegistered.filter((s) => s !== null);
-    const newStudents = validStudents.filter(
-      (student) =>
-        !registeredStudents.some((s) => s.studentName === student.name)
-    );
-
-    // 4. Masukkan siswa baru ke cl_students
-    await Promise.all(
-      newStudents.map(async (student) => {
-        await client.query(
-          `INSERT INTO cl_students(periode, classid, student, student_name, homebase)
-            VALUES($1, $2, $3, $4, $5)`,
-          [periodeid, classid, student.id, student.name, homebase]
-        );
-      })
-    );
 
     await client.query("COMMIT");
 
-    if (registeredStudents.length > 0) {
-      const registeredMessage = registeredStudents
-        .map((s) => `${s.studentName} sudah terdaftar di kelas ${s.className}`)
-        .join(", ");
-      return res.status(400).json({
-        message: `Beberapa siswa sudah terdaftar: ${registeredMessage}`,
-        registeredStudents,
-      });
+    // Tentukan status response
+    let status = 200;
+    let message = "Students uploaded successfully";
+    if (
+      invalidData.length > 0 ||
+      duplicatedNIS.length > 0 ||
+      alreadyRegistered.length > 0
+    ) {
+      status = 207; // Multi-Status
+      message = "Sebagian siswa berhasil diupload. Lihat detail.";
     }
 
-    res.status(200).json({ message: "Students uploaded successfully" });
+    return res.status(status).json({
+      message,
+      uploaded,
+      duplicatedNIS,
+      alreadyRegistered,
+      invalidData,
+    });
   } catch (error) {
     await client.query("ROLLBACK");
     console.log(error);

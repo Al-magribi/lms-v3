@@ -64,21 +64,21 @@ const TableData = ({ setDetail }) => {
           classes.map((item, i) => (
             <div key={i} className="col-12 col-md-6 col-lg-4 col-xl-3">
               <div className="card bg-white border rounded-4 shadow-sm hover-shadow h-100 position-relative">
-                <span
-                  className="position-absolute top-0 end-0 badge bg-primary rounded-pill m-2"
-                  style={{ fontSize: 13, zIndex: 2 }}
-                >
-                  #{(page - 1) * limit + i + 1}
-                </span>
                 <div className="card-body p-4 d-flex flex-column h-100">
                   <div className="d-flex align-items-start justify-content-between mb-3">
                     <div className="d-flex flex-column gap-2">
-                      <h4
-                        className="fw-bold text-primary mb-1"
-                        style={{ fontSize: 22 }}
-                      >
-                        {item.name}
-                      </h4>
+                      <div className="d-flex flex-column align-items-start">
+                        <span className="badge bg-secondary bg-opacity-10 text-secondary fst-italic">
+                          _id: {item.id}
+                        </span>
+
+                        <h4
+                          className="fw-bold text-primary m-0"
+                          style={{ fontSize: 22 }}
+                        >
+                          {item.name}
+                        </h4>
+                      </div>
                       <div className="d-flex align-items-center gap-2">
                         <i className="bi bi-mortarboard text-success"></i>
                         <span className="text-muted small">
@@ -120,7 +120,7 @@ const TableData = ({ setDetail }) => {
                             data-bs-target="#modal-add"
                             onClick={() => setClass(item)}
                           >
-                            <i className="bi bi-folder-plus"></i> Siswa
+                            <i className="bi bi-people-fill"></i> Siswa
                           </button>
                         </li>
                         <li>

@@ -173,35 +173,32 @@ const TableData = ({ setDetail }) => {
                       </ul>
                     </div>
                   </div>
-                  <div>
-                    <div className="d-flex flex-wrap gap-2 align-items-center mb-1">
-                      <div className="d-flex align-items-center gap-2">
-                        <i className="bi bi-calendar-event text-primary"></i>
-                        <span className="small">
-                          Tahun Ajaran: <b>{student.periode_name}</b>
-                        </span>
-                      </div>
-                      <div className="d-flex align-items-center gap-2">
-                        <i className="bi bi-calendar-plus text-primary"></i>
-                        <span className="small">
-                          Tahun Masuk: <b>{student.entry}</b>
-                        </span>
-                      </div>
+
+                  <div className="d-flex flex-column gap-2">
+                    <div className="d-flex align-items-center gap-2">
+                      <i className="bi bi-calendar-event text-primary"></i>
+                      <span className="small">
+                        Tahun Ajaran: <b>{student.periode_name}</b>
+                      </span>
+                    </div>
+                    <div className="d-flex align-items-center gap-2">
+                      <i className="bi bi-calendar-plus text-primary"></i>
+                      <span className="small">
+                        Tahun Masuk: <b>{student.entry}</b>
+                      </span>
                     </div>
 
-                    <div className="d-flex flex-wrap gap-2 align-items-center mb-1">
-                      <div className="d-flex align-items-center gap-2">
-                        <i className="bi bi-building text-primary"></i>
-                        <span className="small">
-                          Satuan: <b>{student.homebase}</b>
-                        </span>
-                      </div>
-                      <div className="d-flex align-items-center gap-2">
-                        <i className="bi bi-mortarboard-fill text-primary"></i>
-                        <span className="small">
-                          Kelas: <b>{student.classname}</b>
-                        </span>
-                      </div>
+                    <div className="d-flex align-items-center gap-2">
+                      <i className="bi bi-building text-primary"></i>
+                      <span className="small">
+                        Satuan: <b>{student.homebase}</b>
+                      </span>
+                    </div>
+                    <div className="d-flex align-items-center gap-2">
+                      <i className="bi bi-mortarboard-fill text-primary"></i>
+                      <span className="small">
+                        Kelas: <b>{student.classname}</b>
+                      </span>
                     </div>
 
                     <div className="d-flex align-items-center gap-2 mb-1">
@@ -220,13 +217,11 @@ const TableData = ({ setDetail }) => {
                       </span>
                     </div>
                   </div>
+
+                  <p className="m-0 text-muted small text-end">
+                    #{(page - 1) * limit + i + 1}
+                  </p>
                 </div>
-                <span
-                  className="position-absolute top-0 end-0 badge bg-primary rounded-pill m-2"
-                  style={{ fontSize: 13 }}
-                >
-                  #{(page - 1) * limit + i + 1}
-                </span>
               </div>
             </div>
           ))
@@ -239,32 +234,6 @@ const TableData = ({ setDetail }) => {
           </div>
         )}
       </div>
-      {/* Footer untuk ganti tahun ajaran */}
-      {/* <div className="d-flex align-items-center justify-content-end gap-2 mt-4">
-        <select
-          style={{ width: "20%" }}
-          className="form-select"
-          value={selectedPeriode}
-          onChange={updatePeriode}
-        >
-          <option value="" hidden>
-            Ganti Tahun Ajaran
-          </option>
-          {periodes?.map((periode) => (
-            <option key={periode.id} value={periode.id}>
-              {periode.name}
-            </option>
-          ))}
-        </select>
-        <button
-          className="btn btn-success"
-          onClick={handleSavePeriode}
-          disabled={isChanging || !selectedPeriode}
-        >
-          <i className="bi bi-save me-2"></i>
-          {isChanging ? "Menyimpan..." : "Simpan"}
-        </button>
-      </div> */}
     </Table>
   );
 };

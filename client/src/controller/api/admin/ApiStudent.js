@@ -33,14 +33,6 @@ export const ApiStudent = createApi({
       }),
       invalidatesTags: ["students"],
     }),
-    uploadStudents: builder.mutation({
-      query: (body) => ({
-        url: "/upload-students",
-        method: "POST",
-        body,
-      }),
-      invalidatesTags: ["students"],
-    }),
     changeStatus: builder.mutation({
       query: (id) => ({
         url: "/change-status",
@@ -78,7 +70,6 @@ export const {
   useAddStudentMutation,
   useGetStudentsQuery,
   useDeleteStudentMutation,
-  useUploadStudentsMutation,
   useChangeStatusMutation,
   useGraduatedMutation,
   useChangePeriodeMutation,

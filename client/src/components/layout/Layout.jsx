@@ -237,6 +237,15 @@ const Layout = ({ children, title, desc, levels }) => {
                     <i className="bi bi-plus-lg"></i>
                     <span className="ms-2">Kelas</span>
                   </button>
+
+                  <button
+                    className="btn btn-sm btn-outline-success"
+                    data-bs-toggle="modal"
+                    data-bs-target="#uploadstudents"
+                  >
+                    <i className="bi bi-file-earmark-arrow-up-fill"></i>
+                    <span className="ms-2">Upload Siswa</span>
+                  </button>
                 </div>
               )}
 
