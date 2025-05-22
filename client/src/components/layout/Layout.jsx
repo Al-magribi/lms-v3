@@ -33,6 +33,13 @@ const Layout = ({ children, title, desc, levels }) => {
   const [logout, { isSuccess, isLoading, error, reset }] = useLogoutMutation();
   const { data: appData } = useGetAppQuery();
 
+  const truncateName = (name) => {
+    if (!name) return "";
+    return windowWidth < 768 && name.length > 16
+      ? `${name.substring(0, 16)}...`
+      : name;
+  };
+
   const logoutHandler = () => {
     toast.promise(
       logout()
@@ -139,7 +146,7 @@ const Layout = ({ children, title, desc, levels }) => {
             }
           >
             <i className="bi bi-person-circle me-2"></i>
-            <h5 className="mb-0">{user?.name}</h5>
+            <h5 className="mb-0">{truncateName(user?.name)}</h5>
           </a>
           <button
             className="navbar-toggler"

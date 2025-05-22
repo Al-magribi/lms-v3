@@ -134,6 +134,13 @@ const Table = ({
 
         {/* Pagination and Info */}
         <div className="d-flex align-items-center justify-content-between flex-wrap gap-3">
+          <div className="d-flex align-items-center gap-2">
+            <span className="text-muted">Total Data:</span>
+            <span className="fw-semibold">
+              {parseFloat(totalData).toLocaleString("id-ID")}
+            </span>
+          </div>
+
           <nav aria-label="Page navigation example" className="m-0">
             <ul className="pagination pagination-sm mb-0">
               <li className={`page-item ${page === 1 ? "disabled" : ""}`}>
@@ -183,13 +190,6 @@ const Table = ({
               </li>
             </ul>
           </nav>
-
-          <div className="d-flex align-items-center gap-2">
-            <span className="text-muted">Total Data:</span>
-            <span className="fw-semibold">
-              {parseFloat(totalData).toLocaleString("id-ID")}
-            </span>
-          </div>
         </div>
       </div>
     </div>

@@ -35,6 +35,8 @@ import { ApiAnswer } from "./api/cbt/ApiAnswer";
 // LMS
 import { ApiChapter } from "./api/lms/ApiChapter";
 import { ApiLms } from "./api/lms/ApiLms";
+import { ApiPresensi } from "./api/lms/ApiPresensi";
+
 // Tahfiz
 import { ApiQuran } from "./api/tahfiz/ApiQuran";
 import { ApiScoring } from "./api/tahfiz/ApiScoring";
@@ -51,6 +53,8 @@ import { ApiArea } from "./api/database/ApiArea";
 
 // Logs
 import { ApiLog } from "./api/log/ApiLog";
+
+const isDevelopment = import.meta.env.VITE_MODE === "development";
 
 const store = configureStore({
   reducer: {
@@ -84,6 +88,7 @@ const store = configureStore({
 
     [ApiChapter.reducerPath]: ApiChapter.reducer,
     [ApiLms.reducerPath]: ApiLms.reducer,
+    [ApiPresensi.reducerPath]: ApiPresensi.reducer,
 
     [ApiQuran.reducerPath]: ApiQuran.reducer,
     [ApiScoring.reducerPath]: ApiScoring.reducer,
@@ -129,6 +134,8 @@ const store = configureStore({
 
       ApiChapter.middleware,
       ApiLms.middleware,
+      ApiPresensi.middleware,
+
       ApiQuran.middleware,
       ApiScoring.middleware,
       ApiExaminer.middleware,
@@ -142,6 +149,7 @@ const store = configureStore({
       ApiDatabase.middleware,
       ApiArea.middleware,
     ]),
+  devTools: isDevelopment,
 });
 
 export default store;

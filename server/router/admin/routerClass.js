@@ -362,7 +362,7 @@ router.post("/upload-students", authorize("admin"), async (req, res) => {
 });
 
 // Mangambil data siswa dalam kelas
-router.get("/get-students", authorize("admin"), async (req, res) => {
+router.get("/get-students", authorize("admin", "teacher"), async (req, res) => {
   const client = await pool.connect();
   try {
     const { page, limit, search, classid } = req.query;
