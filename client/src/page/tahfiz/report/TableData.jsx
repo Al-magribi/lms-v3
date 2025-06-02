@@ -6,6 +6,7 @@ import {
 } from "../../../controller/api/tahfiz/ApiReport";
 import Detail from "./Detail";
 import { toast } from "react-hot-toast";
+import { useMediaQuery } from "react-responsive";
 
 const TableData = ({ type }) => {
   const [page, setPage] = useState(1);
@@ -23,6 +24,8 @@ const TableData = ({ type }) => {
   });
   const { report = [], totalData, totalPages } = data;
   const [deleteReport, { isLoading: delLoading }] = useDeleteReportMutation();
+
+  const isMobile = useMediaQuery({ maxWidth: 768 });
 
   const openModal = (data, id) => {
     setDetail(data);
@@ -47,7 +50,71 @@ const TableData = ({ type }) => {
     }
   };
 
-  return (
+  const renderMobileCard = (item) => (
+    <div
+      key={item.id}
+      className="card mb-3 shadow-sm animate__animated animate__fadeIn"
+    >
+      <div className="card-body">
+        <div className="d-flex justify-content-between align-items-center mb-2">
+          <h6 className="card-subtitle text-muted">
+            <i className="bi bi-calendar-event me-1"></i>
+            {new Date(item.date).toLocaleDateString()}
+          </h6>
+          <span className="badge bg-primary rounded-pill px-3">
+            <i className="bi bi-star-fill me-1"></i>
+            {item.totalPoints}
+          </span>
+        </div>
+
+        <h5 className="card-title d-flex align-items-center">
+          <i className="bi bi-person-circle me-2"></i>
+          {item.name}
+          <small className="text-muted ms-2">({item.nis})</small>
+        </h5>
+
+        <div className="mt-3">
+          <div className="d-flex align-items-center mb-2">
+            <i className="bi bi-mortarboard-fill text-secondary me-2"></i>
+            <span>{item.class}</span>
+          </div>
+          <div className="d-flex align-items-center mb-2">
+            <i className="bi bi-journal-text text-secondary me-2"></i>
+            <span>{item.type}</span>
+          </div>
+          <div className="d-flex align-items-center mb-2">
+            <i className="bi bi-book-fill text-secondary me-2"></i>
+            <span>{item.examiner}</span>
+          </div>
+        </div>
+
+        <div className="d-grid gap-2 d-flex mt-3">
+          <button
+            className="btn btn-primary flex-grow-1 d-flex align-items-center justify-content-center gap-2"
+            onClick={() => openModal(item, item.id)}
+          >
+            <i className="bi bi-eye-fill"></i>
+            <span>Detail</span>
+          </button>
+          <button
+            className="btn btn-danger flex-grow-1 d-flex align-items-center justify-content-center gap-2"
+            onClick={() =>
+              deleteHandler(
+                item.userid,
+                item.type_id,
+                new Date(item.date).toLocaleDateString()
+              )
+            }
+          >
+            <i className="bi bi-trash"></i>
+            <span>Hapus</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderDesktopTable = () => (
     <Table
       isLoading={isLoading}
       totalData={totalData}
@@ -73,63 +140,46 @@ const TableData = ({ type }) => {
             <th className="align-middle text-center">Aksi</th>
           </tr>
         </thead>
-        {report?.length === 0 ? (
-          <tbody>
-            <tr>
-              <td colSpan={11}>Belum ada data</td>
+        <tbody>
+          {report?.map((item, index) => (
+            <tr key={index}>
+              <td className="text-center align-middle">{index + 1}</td>
+              <td className="text-center align-middle">
+                {new Date(item.date).toLocaleDateString()}
+              </td>
+              <td className="text-center align-middle">{item.nis}</td>
+              <td className="text-start align-middle">{item.name}</td>
+              <td className="text-center align-middle">{item.grade}</td>
+              <td className="text-center align-middle">{item.class}</td>
+              <td className="text-center align-middle">{item.type}</td>
+              <td className="text-center align-middle">{item.totalPoints}</td>
+              <td className="text-center align-middle">{item.examiner}</td>
+              <td className="align-middle">
+                <div className="d-flex justify-content-center gap-2">
+                  <button
+                    className="btn btn-sm btn-primary"
+                    onClick={() => openModal(item, item.id)}
+                    title="Lihat Detail"
+                  >
+                    <i className="bi bi-eye-fill"></i>
+                  </button>
+                  <button
+                    className="btn btn-sm btn-danger"
+                    onClick={() =>
+                      deleteHandler(
+                        item.userid,
+                        item.type_id,
+                        new Date(item.date).toLocaleDateString()
+                      )
+                    }
+                  >
+                    <i className="bi bi-trash"></i>
+                  </button>
+                </div>
+              </td>
             </tr>
-          </tbody>
-        ) : isLoading ? (
-          <tbody>
-            <tr>
-              <td>Loading..</td>
-            </tr>
-          </tbody>
-        ) : (
-          <tbody>
-            {report?.map((data, index) => (
-              <tr key={index}>
-                <td className="text-center align-middle">{index + 1}</td>
-                <td className="text-center align-middle">
-                  {new Date(data.date).toLocaleDateString()}
-                </td>
-                <td className="text-center align-middle">{data.nis}</td>
-                <td className="text-start align-middle">{data.name}</td>
-                <td className="text-center align-middle">{data.grade}</td>
-                <td className="text-center align-middle">{data.class}</td>
-                <td className="text-center align-middle">{data.type}</td>
-                <td className="text-center align-middle">{data.totalPoints}</td>
-                <td className="text-center align-middle">{data.examiner}</td>
-                <td className="align-middle">
-                  <div className="d-flex justify-content-center gap-2">
-                    <button
-                      className="btn btn-sm btn-primary"
-                      data-bs-toggle="modal"
-                      data-bs-target={`#modal-${data.id}`}
-                      onClick={() => openModal(data, data.id)}
-                      title="Lihat Detail"
-                    >
-                      <i className="bi bi-eye-fill"></i>
-                    </button>
-
-                    <button
-                      className="btn btn-sm btn-danger"
-                      onClick={() =>
-                        deleteHandler(
-                          data.userid,
-                          data.type_id,
-                          new Date(data.date).toLocaleDateString()
-                        )
-                      }
-                    >
-                      <i className="bi bi-trash"></i>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        )}
+          ))}
+        </tbody>
       </table>
 
       {report?.map((data, index) => (
@@ -141,6 +191,31 @@ const TableData = ({ type }) => {
         />
       ))}
     </Table>
+  );
+
+  return (
+    <div className="container-fluid">
+      {isMobile ? (
+        <div className="px-2">
+          {isLoading ? (
+            <div className="text-center py-4">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          ) : report?.length === 0 ? (
+            <div className="text-center py-4 text-muted">
+              <i className="bi bi-inbox-fill fs-1"></i>
+              <p className="mt-2">Belum ada data</p>
+            </div>
+          ) : (
+            report?.map(renderMobileCard)
+          )}
+        </div>
+      ) : (
+        renderDesktopTable()
+      )}
+    </div>
   );
 };
 

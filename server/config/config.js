@@ -22,22 +22,19 @@ const config = {
   user: process.env.P_USER,
   password: process.env.P_PASSWORD,
   host: process.env.P_HOST,
+  port: process.env.P_PORT,
   database: process.env.P_DATABASE,
-  port: 5432,
-  max: 5000,
-  min: 1000,
-  idleTimeoutMillis: 300000,
-  connectionTimeoutMillis: 60000,
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
+  maxUses: 7500,
   application_name: "LMS-V3",
   statement_timeout: 120000,
   query_timeout: 120000,
   prepare: true,
   keepalive: true,
   keepaliveInitialDelayMillis: 10000,
-  maxUses: 7500,
-  allowExitOnIdle: true,
   maxWaitingClients: 5000,
-  connectionTimeoutMillis: 30000,
   idleInTransactionSessionTimeout: 60000,
 };
 
@@ -110,6 +107,9 @@ pool.on("error", (err, client) => {
       connectToDatabase();
     }, 5000);
   }
+
+  console.error("Unexpected error on idle client", err);
+  process.exit(-1);
 });
 
 pool.on("connect", (client) => {
@@ -128,9 +128,9 @@ pool.on("remove", (client) => {
   console.log(`[${stats.timestamp}] Client dihapus dari pool. Status:`, stats);
 
   // Log warning if pool is getting exhausted
-  if (stats.total < config.min) {
+  if (stats.total < config.max) {
     console.warn(
-      `[${stats.timestamp}] WARNING: Pool size below minimum (${stats.total}/${config.min})`
+      `[${stats.timestamp}] WARNING: Pool size below minimum (${stats.total}/${config.max})`
     );
   }
 });

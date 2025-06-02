@@ -26,9 +26,8 @@ const Achievement = () => {
   const [modalData, setModalData] = useState({
     students: [],
     gradeName: "",
+    className: "",
   });
-
-  console.log(data);
 
   if (isLoading || !data) return <div>Loading...</div>;
 
@@ -62,7 +61,13 @@ const Achievement = () => {
           <div className="card-body">
             {periode.grade.map((grade, gradeIndex) => (
               <div key={gradeIndex} className="mb-4">
-                <h5>{grade.name}</h5>
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <h5>{grade.name}</h5>
+                  <div className="badge bg-primary">
+                    {grade.achievement}% Ketuntasan Total
+                  </div>
+                </div>
+
                 <div className="row">
                   <div className="col-md-4">
                     <div className="card mb-3">
@@ -75,24 +80,23 @@ const Achievement = () => {
                                 {target.juz}
                               </span>
                               <small className="badge bg-danger">
-                                {target.verses} Ayat | {target.lines} Baris
+                                {target.lines} Baris
                               </small>
                             </div>
                           </div>
                         ))}
                       </div>
                     </div>
-                  </div>
-                  <div className="col-md-8">
+
                     <div className="card mb-3">
                       <div className="card-body">
-                        <h6>Pencapaian Target hafalan</h6>
+                        <h6>Statistik Grade</h6>
                         <div className="mb-3">
                           <div className="d-flex justify-content-between mb-1">
-                            <span>Progress Ketuntasan</span>
+                            <span>Ketuntasan Target</span>
                             <span>{grade.achievement}%</span>
                           </div>
-                          <div className="progress">
+                          <div className="progress mb-3">
                             <div
                               className={`progress-bar ${
                                 grade.achievement >= 75
@@ -110,26 +114,8 @@ const Achievement = () => {
                               {grade.achievement}%
                             </div>
                           </div>
-                        </div>
-                        <div className="row text-center">
-                          <div className="col">
-                            <div className="h5 mb-0">{grade.completed}</div>
-                            <small className="text-success">Tuntas</small>
-                          </div>
-                          <div className="col">
-                            <div className="h5 mb-0">{grade.uncompleted}</div>
-                            <small className="text-danger">Belum Tuntas</small>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="card mb-3">
-                      <div className="card-body">
-                        <h6>Pencapaian Melebihi Target</h6>
-                        <div className="mb-3">
                           <div className="d-flex justify-content-between mb-1">
-                            <span>Progress Ketuntasan</span>
+                            <span>Melebihi Target</span>
                             <span>{grade.exceed_achievement}%</span>
                           </div>
                           <div className="progress">
@@ -151,40 +137,115 @@ const Achievement = () => {
                             </div>
                           </div>
                         </div>
-                        <div className="row text-center">
-                          <div className="col">
-                            <div className="h5 mb-0">
-                              {grade.exceed_completed}
+                        <div className="row text-center g-2">
+                          <div className="col-6">
+                            <div className="border rounded p-2">
+                              <div className="h5 mb-0">{grade.completed}</div>
+                              <small className="text-success">Tuntas</small>
                             </div>
-                            <small className="text-success">
-                              Melebihi Target
-                            </small>
                           </div>
-                          <div className="col">
-                            <div className="h5 mb-0">
-                              {grade.exceed_uncompleted}
+                          <div className="col-6">
+                            <div className="border rounded p-2">
+                              <div className="h5 mb-0">{grade.uncompleted}</div>
+                              <small className="text-danger">
+                                Belum Tuntas
+                              </small>
                             </div>
-                            <small className="text-danger">
-                              Belum Melebihi
-                            </small>
                           </div>
-                        </div>
-                        <div className="text-center mt-3">
-                          <button
-                            className="btn btn-sm btn-primary"
-                            data-bs-toggle="modal"
-                            data-bs-target="#detail-student"
-                            onClick={() =>
-                              setModalData({
-                                students: grade.students,
-                                gradeName: grade.name,
-                              })
-                            }
-                          >
-                            Lihat Detail Siswa
-                          </button>
+                          <div className="col-6">
+                            <div className="border rounded p-2">
+                              <div className="h5 mb-0">
+                                {grade.exceed_completed}
+                              </div>
+                              <small className="text-success">
+                                Melebihi Target
+                              </small>
+                            </div>
+                          </div>
+                          <div className="col-6">
+                            <div className="border rounded p-2">
+                              <div className="h5 mb-0">
+                                {grade.exceed_uncompleted}
+                              </div>
+                              <small className="text-danger">
+                                Belum Melebihi
+                              </small>
+                            </div>
+                          </div>
                         </div>
                       </div>
+                    </div>
+                  </div>
+
+                  <div className="col-md-8">
+                    <div className="row">
+                      {grade.classes.map((classItem, classIndex) => (
+                        <div key={classIndex} className="col-md-6 mb-3">
+                          <div className="card h-100">
+                            <div className="card-header">
+                              <h6 className="mb-0">{classItem.class_name}</h6>
+                            </div>
+                            <div className="card-body">
+                              <div className="row text-center g-2 mb-3">
+                                <div className="col-6">
+                                  <div className="border rounded p-2">
+                                    <div className="h6 mb-0">
+                                      {classItem.completed}
+                                    </div>
+                                    <small className="text-success">
+                                      Tuntas
+                                    </small>
+                                  </div>
+                                </div>
+                                <div className="col-6">
+                                  <div className="border rounded p-2">
+                                    <div className="h6 mb-0">
+                                      {classItem.uncompleted}
+                                    </div>
+                                    <small className="text-danger">
+                                      Belum Tuntas
+                                    </small>
+                                  </div>
+                                </div>
+                                <div className="col-6">
+                                  <div className="border rounded p-2">
+                                    <div className="h6 mb-0">
+                                      {classItem.exceed_completed}
+                                    </div>
+                                    <small className="text-success">
+                                      Melebihi Target
+                                    </small>
+                                  </div>
+                                </div>
+                                <div className="col-6">
+                                  <div className="border rounded p-2">
+                                    <div className="h6 mb-0">
+                                      {classItem.exceed_uncompleted}
+                                    </div>
+                                    <small className="text-danger">
+                                      Belum Melebihi
+                                    </small>
+                                  </div>
+                                </div>
+                              </div>
+                              <button
+                                className="btn btn-sm btn-primary w-100"
+                                data-bs-toggle="modal"
+                                data-bs-target="#detail-student"
+                                onClick={() =>
+                                  setModalData({
+                                    students: classItem.students,
+                                    gradeName: grade.name,
+                                    className: classItem.class_name,
+                                  })
+                                }
+                              >
+                                Lihat Detail Siswa
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -239,6 +300,7 @@ const Achievement = () => {
       <StudentDetail
         students={modalData.students}
         gradename={modalData.gradeName}
+        classname={modalData.className}
       />
     </div>
   );
