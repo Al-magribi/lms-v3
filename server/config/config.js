@@ -24,7 +24,7 @@ const config = {
   host: process.env.P_HOST,
   port: process.env.P_PORT,
   database: process.env.P_DATABASE,
-  max: 20,
+  max: 2000,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 10000,
   maxUses: 7500,
