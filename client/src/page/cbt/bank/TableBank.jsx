@@ -77,16 +77,23 @@ const TableBank = ({ setDetail }) => {
                         <i className="bi bi-person text-primary fs-4"></i>
                       </div>
                       <div className="d-flex flex-column">
-                        <h5
-                          className="fw-bold text-primary mb-1"
-                          style={{ fontSize: 18 }}
+                        <h6
+                          title={item.name}
+                          className="fw-bold text-primary mb-1 pointer"
                         >
-                          {item.name}
-                        </h5>
+                          {item.name.length > 20
+                            ? `${item.name.slice(0, 20)}...`
+                            : item.name}
+                        </h6>
 
                         <div className="d-flex gap-2 align-items-center">
-                          <span className="text-muted small">
-                            {item.teacher_name}
+                          <span
+                            title={item.teacher_name}
+                            className="text-muted small pointer"
+                          >
+                            {item.teacher_name.length > 20
+                              ? `${item.teacher_name.slice(0, 20)}...`
+                              : item.teacher_name}
                           </span>
 
                           <div className="vr"></div>

@@ -106,9 +106,15 @@ const TableExam = ({ setDetail }) => {
                       </div>
 
                       <div className="d-flex flex-column gap-2">
-                        <div className="d-flex flex-column align-items-start">
-                          <h4 className="lh-1 text-primary m-0">{exam.name}</h4>
-
+                        <div className="d-flex gap-2 flex-column align-items-start">
+                          <h6
+                            title={exam.name}
+                            className="lh-1 text-primary m-0 pointer"
+                          >
+                            {exam.name.length > 20
+                              ? `${exam.name.slice(0, 20)}...`
+                              : exam.name}
+                          </h6>
                           <span
                             className="badge bg-secondary pointer"
                             data-toggle="tooltip"
@@ -121,8 +127,13 @@ const TableExam = ({ setDetail }) => {
                         </div>
 
                         <div className="d-flex gap-2">
-                          <span className="text-muted small">
-                            {exam.teacher_name}
+                          <span
+                            title={exam.teacher_name}
+                            className="text-muted small pointer"
+                          >
+                            {exam.teacher_name.length > 20
+                              ? `${exam.teacher_name.slice(0, 20)}...`
+                              : exam.teacher_name}
                           </span>
                           <div className="vr" />
                           <div className="d-flex flex-wrap gap-2">
@@ -200,10 +211,22 @@ const TableExam = ({ setDetail }) => {
                     </div>
                     <div className="d-flex flex-column gap-1">
                       {exam.banks.map((bank, idx) => (
-                        <span key={idx} className="fs-5 fw-bold text-secondary">
+                        <span
+                          key={idx}
+                          className="fs-6 fw-bold text-secondary pointer"
+                          title={bank.name}
+                        >
                           {bank.type !== "paket"
-                            ? `${bank.name} - PG ${bank.pg} - Essay ${bank.essay}`
-                            : `${bank.name}`}
+                            ? `${
+                                bank.name.length > 20
+                                  ? `${bank.name.slice(0, 20)}...`
+                                  : bank.name
+                              } - PG ${bank.pg} - Essay ${bank.essay}`
+                            : `${
+                                bank.name.length > 20
+                                  ? `${bank.name.slice(0, 20)}...`
+                                  : bank.name
+                              }`}
                         </span>
                       ))}
                     </div>

@@ -259,51 +259,63 @@ const Form = ({ detail, setDetail, onSuccess }) => {
               onChange={handleClass}
             />
 
-            <input
-              type="text"
-              name="name"
-              className="form-control"
-              placeholder="Nama Ujian"
-              value={formData.name || ""}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
-            />
+            <div className="form-floating">
+              <input
+                type="text"
+                name="name"
+                className="form-control"
+                placeholder="Nama Ujian"
+                value={formData.name || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+              />
+              <label htmlFor="name">Nama Ujian</label>
+            </div>
 
-            <input
-              type="number"
-              name="duration"
-              className="form-control"
-              placeholder="Durasi"
-              value={formData.duration || ""}
-              onChange={(e) =>
-                setFormData({ ...formData, duration: e.target.value })
-              }
-            />
+            <div className="form-floating">
+              <input
+                type="number"
+                name="duration"
+                className="form-control"
+                placeholder="Durasi"
+                value={formData.duration || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, duration: e.target.value })
+                }
+              />
+              <label htmlFor="duration">Durasi</label>
+            </div>
 
-            <input
-              type="number"
-              name="mc_score"
-              id="mc_score"
-              className="form-control"
-              placeholder="Persentase Nilai PG"
-              value={formData.mc_score}
-              onChange={(e) =>
-                setFormData({ ...formData, mc_score: e.target.value })
-              }
-            />
+            <div className="form-floating">
+              <input
+                type="number"
+                name="mc_score"
+                id="mc_score"
+                className="form-control"
+                placeholder="Persentase Nilai PG"
+                value={formData.mc_score}
+                onChange={(e) =>
+                  setFormData({ ...formData, mc_score: e.target.value })
+                }
+              />
+              <label htmlFor="mc_score">Persentase Nilai PG</label>
+            </div>
 
-            <input
-              type="number"
-              name="essay_score"
-              id="essay_score"
-              className="form-control"
-              placeholder="Persentase Nilai Essay"
-              value={formData.essay_score}
-              onChange={(e) =>
-                setFormData({ ...formData, essay_score: e.target.value })
-              }
-            />
+            <div className="form-floating">
+              <input
+                type="number"
+                name="essay_score"
+                id="essay_score"
+                className="form-control"
+                placeholder="Persentase Nilai Essay"
+                value={formData.essay_score}
+                onChange={(e) =>
+                  setFormData({ ...formData, essay_score: e.target.value })
+                }
+              />
+              <label htmlFor="essay_score">Persentase Nilai Essay</label>
+            </div>
 
             <select
               name="isshuffle"
