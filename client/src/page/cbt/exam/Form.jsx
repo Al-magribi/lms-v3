@@ -125,6 +125,11 @@ const Form = ({ detail, setDetail, onSuccess }) => {
   const addHandler = (e) => {
     e.preventDefault();
 
+    if (formData.name.includes("/")) {
+      toast.error("Karakter / tidak diizinkan");
+      return;
+    }
+
     toast.promise(
       createExam(formData)
         .unwrap()
@@ -335,7 +340,7 @@ const Form = ({ detail, setDetail, onSuccess }) => {
           <div className="modal-footer">
             <button
               type="button"
-              className="btn btn-warning"
+              className="btn btn-sm btn-warning"
               data-bs-dismiss="modal"
               onClick={cancel}
             >
@@ -344,7 +349,7 @@ const Form = ({ detail, setDetail, onSuccess }) => {
 
             <button
               type="submit"
-              className="btn btn-success"
+              className="btn btn-sm btn-success"
               disabled={isLoading}
             >
               {detail?.id ? "Update" : "Simpan"}
