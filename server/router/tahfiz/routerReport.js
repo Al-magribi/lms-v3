@@ -485,7 +485,18 @@ router.get("/get-report-target", async (req, res) => {
         // Student progress query
         client.query(
           `
-          WITH student_progress AS (
+          WITH dedup_process AS (
+            SELECT 
+              tp.userid,
+              tp.juz_id,
+              tp.surah_id,
+              (tp.to_count - tp.from_count + 1) as verse,
+              (tp.to_line - tp.from_line + 1) as line,
+              ROW_NUMBER() OVER (PARTITION BY tp.userid, tp.juz_id, tp.surah_id ORDER BY tp.to_line DESC, tp.createdat DESC) as rn
+            FROM t_process tp
+            WHERE tp.type_id = 6
+          ),
+          student_progress AS (
             SELECT 
               us.id as userid,
               us.nis,
@@ -496,8 +507,8 @@ router.get("/get-report-target", async (req, res) => {
               c.name as class_name,
               t.juz_id,
               tj.name as juz_name,
-              COALESCE(SUM(tp.to_count - tp.from_count + 1), 0) as completed_verses,
-              COALESCE(SUM(tp.to_line - tp.from_line + 1), 0) as completed_lines,
+              COALESCE(SUM(dp.verse), 0) as completed_verses,
+              COALESCE(SUM(dp.line), 0) as completed_lines,
               (
                 SELECT SUM(tji.to_ayat - tji.from_ayat + 1)
                 FROM t_target tt
@@ -516,9 +527,7 @@ router.get("/get-report-target", async (req, res) => {
             INNER JOIN a_grade g ON c.grade = g.id
             INNER JOIN t_target t ON g.id = t.grade_id
             INNER JOIN t_juz tj ON t.juz_id = tj.id
-            LEFT JOIN t_process tp ON us.id = tp.userid 
-              AND tp.juz_id = t.juz_id 
-              AND tp.type_id = 6
+            LEFT JOIN dedup_process dp ON us.id = dp.userid AND t.juz_id = dp.juz_id AND dp.rn = 1
             WHERE us.homebase = $2
             GROUP BY us.id, us.nis, us.name, g.id, g.name, c.id, c.name, t.juz_id, tj.name
           )
@@ -538,8 +547,11 @@ router.get("/get-report-target", async (req, res) => {
             ARRAY_AGG(
               CASE 
                 WHEN target_verses > 0 AND target_lines > 0 THEN 
-                  ROUND(((completed_verses::numeric / target_verses::numeric) * 0.5 + 
-                        (completed_lines::numeric / target_lines::numeric) * 0.5) * 100, 2)
+                  LEAST(
+                    100,
+                    ROUND(((completed_verses::numeric / target_verses::numeric) * 0.5 + 
+                          (completed_lines::numeric / target_lines::numeric) * 0.5) * 100, 2)
+                  )
                 ELSE 0 
               END
               ORDER BY juz_name ASC
@@ -696,12 +708,15 @@ router.get("/get-report-target", async (req, res) => {
                     target: student.target_verses[idx],
                     percentage:
                       student.target_verses[idx] > 0
-                        ? Number(
-                            (
-                              (student.completed_verses[idx] /
-                                student.target_verses[idx]) *
-                              100
-                            ).toFixed(2)
+                        ? Math.min(
+                            100,
+                            Number(
+                              (
+                                (student.completed_verses[idx] /
+                                  student.target_verses[idx]) *
+                                100
+                              ).toFixed(2)
+                            )
                           )
                         : 0,
                   },
@@ -710,12 +725,15 @@ router.get("/get-report-target", async (req, res) => {
                     target: student.target_lines[idx],
                     percentage:
                       student.target_lines[idx] > 0
-                        ? Number(
-                            (
-                              (student.completed_lines[idx] /
-                                student.target_lines[idx]) *
-                              100
-                            ).toFixed(2)
+                        ? Math.min(
+                            100,
+                            Number(
+                              (
+                                (student.completed_lines[idx] /
+                                  student.target_lines[idx]) *
+                                100
+                              ).toFixed(2)
+                            )
                           )
                         : 0,
                   },
@@ -835,16 +853,23 @@ router.get("/get-student-report", async (req, res) => {
 
     const targets = await fetchQueryResults(targetQuery, [userid]);
 
-    // Get student's progress for each juz
+    // Get student's progress for each juz (ambil baris tertinggi per surah)
     const memorization = await Promise.all(
       targets.map(async (target) => {
-        // Get completed verses and lines for this juz
         const progressQuery = `
           SELECT 
-            COALESCE(SUM(tp.to_count - tp.from_count + 1), 0) as completed_verses,
-            COALESCE(SUM(tp.to_line - tp.from_line + 1), 0) as completed_lines
-          FROM t_process tp
-          WHERE tp.userid = $1 AND tp.juz_id = $2 AND tp.type_id = 6
+            COALESCE(SUM(s.verse), 0) as completed_verses,
+            COALESCE(SUM(s.line), 0) as completed_lines
+          FROM (
+            SELECT 
+              tp.surah_id,
+              (tp.to_count - tp.from_count + 1) as verse,
+              (tp.to_line - tp.from_line + 1) as line,
+              ROW_NUMBER() OVER (PARTITION BY tp.surah_id ORDER BY tp.to_line DESC, tp.createdat DESC) as rn
+            FROM t_process tp
+            WHERE tp.userid = $1 AND tp.juz_id = $2 AND tp.type_id = 6
+          ) s
+          WHERE s.rn = 1
         `;
 
         const progress = await fetchQueryResults(progressQuery, [
@@ -854,15 +879,19 @@ router.get("/get-student-report", async (req, res) => {
 
         // Get surah details for this juz
         const surahQuery = `
-          SELECT 
-            ts.id as surah_id,
-            ts.name as surah_name,
-            tp.to_count as verse,
-            tp.to_line as line
-          FROM t_process tp
-          INNER JOIN t_surah ts ON tp.surah_id = ts.id
-          WHERE tp.userid = $1 AND tp.juz_id = $2 AND tp.type_id = 6
-          ORDER BY tp.createdat DESC
+          SELECT s.surah_id, s.surah_name, s.verse, s.line FROM (
+            SELECT 
+              ts.id as surah_id,
+              ts.name as surah_name,
+              tp.to_count as verse,
+              tp.to_line as line,
+              tp.createdat,
+              ROW_NUMBER() OVER (PARTITION BY tp.surah_id ORDER BY tp.createdat DESC, tp.to_line DESC) as rn
+            FROM t_process tp
+            INNER JOIN t_surah ts ON tp.surah_id = ts.id
+            WHERE tp.userid = $1 AND tp.juz_id = $2 AND tp.type_id = 6
+          ) s
+          WHERE s.rn = 1
         `;
 
         const surahs = await fetchQueryResults(surahQuery, [
@@ -879,11 +908,19 @@ router.get("/get-student-report", async (req, res) => {
           juz: target.juz,
           lines: totalLines,
           verses: totalVerses,
-          completed: completedVerses,
-          uncompleted: totalVerses - completedVerses,
+          completed: Math.min(completedVerses, totalVerses),
+          uncompleted: totalVerses - Math.min(completedVerses, totalVerses),
           progress:
             totalVerses > 0
-              ? Number(((completedVerses / totalVerses) * 100).toFixed(2))
+              ? Math.min(
+                  100,
+                  Number(
+                    (
+                      (Math.min(completedVerses, totalVerses) / totalVerses) *
+                      100
+                    ).toFixed(2)
+                  )
+                )
               : 0,
           surah: surahs,
         };
@@ -925,13 +962,21 @@ router.get("/get-student-report", async (req, res) => {
     // Get student's progress for each exceed juz
     const exceed = await Promise.all(
       exceedTargets.map(async (target) => {
-        // Get completed verses and lines for this juz
+        // Get completed verses and lines for this juz (ambil baris tertinggi per surah)
         const progressQuery = `
           SELECT 
-            COALESCE(SUM(tp.to_count - tp.from_count + 1), 0) as completed_verses,
-            COALESCE(SUM(tp.to_line - tp.from_line + 1), 0) as completed_lines
-          FROM t_process tp
-          WHERE tp.userid = $1 AND tp.juz_id = $2 AND tp.type_id = 6
+            COALESCE(SUM(s.verse), 0) as completed_verses,
+            COALESCE(SUM(s.line), 0) as completed_lines
+          FROM (
+            SELECT 
+              tp.surah_id,
+              (tp.to_count - tp.from_count + 1) as verse,
+              (tp.to_line - tp.from_line + 1) as line,
+              ROW_NUMBER() OVER (PARTITION BY tp.surah_id ORDER BY tp.to_line DESC, tp.createdat DESC) as rn
+            FROM t_process tp
+            WHERE tp.userid = $1 AND tp.juz_id = $2 AND tp.type_id = 6
+          ) s
+          WHERE s.rn = 1
         `;
 
         const progress = await fetchQueryResults(progressQuery, [
@@ -941,15 +986,19 @@ router.get("/get-student-report", async (req, res) => {
 
         // Get surah details for this juz
         const surahQuery = `
-          SELECT 
-            ts.id as surah_id,
-            ts.name as surah_name,
-            tp.to_count as verse,
-            tp.to_line as line
-          FROM t_process tp
-          INNER JOIN t_surah ts ON tp.surah_id = ts.id
-          WHERE tp.userid = $1 AND tp.juz_id = $2 AND tp.type_id = 6
-          ORDER BY tp.createdat DESC
+          SELECT s.surah_id, s.surah_name, s.verse, s.line FROM (
+            SELECT 
+              ts.id as surah_id,
+              ts.name as surah_name,
+              tp.to_count as verse,
+              tp.to_line as line,
+              tp.createdat,
+              ROW_NUMBER() OVER (PARTITION BY tp.surah_id ORDER BY tp.createdat DESC, tp.to_line DESC) as rn
+            FROM t_process tp
+            INNER JOIN t_surah ts ON tp.surah_id = ts.id
+            WHERE tp.userid = $1 AND tp.juz_id = $2 AND tp.type_id = 6
+          ) s
+          WHERE s.rn = 1
         `;
 
         const surahs = await fetchQueryResults(surahQuery, [
@@ -966,11 +1015,19 @@ router.get("/get-student-report", async (req, res) => {
           juz: target.juz,
           lines: totalLines,
           verses: totalVerses,
-          completed: completedVerses,
-          uncompleted: totalVerses - completedVerses,
+          completed: Math.min(completedVerses, totalVerses),
+          uncompleted: totalVerses - Math.min(completedVerses, totalVerses),
           progress:
             totalVerses > 0
-              ? Number(((completedVerses / totalVerses) * 100).toFixed(2))
+              ? Math.min(
+                  100,
+                  Number(
+                    (
+                      (Math.min(completedVerses, totalVerses) / totalVerses) *
+                      100
+                    ).toFixed(2)
+                  )
+                )
               : 0,
           surah: surahs,
         };
