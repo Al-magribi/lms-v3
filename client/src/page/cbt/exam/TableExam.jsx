@@ -19,6 +19,8 @@ const TableExam = ({ setDetail }) => {
   });
   const { exams = [], totalData, totalPages } = rawData;
 
+  console.log(exams);
+
   const [deleteExam, { isSuccess, isLoading, isError, reset }] =
     useDeleteExamMutation();
   const [
@@ -232,32 +234,46 @@ const TableExam = ({ setDetail }) => {
                     </div>
                   </div>
 
-                  <div className="row g-2">
-                    <div className="col-6 col-sm-3">
-                      <div className="text-muted small">PG</div>
-                      <span className="badge bg-success px-3 py-1">
-                        {exam.mc_score}%
-                      </span>
-                    </div>
-                    <div className="col-6 col-sm-3">
-                      <div className="text-muted small">Essay</div>
-                      <span className="badge bg-success px-3 py-1">
-                        {exam.essay_score}%
-                      </span>
-                    </div>
-                    <div className="col-6 col-sm-3">
-                      <div className="text-muted small">Durasi</div>
-                      <span className="badge bg-info px-3 py-1">
-                        {exam.duration} Menit
-                      </span>
-                    </div>
-                    <div className="col-6 col-sm-3">
-                      <div className="text-muted small">Acak</div>
-                      {exam.isshuffle ? (
-                        <span className="badge bg-success px-3 py-1">Ya</span>
-                      ) : (
-                        <span className="badge bg-danger px-3 py-1">Tidak</span>
-                      )}
+                  <div className="mt-3">
+                    <div className="d-flex flex-wrap gap-3">
+                      <div className="d-flex flex-column">
+                        <div className="text-muted small mb-1">PG</div>
+                        <span className="badge bg-success px-3 py-2">
+                          {exam.mc_score}%
+                        </span>
+                      </div>
+                      <div className="d-flex flex-column">
+                        <div className="text-muted small mb-1">Essay</div>
+                        <span className="badge bg-success px-3 py-2">
+                          {exam.essay_score}%
+                        </span>
+                      </div>
+                      <div className="d-flex flex-column">
+                        <div className="text-muted small mb-1">Durasi</div>
+                        <span className="badge bg-info px-3 py-2">
+                          {exam.duration}
+                        </span>
+                      </div>
+                      <div className="d-flex flex-column">
+                        <div className="text-muted small mb-1">Acak</div>
+                        {exam.isshuffle ? (
+                          <span className="badge bg-success px-3 py-2">Ya</span>
+                        ) : (
+                          <span className="badge bg-danger px-3 py-2">
+                            Tidak
+                          </span>
+                        )}
+                      </div>
+                      <div className="d-flex flex-column">
+                        <div className="text-muted small mb-1">Status</div>
+                        <span
+                          className={`badge ${
+                            exam.isactive ? "bg-success" : "bg-danger"
+                          } px-3 py-2`}
+                        >
+                          {exam.isactive ? "Aktif" : "Tidak Aktif"}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>

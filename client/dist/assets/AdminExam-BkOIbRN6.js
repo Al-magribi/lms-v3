@@ -1,0 +1,2 @@
+import{j as s}from"./index-Bobqo80g.js";import"./vendor-CnnDPxwB.js";import{L as t}from"./Layout-B7Kbg6B-.js";import{C as i}from"./CbtExam-WItfdqRB.js";import"./index-B8CuzAwO.js";import"./index-g0LoU_Ie.js";import"./index-BpPDjKa5.js";import"./react-select.esm-C351JJ6e.js";import"./Table-DzqoReHK.js";const r=()=>s.jsx(t,{title:"Daftar Ujian",levels:["admin"],children:s.jsx(i,{})});export{r as default};
+//# sourceMappingURL=AdminExam-BkOIbRN6.js.map
