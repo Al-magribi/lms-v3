@@ -20,12 +20,12 @@ const AnswerCard = ({
     if (currentQuestion.qtype === 2) {
       const savedEssay = answers[currentQuestion.id]?.essay || "";
       return (
-        <div className='answer-options'>
+        <div className="answer-options">
           <textarea
-            className='form-control'
-            rows='4'
-            placeholder='Ketikkan jawabanmu disini...'
-            value={savedEssay || essay}
+            className="form-control"
+            rows="4"
+            placeholder="Ketikkan jawabanmu disini..."
+            value={essay}
             onChange={(e) => setEssay(e.target.value)}
             onBlur={() => handleSubmit()}
           ></textarea>
@@ -35,7 +35,7 @@ const AnswerCard = ({
 
     // For other question types, show options
     return (
-      <div className='d-flex flex-column gap-2'>
+      <div className="d-flex flex-column gap-2">
         {currentQuestion.choices &&
           currentQuestion.choices.map((choice, index) => {
             // Improved check for selected answer
@@ -43,10 +43,10 @@ const AnswerCard = ({
             const isSelected = savedAnswer && savedAnswer === choice.key;
 
             return (
-              <div key={index} className='form-check'>
+              <div key={index} className="form-check">
                 <input
-                  className='form-check-input'
-                  type='radio'
+                  className="form-check-input"
+                  type="radio"
                   name={`question-${currentPage}`}
                   id={`option-${choice.key}`}
                   value={choice.key}
@@ -54,7 +54,7 @@ const AnswerCard = ({
                   onChange={(e) => handleSubmit(e.target.value)}
                 />
                 <label
-                  className='form-check-label pointer'
+                  className="form-check-label pointer"
                   htmlFor={`option-${choice.key}`}
                 >
                   <span dangerouslySetInnerHTML={createHtml(choice.text)} />
@@ -67,12 +67,12 @@ const AnswerCard = ({
   };
 
   return (
-    <div className='card'>
-      <div className='card-body'>
+    <div className="card">
+      <div className="card-body">
         {isLoadingAnswer ? (
-          <div className='text-center'>
-            <div className='spinner-border text-primary' role='status'>
-              <span className='visually-hidden'>Loading...</span>
+          <div className="text-center">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading...</span>
             </div>
           </div>
         ) : (

@@ -46,8 +46,6 @@ const Body = ({
   const [addAnswer, { isLoading, isSuccess, isError, reset }] =
     useAddAnswerMutation();
 
-  console.log(answer);
-
   // Load saved answers when component mounts
   useEffect(() => {
     if (answer) {
@@ -91,6 +89,9 @@ const Body = ({
     // For essay questions, use the essay state value
     // For multiple choice, use the selected key
     const answerValue = currentQuestion.qtype === 2 ? essay : selectedKey;
+
+    // Don't submit if essay is empty
+    if (currentQuestion.qtype === 2 && !answerValue) return;
 
     const data = {
       id: answers[currentQuestion.id]?.id || null,
@@ -153,7 +154,7 @@ const Body = ({
   }, [isError, reset, isSuccess]);
 
   return (
-    <div className='container-fluid mt-2'>
+    <div className="container-fluid mt-2">
       <Navigation
         currentPage={currentPage}
         questionsLength={questionsData.length}
@@ -166,14 +167,14 @@ const Body = ({
         answers={answers}
       />
 
-      <div className='row g-2'>
+      <div className="row g-2">
         {/* Question Column */}
-        <div className='col-lg-5 col-12'>
+        <div className="col-lg-5 col-12">
           <QuestionCard question={currentQuestion.question} />
         </div>
 
         {/* Answer Column */}
-        <div className='col-lg-5 col-12'>
+        <div className="col-lg-5 col-12">
           <AnswerCard
             currentQuestion={currentQuestion}
             answers={answers}
@@ -186,7 +187,7 @@ const Body = ({
         </div>
 
         {/* Question Numbers Column */}
-        <div className='col-lg-2 col-12'>
+        <div className="col-lg-2 col-12">
           <QuestionNumbers
             questionsData={questionsData}
             currentPage={currentPage}
