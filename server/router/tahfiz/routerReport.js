@@ -704,7 +704,10 @@ router.get("/get-report-target", async (req, res) => {
                 progress: student.juz_names.map((juz, idx) => ({
                   juz: juz,
                   verses: {
-                    completed: student.completed_verses[idx],
+                    completed: Math.min(
+                      student.completed_verses[idx],
+                      student.target_verses[idx]
+                    ),
                     target: student.target_verses[idx],
                     percentage:
                       student.target_verses[idx] > 0
@@ -712,7 +715,10 @@ router.get("/get-report-target", async (req, res) => {
                             100,
                             Number(
                               (
-                                (student.completed_verses[idx] /
+                                (Math.min(
+                                  student.completed_verses[idx],
+                                  student.target_verses[idx]
+                                ) /
                                   student.target_verses[idx]) *
                                 100
                               ).toFixed(2)
@@ -721,7 +727,10 @@ router.get("/get-report-target", async (req, res) => {
                         : 0,
                   },
                   lines: {
-                    completed: student.completed_lines[idx],
+                    completed: Math.min(
+                      student.completed_lines[idx],
+                      student.target_lines[idx]
+                    ),
                     target: student.target_lines[idx],
                     percentage:
                       student.target_lines[idx] > 0
@@ -729,7 +738,10 @@ router.get("/get-report-target", async (req, res) => {
                             100,
                             Number(
                               (
-                                (student.completed_lines[idx] /
+                                (Math.min(
+                                  student.completed_lines[idx],
+                                  student.target_lines[idx]
+                                ) /
                                   student.target_lines[idx]) *
                                 100
                               ).toFixed(2)
@@ -739,7 +751,54 @@ router.get("/get-report-target", async (req, res) => {
                   },
                   persentase: student.progress_percentages[idx],
                 })),
-                exceed: student.exceed,
+                exceed: student.exceed.map((target) => {
+                  const completedVerses = Math.min(
+                    target.verses.completed,
+                    target.verses.target
+                  );
+                  const completedLines = Math.min(
+                    target.lines.completed,
+                    target.lines.target
+                  );
+                  return {
+                    ...target,
+                    lines: {
+                      ...target.lines,
+                      completed: completedLines,
+                      percentage:
+                        target.lines.target > 0
+                          ? Number(
+                              (
+                                (completedLines / target.lines.target) *
+                                100
+                              ).toFixed(2)
+                            )
+                          : 0,
+                    },
+                    verses: {
+                      ...target.verses,
+                      completed: completedVerses,
+                      percentage:
+                        target.verses.target > 0
+                          ? Number(
+                              (
+                                (completedVerses / target.verses.target) *
+                                100
+                              ).toFixed(2)
+                            )
+                          : 0,
+                    },
+                    persentase:
+                      target.verses.target > 0
+                        ? Number(
+                            (
+                              (completedVerses / target.verses.target) *
+                              100
+                            ).toFixed(2)
+                          )
+                        : 0,
+                  };
+                }),
               })),
             };
           });
@@ -904,24 +963,26 @@ router.get("/get-student-report", async (req, res) => {
         const totalVerses = parseInt(target.total_verses);
         const totalLines = parseInt(target.total_lines);
 
+        const cappedVerses = Math.min(completedVerses, totalVerses);
+        const cappedLines = Math.min(completedLines, totalLines);
+        const versePercent = totalVerses > 0 ? cappedVerses / totalVerses : 0;
+        const linePercent = totalLines > 0 ? cappedLines / totalLines : 0;
+        const progressValue =
+          versePercent + linePercent > 0
+            ? Math.min(
+                100,
+                Number((((versePercent + linePercent) / 2) * 100).toFixed(2))
+              )
+            : 0;
+
         return {
           juz: target.juz,
           lines: totalLines,
           verses: totalVerses,
-          completed: Math.min(completedVerses, totalVerses),
-          uncompleted: totalVerses - Math.min(completedVerses, totalVerses),
-          progress:
-            totalVerses > 0
-              ? Math.min(
-                  100,
-                  Number(
-                    (
-                      (Math.min(completedVerses, totalVerses) / totalVerses) *
-                      100
-                    ).toFixed(2)
-                  )
-                )
-              : 0,
+          completed: cappedVerses,
+          completed_lines: cappedLines,
+          uncompleted: totalVerses - cappedVerses,
+          progress: progressValue,
           surah: surahs,
         };
       })
@@ -1011,24 +1072,26 @@ router.get("/get-student-report", async (req, res) => {
         const totalVerses = parseInt(target.total_verses);
         const totalLines = parseInt(target.total_lines);
 
+        const cappedVerses = Math.min(completedVerses, totalVerses);
+        const cappedLines = Math.min(completedLines, totalLines);
+        const versePercent = totalVerses > 0 ? cappedVerses / totalVerses : 0;
+        const linePercent = totalLines > 0 ? cappedLines / totalLines : 0;
+        const progressValue =
+          versePercent + linePercent > 0
+            ? Math.min(
+                100,
+                Number((((versePercent + linePercent) / 2) * 100).toFixed(2))
+              )
+            : 0;
+
         return {
           juz: target.juz,
           lines: totalLines,
           verses: totalVerses,
-          completed: Math.min(completedVerses, totalVerses),
-          uncompleted: totalVerses - Math.min(completedVerses, totalVerses),
-          progress:
-            totalVerses > 0
-              ? Math.min(
-                  100,
-                  Number(
-                    (
-                      (Math.min(completedVerses, totalVerses) / totalVerses) *
-                      100
-                    ).toFixed(2)
-                  )
-                )
-              : 0,
+          completed: cappedVerses,
+          completed_lines: cappedLines,
+          uncompleted: totalVerses - cappedVerses,
+          progress: progressValue,
           surah: surahs,
         };
       })

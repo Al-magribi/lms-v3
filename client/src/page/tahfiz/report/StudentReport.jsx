@@ -47,6 +47,25 @@ const StudentReport = () => {
           <p className="m-0 h5">Target Hafalan</p>
         </div>
 
+        {/* Visualisasi jumlah juz yang sudah 100% */}
+        {data?.memorization && data?.exceed && (
+          <div className="mb-3 d-flex gap-2 align-items-center">
+            <span className="badge bg-success fs-6">
+              Juz Selesai 100% (Target):{" "}
+              {data.memorization.filter((juz) => juz.progress === 100).length}
+            </span>
+            <span className="badge bg-info fs-6">
+              Juz Selesai 100% (Melebihi Target):{" "}
+              {data.exceed.filter((juz) => juz.progress === 100).length}
+            </span>
+            <span className="badge bg-primary fs-6">
+              Total Juz Selesai 100%:{" "}
+              {data.memorization.filter((juz) => juz.progress === 100).length +
+                data.exceed.filter((juz) => juz.progress === 100).length}
+            </span>
+          </div>
+        )}
+
         <div className="row g-4">
           {data?.memorization.map((juz, index) => (
             <div className="col-6" key={index}>
@@ -73,7 +92,7 @@ const StudentReport = () => {
                         <div>
                           <div>Baris</div>
                           <strong>
-                            {juz.completed}/{juz.lines}
+                            {juz.completed_lines ?? juz.completed}/{juz.lines}
                           </strong>
                         </div>
                       </div>
@@ -147,7 +166,8 @@ const StudentReport = () => {
                             <div>
                               <div>Baris</div>
                               <strong>
-                                {juz.completed}/{juz.lines}
+                                {juz.completed_lines ?? juz.completed}/
+                                {juz.lines}
                               </strong>
                             </div>
                           </div>
