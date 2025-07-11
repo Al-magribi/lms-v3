@@ -52,6 +52,7 @@ export const TeacherMenus = [
     icon: <Md.MdOutlineFolderCopy />,
   },
   { label: "Ujian", link: "/guru-ujian", icon: <Bs.BsLaptopFill /> },
+  { label: "Penilaian", link: "/guru-penilaian", icon: <Gr.GrScorecard /> },
   { label: "Profile", link: "/guru-profile", icon: <Fa.FaRegUser /> },
 ];
 

@@ -100,6 +100,7 @@ const ExamReport = lazy(() => import("./page/cbt/exam/report/ExamReport"));
 const TeacherSubject = lazy(() => import("./page/teacher/lms/TeacherSubject"));
 const LmsSubject = lazy(() => import("./page/lms/subject/LmsSubject"));
 const Subject = lazy(() => import("./page/lms/list/Subject"));
+const TeacherScores = lazy(() => import("./page/teacher/scores/TeacherScores"));
 
 // Tahfiz
 const TahfizDash = lazy(() => import("./page/tahfiz/dashboard/TahfizDash"));
@@ -309,6 +310,8 @@ function App() {
             <Route path="/guru-mapel/:name/:id" element={<LmsSubject />} />
 
             <Route path="/pelajaran/:name/:id" element={<Subject />} />
+
+            <Route path="/guru-penilaian" element={<TeacherScores />} />
 
             {/* Tahfiz */}
             <Route path="/tahfiz-dashboard" element={<TahfizDash />} />

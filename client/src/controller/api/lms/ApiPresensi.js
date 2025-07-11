@@ -9,8 +9,22 @@ export const ApiPresensi = createApi({
   tagTypes: ["Presensi"],
   endpoints: (builder) => ({
     getPresensi: builder.query({
-      query: ({ classid, subjectid }) => ({
+      query: ({ classid, subjectid, date }) => ({
         url: "/get-presensi",
+        params: { classid, subjectid, ...(date && { date }) },
+      }),
+      providesTags: ["Presensi"],
+    }),
+    getPresensiSummary: builder.query({
+      query: ({ classid, subjectid, month, year }) => ({
+        url: "/get-presensi-summary",
+        params: { classid, subjectid, month, year },
+      }),
+      providesTags: ["Presensi"],
+    }),
+    getAttendanceDates: builder.query({
+      query: ({ classid, subjectid }) => ({
+        url: "/get-attendance-dates",
         params: { classid, subjectid },
       }),
       providesTags: ["Presensi"],
@@ -26,4 +40,9 @@ export const ApiPresensi = createApi({
   }),
 });
 
-export const { useGetPresensiQuery, useAddPresensiMutation } = ApiPresensi;
+export const {
+  useGetPresensiQuery,
+  useGetPresensiSummaryQuery,
+  useGetAttendanceDatesQuery,
+  useAddPresensiMutation,
+} = ApiPresensi;

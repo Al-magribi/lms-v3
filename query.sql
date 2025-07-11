@@ -221,6 +221,7 @@ CREATE TABLE l_attendance(
     subjectid integer REFERENCES a_subject(id) ON DELETE CASCADE,
     studentid integer REFERENCES u_students(id) ON DELETE CASCADE,
     note text,
+    day_date date,
     createdat timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY(id)
 );

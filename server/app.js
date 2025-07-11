@@ -46,6 +46,8 @@ import routerAnswer from "./router/cbt/routerAnswer.js";
 import routerChapter from "./router/lms/routerChapter.js";
 import routerLmsStudent from "./router/lms/routerLms.js";
 import routerPresensi from "./router/lms/routerPresensi.js";
+import routerScores from "./router/lms/routerScores.js";
+
 // Tahfiz
 import routerSurah from "./router/tahfiz/routerSurah.js";
 import routerScoring from "./router/tahfiz/routerScoring.js";
@@ -101,6 +103,7 @@ app.use("/api/answer", routerAnswer);
 app.use("/api/chapter", routerChapter);
 app.use("/api/lms", routerLmsStudent);
 app.use("/api/presensi", routerPresensi);
+app.use("/api/scores", routerScores);
 
 app.use("/api/quran", routerSurah);
 app.use("/api/scoring", routerScoring);

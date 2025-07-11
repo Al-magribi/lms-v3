@@ -269,7 +269,21 @@ router.post("/upload-students", authorize("admin"), async (req, res) => {
     const uploaded = [];
     const invalidData = [];
 
-    // 1. Cek dan insert ke u_students jika belum ada
+    // 1. Cek duplikat NIS di body
+    const nisSet = new Set();
+    for (const student of students) {
+      const nis = student[1];
+      if (nisSet.has(nis)) {
+        invalidData.push({
+          nis,
+          name: student[2],
+          reason: "NIS duplikat dalam upload",
+        });
+      }
+      nisSet.add(nis);
+    }
+
+    // 2. Proses setiap student
     for (const student of students) {
       // student: [entry, nis, name, gender, classid]
       const entry = student[0];
@@ -277,6 +291,15 @@ router.post("/upload-students", authorize("admin"), async (req, res) => {
       const name = student[2];
       const gender = student[3];
       const classid = student[4];
+
+      // Skip jika NIS duplikat di body
+      if (
+        invalidData.find(
+          (s) => s.nis === nis && s.reason === "NIS duplikat dalam upload"
+        )
+      ) {
+        continue;
+      }
 
       // Basic validation
       if (!nis || !name || !gender || !classid) {
@@ -303,26 +326,22 @@ router.post("/upload-students", authorize("admin"), async (req, res) => {
         studentId = insert.rows[0].id;
       }
 
-      // 2. Cek apakah sudah terdaftar di cl_students
+      // 3. Cek apakah sudah terdaftar di cl_students untuk periode & classid yang sama
       const checkStudent = await client.query(
-        `SELECT classid FROM cl_students WHERE student = $1 AND homebase = $2`,
-        [studentId, homebase]
+        `SELECT id FROM cl_students WHERE student = $1 AND periode = $2 AND classid = $3 AND homebase = $4`,
+        [studentId, periodeid, classid, homebase]
       );
       if (checkStudent.rowCount > 0) {
-        // Sudah terdaftar di kelas mana
-        const checkClass = await client.query(
-          `SELECT name FROM a_class WHERE id = $1 AND homebase = $2`,
-          [checkStudent.rows[0].classid, homebase]
-        );
+        // Sudah terdaftar di kelas & periode ini
         alreadyRegistered.push({
           nis,
           name,
-          className: checkClass.rows[0].name,
+          classid,
         });
         continue;
       }
 
-      // 3. Insert ke cl_students pakai classid dari array
+      // 4. Insert ke cl_students pakai classid dari array
       await client.query(
         `INSERT INTO cl_students(periode, classid, student, student_name, homebase)
           VALUES($1, $2, $3, $4, $5)`,
@@ -344,6 +363,11 @@ router.post("/upload-students", authorize("admin"), async (req, res) => {
       status = 207; // Multi-Status
       message = "Sebagian siswa berhasil diupload. Lihat detail.";
     }
+
+    console.log(`Uploaded: ${uploaded}`);
+    console.log(`Duplicated NIS: ${duplicatedNIS}`);
+    console.log(`Already Registered: ${alreadyRegistered}`);
+    console.log(`Invalid Data: ${invalidData}`);
 
     return res.status(status).json({
       message,
