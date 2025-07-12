@@ -14,6 +14,7 @@ const Table = ({
   setLimit,
   setSearch,
   isLoading,
+  downloadButton,
 }) => {
   const [limitValue, setLimitValue] = useState(limit || 10);
   const [searchTimeout, setSearchTimeout] = useState(null);
@@ -80,44 +81,56 @@ const Table = ({
     return pages;
   };
   return (
-    <div className="rounded-lg  no-overflow-x">
-      <div style={{ height: height }} className="d-flex flex-column gap-4">
-        <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
-          <div className="position-relative">
+    <div className='rounded-lg  no-overflow-x'>
+      <div style={{ height: height }} className='d-flex flex-column gap-4'>
+        <div className='d-flex flex-wrap align-items-center justify-content-between gap-3'>
+          <div className='position-relative'>
             <input
-              className="form-control ps-4"
-              name="search"
-              id="search"
-              placeholder="Cari data..."
+              className='form-control ps-4'
+              name='search'
+              id='search'
+              placeholder='Cari data...'
               style={{ width: 280, borderRadius: "8px" }}
               value={searchValue}
               onChange={handleSearchChange}
             />
           </div>
 
-          <div className="d-flex gap-3">
+          <div className='d-flex gap-3'>
             <select
               style={{ width: 120, borderRadius: "8px" }}
-              name="limit"
-              id="limit"
-              className="form-select"
+              name='limit'
+              id='limit'
+              className='form-select'
               value={limitValue || ""}
               onChange={handleLimit}
             >
-              <option value="10">10 per halaman</option>
-              <option value="20">20 per halaman</option>
-              <option value="50">50 per halaman</option>
-              <option value="100">100 per halaman</option>
-              <option value="200">200 per halaman</option>
-              <option value="500">500 per halaman</option>
-              <option value="1000">1000 per halaman</option>
+              <option value='10'>10 per halaman</option>
+              <option value='20'>20 per halaman</option>
+              <option value='50'>50 per halaman</option>
+              <option value='100'>100 per halaman</option>
+              <option value='200'>200 per halaman</option>
+              <option value='500'>500 per halaman</option>
+              <option value='1000'>1000 per halaman</option>
             </select>
+
+            {downloadButton && (
+              <button
+                onClick={downloadButton.onClick}
+                disabled={downloadButton.isLoading}
+                className='btn btn-sm btn-outline-success'
+                style={{ borderRadius: "8px" }}
+              >
+                <i className='bi bi-file-earmark-arrow-down-fill me-2'></i>
+                {downloadButton.isLoading ? "Mengunduh..." : "Download"}
+              </button>
+            )}
 
             {id && (
               <button
-                data-bs-toggle="modal"
+                data-bs-toggle='modal'
                 data-bs-target={`#${id}`}
-                className="btn btn-primary d-flex align-items-center gap-2"
+                className='btn btn-primary d-flex align-items-center gap-2'
                 style={{ borderRadius: "8px" }}
               >
                 <Md.MdAdd size={20} />
@@ -128,29 +141,29 @@ const Table = ({
         </div>
 
         {/* Table */}
-        <div className="rounded-lg">
+        <div className='rounded-lg'>
           {isLoading ? <TableLoader /> : children}
         </div>
 
         {/* Pagination and Info */}
-        <div className="d-flex align-items-center justify-content-between flex-wrap gap-3">
-          <div className="d-flex align-items-center gap-2">
-            <span className="text-muted">Total Data:</span>
-            <span className="fw-semibold">
+        <div className='d-flex align-items-center justify-content-between flex-wrap gap-3'>
+          <div className='d-flex align-items-center gap-2'>
+            <span className='text-muted'>Total Data:</span>
+            <span className='fw-semibold'>
               {parseFloat(totalData).toLocaleString("id-ID")}
             </span>
           </div>
 
-          <nav aria-label="Page navigation example" className="m-0">
-            <ul className="pagination pagination-sm mb-0">
+          <nav aria-label='Page navigation example' className='m-0'>
+            <ul className='pagination pagination-sm mb-0'>
               <li className={`page-item ${page === 1 ? "disabled" : ""}`}>
                 <button
-                  className="page-link border-0"
-                  aria-label="Previous"
+                  className='page-link border-0'
+                  aria-label='Previous'
                   onClick={() => handlePageChange(page - 1)}
                   style={{ borderRadius: "6px", margin: "0 2px" }}
                 >
-                  <span aria-hidden="true">&laquo;</span>
+                  <span aria-hidden='true'>&laquo;</span>
                 </button>
               </li>
               {getPageNumbers().map((pageNumber) => (
@@ -161,7 +174,7 @@ const Table = ({
                   }`}
                 >
                   <button
-                    className="page-link border-0"
+                    className='page-link border-0'
                     onClick={() => handlePageChange(pageNumber)}
                     style={{
                       borderRadius: "6px",
@@ -180,12 +193,12 @@ const Table = ({
                 className={`page-item ${page === totalPages ? "disabled" : ""}`}
               >
                 <button
-                  className="page-link border-0"
-                  aria-label="Next"
+                  className='page-link border-0'
+                  aria-label='Next'
                   onClick={() => handlePageChange(page + 1)}
                   style={{ borderRadius: "6px", margin: "0 2px" }}
                 >
-                  <span aria-hidden="true">&raquo;</span>
+                  <span aria-hidden='true'>&raquo;</span>
                 </button>
               </li>
             </ul>

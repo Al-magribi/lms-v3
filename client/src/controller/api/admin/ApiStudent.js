@@ -63,6 +63,24 @@ export const ApiStudent = createApi({
         body,
       }),
     }),
+    downloadStudent: builder.mutation({
+      query: () => ({
+        url: "/download-students",
+        method: "GET",
+        responseHandler: async (response) => {
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = "data-siswa.xlsx";
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+          return { message: "File berhasil didownload" };
+        },
+      }),
+    }),
   }),
 });
 
@@ -73,4 +91,5 @@ export const {
   useChangeStatusMutation,
   useGraduatedMutation,
   useChangePeriodeMutation,
+  useDownloadStudentMutation,
 } = ApiStudent;

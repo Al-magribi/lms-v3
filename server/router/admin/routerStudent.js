@@ -2,6 +2,7 @@ import express from "express";
 import { pool } from "../../config/config.js";
 import { authorize } from "../../middleware/auth.js";
 import bcrypt from "bcrypt";
+import xlsx from "xlsx";
 
 const create = "Berhasil disimpan";
 const update = "Berhasil diperbarui";
@@ -256,4 +257,97 @@ router.put("/graduated", authorize("admin"), async (req, res) => {
   }
 });
 
+router.get("/download-students", authorize("admin"), async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const homebase = req.user.homebase;
+    const periode = await client.query(
+      `SELECT * FROM a_periode WHERE isactive = true AND homebase = $1`,
+      [homebase]
+    );
+
+    const activePeriode = periode.rows[0].id;
+
+    // Get students data with required fields
+    const studentsData = await client.query(
+      `SELECT 
+        entry_periode.name AS tahun_masuk,
+        periode_periode.name AS periode,
+        u_students.nis,
+        u_students.name,
+        a_grade.name AS tingkat,
+        a_class.name AS kelas,
+        CASE 
+          WHEN u_students.isactive = true THEN 'Aktif'
+          ELSE 'Nonaktif'
+        END AS status
+      FROM u_students
+      LEFT JOIN a_periode AS entry_periode ON u_students.entry = entry_periode.id
+      LEFT JOIN a_periode AS periode_periode ON u_students.periode = periode_periode.id
+      LEFT JOIN cl_students ON u_students.id = cl_students.student
+      LEFT JOIN a_class ON cl_students.classid = a_class.id
+      LEFT JOIN a_grade ON a_class.grade = a_grade.id
+      WHERE u_students.homebase = $1
+      AND u_students.periode = $2
+      AND u_students.isactive = true
+      ORDER BY entry_periode.name DESC, a_class.name ASC, u_students.name ASC`,
+      [homebase, activePeriode]
+    );
+
+    // Create workbook and worksheet
+    const workbook = xlsx.utils.book_new();
+    const worksheet = xlsx.utils.json_to_sheet(studentsData.rows);
+
+    // Set column headers
+    const headers = [
+      "Tahun Masuk",
+      "Periode",
+      "NIS",
+      "Nama",
+      "Tingkat",
+      "Kelas",
+      "Status",
+    ];
+
+    // Set headers in the first row
+    xlsx.utils.sheet_add_aoa(worksheet, [headers], { origin: "A1" });
+
+    // Auto-size columns
+    const columnWidths = [
+      { wch: 15 }, // Tahun Masuk
+      { wch: 15 }, // Periode
+      { wch: 12 }, // NIS
+      { wch: 30 }, // Nama
+      { wch: 10 }, // Tingkat
+      { wch: 15 }, // Kelas
+      { wch: 10 }, // Status
+    ];
+    worksheet["!cols"] = columnWidths;
+
+    // Add worksheet to workbook
+    xlsx.utils.book_append_sheet(workbook, worksheet, "Data Siswa");
+
+    // Generate buffer
+    const buffer = xlsx.write(workbook, { type: "buffer", bookType: "xlsx" });
+
+    // Set response headers
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=data-siswa.xlsx"
+    );
+    res.setHeader("Content-Length", buffer.length);
+
+    // Send the file
+    res.send(buffer);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
+  }
+});
 export default router;

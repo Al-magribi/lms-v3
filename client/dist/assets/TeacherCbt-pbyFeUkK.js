@@ -1,2 +1,0 @@
-import{j as t}from"./index-BMtBcaO5.js";import{L as s}from"./Layout-DqOaqA_w.js";import{C as e}from"./CbtBank-CXEUwPaB.js";import"./vendor-CnnDPxwB.js";import"./index-B8CuzAwO.js";import"./index-g0LoU_Ie.js";import"./index-BpPDjKa5.js";import"./react-select.esm-C351JJ6e.js";import"./Table-BToy0c_y.js";const r=()=>t.jsx(s,{title:"Daftar Bank Soal",levels:["teacher"],children:t.jsx(e,{})});export{r as default};
-//# sourceMappingURL=TeacherCbt-pbyFeUkK.js.map

@@ -125,12 +125,12 @@ const Layout = ({ children, title, desc, levels }) => {
   };
 
   return (
-    <div className="min-vh-100 d-flex bg-light flex-column">
+    <div className='min-vh-100 d-flex bg-light flex-column'>
       {/* Navbar */}
-      <nav className="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm">
-        <div className="container-fluid px-4">
+      <nav className='navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm'>
+        <div className='container-fluid px-4'>
           <a
-            className="navbar-brand fw-bold d-flex align-items-center"
+            className='navbar-brand fw-bold d-flex align-items-center'
             href={
               level === "center"
                 ? center
@@ -145,23 +145,23 @@ const Layout = ({ children, title, desc, levels }) => {
                 : tahfiz
             }
           >
-            <i className="bi bi-person-circle me-2"></i>
-            <h5 className="mb-0">{truncateName(user?.name)}</h5>
+            <i className='bi bi-person-circle me-2'></i>
+            <h5 className='mb-0'>{truncateName(user?.name)}</h5>
           </a>
           <button
-            className="navbar-toggler"
-            type="button"
+            className='navbar-toggler'
+            type='button'
             onClick={toggleMenu}
-            aria-label="Toggle navigation"
+            aria-label='Toggle navigation'
           >
             <i className={`bi bi-${isMenuOpen ? "x-lg" : "list"}`}></i>
           </button>
           <div
             className={`collapse navbar-collapse ${isMenuOpen ? "show" : ""}`}
-            id="navbarNav"
+            id='navbarNav'
           >
-            <div className="navbar-nav ms-auto">
-              <div className="d-flex flex-wrap gap-2">
+            <div className='navbar-nav ms-auto'>
+              <div className='d-flex flex-wrap gap-2'>
                 {(level === "center"
                   ? CenterMenus
                   : level === "admin"
@@ -186,27 +186,27 @@ const Layout = ({ children, title, desc, levels }) => {
                     onClick={() => goToLink(menu.link)}
                   >
                     {menu.icon}
-                    <span className="d-none d-md-inline">{menu.label}</span>
+                    <span className='d-none d-md-inline'>{menu.label}</span>
                   </button>
                 ))}
 
                 {user?.homeroom && (
                   <button
-                    className="btn btn-sm btn-outline-light d-flex align-items-center gap-2"
+                    className='btn btn-sm btn-outline-light d-flex align-items-center gap-2'
                     onClick={goToHomeroom}
                   >
-                    <i className="bi bi-database"></i>
-                    <span className="d-none d-md-inline">Database</span>
+                    <i className='bi bi-database'></i>
+                    <span className='d-none d-md-inline'>Database</span>
                   </button>
                 )}
 
                 <button
-                  className="btn btn-sm btn-outline-light d-flex align-items-center gap-2"
+                  className='btn btn-sm btn-outline-light d-flex align-items-center gap-2'
                   disabled={isLoading}
                   onClick={logoutHandler}
                 >
-                  <i className="bi bi-box-arrow-right"></i>
-                  <span className="d-none d-md-inline">Logout</span>
+                  <i className='bi bi-box-arrow-right'></i>
+                  <span className='d-none d-md-inline'>Logout</span>
                 </button>
               </div>
             </div>
@@ -216,157 +216,157 @@ const Layout = ({ children, title, desc, levels }) => {
 
       {/* Main Content */}
       <main
-        className="flex-grow-1 transition-all"
+        className='flex-grow-1 transition-all'
         style={{
           marginTop: "70px",
           minHeight: dynamicHeight,
           transition: "all 0.3s ease",
         }}
       >
-        <div className="container-fluid">
+        <div className='container-fluid'>
           <Meta title={title} desc={desc} />
-          <div className="content-wrapper">
-            <div className="d-flex flex-wrap align-items-center justify-content-between mb-4">
+          <div className='content-wrapper'>
+            <div className='d-flex flex-wrap align-items-center justify-content-between mb-4'>
               {title !== "Profile" && (
-                <div className="d-flex align-items-center gap-2">
-                  <i className="bi bi-house-door-fill me-2 text-primary"></i>
-                  <h4 className="mb-0">{title}</h4>
+                <div className='d-flex align-items-center gap-2'>
+                  <i className='bi bi-house-door-fill me-2 text-primary'></i>
+                  <h4 className='mb-0'>{title}</h4>
                 </div>
               )}
 
               {title === "Kelas" && (
-                <div className="d-flex gap-2">
+                <div className='d-flex gap-2'>
                   <button
-                    className="btn btn-sm btn-outline-success"
-                    data-bs-toggle="modal"
-                    data-bs-target="#addclass"
+                    className='btn btn-sm btn-outline-success'
+                    data-bs-toggle='modal'
+                    data-bs-target='#addclass'
                   >
-                    <i className="bi bi-plus-lg"></i>
-                    <span className="ms-2">Kelas</span>
+                    <i className='bi bi-plus-lg'></i>
+                    <span className='ms-2'>Kelas</span>
                   </button>
 
                   <button
-                    className="btn btn-sm btn-outline-success"
-                    data-bs-toggle="modal"
-                    data-bs-target="#uploadstudents"
+                    className='btn btn-sm btn-outline-success'
+                    data-bs-toggle='modal'
+                    data-bs-target='#uploadstudents'
                   >
-                    <i className="bi bi-file-earmark-arrow-up-fill"></i>
-                    <span className="ms-2">Upload Siswa</span>
+                    <i className='bi bi-file-earmark-arrow-up-fill'></i>
+                    <span className='ms-2'>Upload Siswa</span>
                   </button>
                 </div>
               )}
 
               {title === "Siswa" && (
-                <div className="d-flex gap-2">
+                <div className='d-flex gap-2'>
                   <button
-                    className="btn btn-sm btn-outline-primary"
+                    className='btn btn-sm btn-outline-primary'
                     onClick={goToDatabase}
                   >
-                    <i className="bi bi-database"></i>
-                    <span className="ms-2">Database</span>
+                    <i className='bi bi-database'></i>
+                    <span className='ms-2'>Database</span>
                   </button>
 
                   <button
-                    className="btn btn-sm btn-outline-success"
+                    className='btn btn-sm btn-outline-success'
                     onClick={goToGraduation}
                   >
-                    <i className="bi bi-mortarboard-fill"></i>
-                    <span className="ms-2">Lulusan</span>
+                    <i className='bi bi-mortarboard-fill'></i>
+                    <span className='ms-2'>Lulusan</span>
                   </button>
 
                   <button
-                    className="btn btn-sm btn-outline-success"
-                    data-bs-toggle="modal"
-                    data-bs-target="#addstudent"
+                    className='btn btn-sm btn-outline-success'
+                    data-bs-toggle='modal'
+                    data-bs-target='#addstudent'
                   >
-                    <i className="bi bi-plus-lg"></i>
-                    <span className="ms-2">Siswa</span>
+                    <i className='bi bi-plus-lg'></i>
+                    <span className='ms-2'>Siswa</span>
                   </button>
                 </div>
               )}
 
               {title === "Mata Pelajaran" && (
                 <button
-                  className="btn btn-sm btn-outline-success"
-                  data-bs-toggle="modal"
-                  data-bs-target="#addsubject"
+                  className='btn btn-sm btn-outline-success'
+                  data-bs-toggle='modal'
+                  data-bs-target='#addsubject'
                 >
-                  <i className="bi bi-plus-lg"></i>
-                  <span className="ms-2">Mata Pelajaran</span>
+                  <i className='bi bi-plus-lg'></i>
+                  <span className='ms-2'>Mata Pelajaran</span>
                 </button>
               )}
 
               {title === "Database" && (
                 <button
-                  className="btn btn-sm btn-outline-info"
+                  className='btn btn-sm btn-outline-info'
                   onClick={goToStudent}
                 >
                   <Pi.PiStudentFill />
-                  <span className="ms-2">Siswa</span>
+                  <span className='ms-2'>Siswa</span>
                 </button>
               )}
 
               {title === "Lulusan" && (
-                <div className="d-flex align-items-center gap-2">
+                <div className='d-flex align-items-center gap-2'>
                   <button
-                    className="btn btn-sm btn-outline-info"
+                    className='btn btn-sm btn-outline-info'
                     onClick={goToStudent}
                   >
                     <Pi.PiStudentFill />
-                    <span className="ms-2">Siswa</span>
+                    <span className='ms-2'>Siswa</span>
                   </button>
 
                   <button
-                    className="btn btn-sm btn-outline-success"
-                    data-bs-toggle="modal"
-                    data-bs-target="#addgraduation"
+                    className='btn btn-sm btn-outline-success'
+                    data-bs-toggle='modal'
+                    data-bs-target='#addgraduation'
                   >
-                    <i className="bi bi-plus-lg"></i>
-                    <span className="ms-2">Lulusan</span>
+                    <i className='bi bi-plus-lg'></i>
+                    <span className='ms-2'>Lulusan</span>
                   </button>
                 </div>
               )}
 
               {title === "Guru" && (
-                <div className="d-flex align-items-center gap-2">
+                <div className='d-flex align-items-center gap-2'>
                   <button
-                    className="btn btn-sm btn-outline-success"
-                    data-bs-toggle="modal"
-                    data-bs-target="#addteacher"
+                    className='btn btn-sm btn-outline-success'
+                    data-bs-toggle='modal'
+                    data-bs-target='#addteacher'
                   >
-                    <i className="bi bi-plus-lg"></i>
-                    <span className="ms-2 d-none d-md-inline">Guru</span>
+                    <i className='bi bi-plus-lg'></i>
+                    <span className='ms-2 d-none d-md-inline'>Guru</span>
                   </button>
 
                   <button
-                    className="btn btn-sm btn-outline-success"
-                    data-bs-toggle="modal"
-                    data-bs-target="#uploadteacher"
+                    className='btn btn-sm btn-outline-success'
+                    data-bs-toggle='modal'
+                    data-bs-target='#uploadteacher'
                   >
-                    <i className="bi bi-file-earmark-arrow-up-fill"></i>
-                    <span className="ms-2 d-none d-md-inline">Upload</span>
+                    <i className='bi bi-file-earmark-arrow-up-fill'></i>
+                    <span className='ms-2 d-none d-md-inline'>Upload</span>
                   </button>
                 </div>
               )}
 
               {title === "Daftar Bank Soal" && (
                 <button
-                  className="btn btn-sm btn-outline-success"
-                  data-bs-toggle="modal"
-                  data-bs-target="#addbank"
+                  className='btn btn-sm btn-outline-success'
+                  data-bs-toggle='modal'
+                  data-bs-target='#addbank'
                 >
-                  <i className="bi bi-plus-lg"></i>
-                  <span className="ms-2 d-none d-md-inline">Bank Soal</span>
+                  <i className='bi bi-plus-lg'></i>
+                  <span className='ms-2 d-none d-md-inline'>Bank Soal</span>
                 </button>
               )}
 
               {title === "Daftar Ujian" && (
                 <button
-                  className="btn btn-sm btn-outline-success"
-                  data-bs-toggle="modal"
-                  data-bs-target="#addexam"
+                  className='btn btn-sm btn-outline-success'
+                  data-bs-toggle='modal'
+                  data-bs-target='#addexam'
                 >
-                  <i className="bi bi-plus-lg me-2"></i>
+                  <i className='bi bi-plus-lg me-2'></i>
                   Tambah Ujian
                 </button>
               )}
@@ -378,10 +378,10 @@ const Layout = ({ children, title, desc, levels }) => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-primary text-white py-2">
-        <div className="container-fluid text-center">
-          <div className="d-flex align-items-center justify-content-center gap-2">
-            <i className="bi bi-c-circle"></i>
+      <footer className='bg-primary text-white py-2'>
+        <div className='container-fluid text-center'>
+          <div className='d-flex align-items-center justify-content-center gap-2'>
+            <i className='bi bi-c-circle'></i>
             <small>
               ALMADEV {new Date().getFullYear()} | {appData?.app_name}
             </small>

@@ -11,11 +11,21 @@ router.get("/admin-stats", authorize("admin"), async (req, res) => {
   try {
     const homebaseId = req.user.homebase;
 
+    const periode = await pool.query(
+      `SELECT * FROM a_periode WHERE homebase = $1 AND isactive = true`,
+      [homebaseId]
+    );
+
+    const activePeriode = periode.rows[0].id;
+
     // Basic counts
     const basicStats = await pool.query(
       `
             SELECT 
-                (SELECT COUNT(*) FROM u_students WHERE homebase = $1) as total_students,
+                (SELECT COUNT(DISTINCT us.id) 
+                 FROM u_students us 
+                 JOIN cl_students cs ON us.id = cs.student 
+                 WHERE us.homebase = $1 AND us.isactive = true AND cs.periode = $2) as total_students,
                 (SELECT COUNT(*) FROM u_teachers WHERE homebase = $1) as total_teachers,
                 (SELECT COUNT(*) FROM a_class WHERE homebase = $1) as total_classes,
                 (SELECT COUNT(*) FROM c_exam WHERE homebase = $1) as total_exams,
@@ -24,7 +34,7 @@ router.get("/admin-stats", authorize("admin"), async (req, res) => {
                 (SELECT COUNT(*) FROM l_chapter WHERE subject IN (SELECT id FROM a_subject WHERE homebase = $1)) as total_chapters,
                 (SELECT COUNT(*) FROM l_content WHERE chapter IN (SELECT id FROM l_chapter WHERE subject IN (SELECT id FROM a_subject WHERE homebase = $1))) as total_learning_materials
         `,
-      [homebaseId]
+      [homebaseId, activePeriode]
     );
 
     // Students per grade with gender composition
@@ -39,11 +49,11 @@ router.get("/admin-stats", authorize("admin"), async (req, res) => {
             LEFT JOIN a_class c ON c.grade = g.id
             LEFT JOIN cl_students s ON s.classid = c.id
             LEFT JOIN u_students us ON us.id = s.student
-            WHERE g.homebase = $1
+            WHERE g.homebase = $1 AND us.isactive = true AND s.periode = $2
             GROUP BY g.id, g.name
             ORDER BY g.name
         `,
-      [homebaseId]
+      [homebaseId, activePeriode]
     );
 
     // Students per class with gender composition
@@ -59,11 +69,11 @@ router.get("/admin-stats", authorize("admin"), async (req, res) => {
             LEFT JOIN a_grade g ON c.grade = g.id
             LEFT JOIN cl_students s ON s.classid = c.id
             LEFT JOIN u_students us ON us.id = s.student
-            WHERE c.homebase = $1
+            WHERE c.homebase = $1 AND us.isactive = true AND s.periode = $2
             GROUP BY c.id, c.name, g.name
             ORDER BY g.name, c.name
         `,
-      [homebaseId]
+      [homebaseId, activePeriode]
     );
 
     // Teacher composition by gender and homeroom status
@@ -195,12 +205,13 @@ router.get("/admin-stats", authorize("admin"), async (req, res) => {
       `
       WITH valid_students AS (
         SELECT
-          id,
-          gender,
-          birth_date,
-          EXTRACT(YEAR FROM AGE(CURRENT_DATE, birth_date))::integer as age
-        FROM db_student
-        WHERE birth_date IS NOT NULL AND homebaseid = $1
+          ds.id,
+          ds.gender,
+          ds.birth_date,
+          EXTRACT(YEAR FROM AGE(CURRENT_DATE, ds.birth_date))::integer as age
+        FROM db_student ds
+        JOIN u_students us ON ds.nis = us.nis
+        WHERE ds.birth_date IS NOT NULL AND ds.homebaseid = $1 AND us.isactive = true
       ),
       age_stats AS (
         SELECT
@@ -270,7 +281,8 @@ router.get("/admin-stats", authorize("admin"), async (req, res) => {
           COUNT(*) as student_count
         FROM db_student ds
         JOIN db_province p ON ds.provinceid = p.id
-        WHERE ds.homebaseid = $1
+        JOIN u_students us ON ds.nis = us.nis
+        WHERE ds.homebaseid = $1 AND us.isactive = true
         GROUP BY p.id, p.name
         ORDER BY student_count DESC
         LIMIT 5
@@ -283,7 +295,8 @@ router.get("/admin-stats", authorize("admin"), async (req, res) => {
         FROM db_student ds
         JOIN db_city c ON ds.cityid = c.id
         JOIN db_province p ON c.provinceid = p.id
-        WHERE ds.homebaseid = $1
+        JOIN u_students us ON ds.nis = us.nis
+        WHERE ds.homebaseid = $1 AND us.isactive = true
         GROUP BY c.id, c.name, p.name
         ORDER BY student_count DESC
         LIMIT 5
@@ -298,7 +311,8 @@ router.get("/admin-stats", authorize("admin"), async (req, res) => {
         JOIN db_district d ON ds.districtid = d.id
         JOIN db_city c ON d.cityid = c.id
         JOIN db_province p ON c.provinceid = p.id
-        WHERE ds.homebaseid = $1
+        JOIN u_students us ON ds.nis = us.nis
+        WHERE ds.homebaseid = $1 AND us.isactive = true
         GROUP BY d.id, d.name, c.name, p.name
         ORDER BY student_count DESC
         LIMIT 5
@@ -315,7 +329,8 @@ router.get("/admin-stats", authorize("admin"), async (req, res) => {
         JOIN db_district d ON v.districtid = d.id
         JOIN db_city c ON d.cityid = c.id
         JOIN db_province p ON c.provinceid = p.id
-        WHERE ds.homebaseid = $1
+        JOIN u_students us ON ds.nis = us.nis
+        WHERE ds.homebaseid = $1 AND us.isactive = true
         GROUP BY v.id, v.name, d.name, c.name, p.name
         ORDER BY student_count DESC
         LIMIT 5
@@ -368,13 +383,13 @@ router.get("/admin-stats", authorize("admin"), async (req, res) => {
         LEFT JOIN cl_students cs ON s.id = cs.student
         LEFT JOIN a_class c ON cs.classid = c.id
         LEFT JOIN a_grade g ON c.grade = g.id
-        WHERE s.homebase = $1
+        WHERE s.homebase = $1 AND s.isactive = true AND cs.periode = $2
         GROUP BY g.name
         ORDER BY CAST(g.name AS INTEGER)
       )
       SELECT * FROM student_data
       `,
-      [homebaseId]
+      [homebaseId, activePeriode]
     );
 
     // Student entry statistics
