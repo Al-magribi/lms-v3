@@ -98,10 +98,11 @@ router.get("/get-students", authorize("admin"), async (req, res) => {
     const [count, data] = await Promise.all([
       client.query(
         `SELECT COUNT(*) FROM u_students
-				WHERE homebase = $1 
-        AND (name ILIKE $2 OR nis ILIKE $2)
-        AND periode = $3
-        AND isactive = true`,
+        INNER JOIN cl_students ON u_students.id = cl_students.student
+				WHERE u_students.homebase = $1 
+        AND (u_students.name ILIKE $2 OR u_students.nis ILIKE $2)
+        AND cl_students.periode = $3
+        AND u_students.isactive = true`,
         [homebase, `%${search}%`, activePeriode]
       ),
 
@@ -115,14 +116,14 @@ router.get("/get-students", authorize("admin"), async (req, res) => {
         a_class.name AS classname,
 				a_homebase.name AS homebase
 				FROM u_students
+				INNER JOIN cl_students ON u_students.id = cl_students.student
 				LEFT JOIN a_periode AS entry_periode ON u_students.entry = entry_periode.id
-				LEFT JOIN a_periode AS periode_periode ON u_students.periode = periode_periode.id
+				LEFT JOIN a_periode AS periode_periode ON cl_students.periode = periode_periode.id
 				LEFT JOIN a_homebase ON u_students.homebase = a_homebase.id
-				LEFT JOIN cl_students ON u_students.id = cl_students.student
 				LEFT JOIN a_class ON cl_students.classid = a_class.id
 				WHERE u_students.homebase = $1
 				AND (u_students.name ILIKE $2 OR u_students.nis ILIKE $2) 
-				AND u_students.periode = $3
+				AND cl_students.periode = $3
         AND u_students.isactive = true
 				ORDER BY entry_periode.name DESC, u_students.name ASC
 				LIMIT $4 OFFSET $5`,
@@ -218,6 +219,11 @@ router.put(
         userid,
       ]);
 
+      await client.query(
+        `UPDATE cl_students SET periode = $1 WHERE student = $2`,
+        [periodeid, userid]
+      );
+
       await client.query("COMMIT");
 
       res.status(200).json({ message: "Berhasil mengubah tahun ajaran" });
@@ -257,6 +263,37 @@ router.put("/graduated", authorize("admin"), async (req, res) => {
   }
 });
 
+// New endpoint to fix period mismatch between u_students and cl_students
+router.put("/fix-periods", authorize("admin"), async (req, res) => {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    // Update u_students.periode to match cl_students.periode for all students
+    const updateResult = await client.query(
+      `UPDATE u_students 
+       SET periode = cl_students.periode 
+       FROM cl_students 
+       WHERE u_students.id = cl_students.student 
+       AND u_students.periode != cl_students.periode`
+    );
+
+    await client.query("COMMIT");
+
+    res.status(200).json({
+      message: `Berhasil memperbaiki periode untuk ${updateResult.rowCount} siswa`,
+      updatedCount: updateResult.rowCount,
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+// Modified download-students endpoint to use cl_students.periode for filtering
 router.get("/download-students", authorize("admin"), async (req, res) => {
   const client = await pool.connect();
   try {
@@ -283,12 +320,12 @@ router.get("/download-students", authorize("admin"), async (req, res) => {
         END AS status
       FROM u_students
       LEFT JOIN a_periode AS entry_periode ON u_students.entry = entry_periode.id
-      LEFT JOIN a_periode AS periode_periode ON u_students.periode = periode_periode.id
-      LEFT JOIN cl_students ON u_students.id = cl_students.student
+      LEFT JOIN a_periode AS periode_periode ON cl_students.periode = periode_periode.id
+      INNER JOIN cl_students ON u_students.id = cl_students.student
       LEFT JOIN a_class ON cl_students.classid = a_class.id
       LEFT JOIN a_grade ON a_class.grade = a_grade.id
       WHERE u_students.homebase = $1
-      AND u_students.periode = $2
+      AND cl_students.periode = $2
       AND u_students.isactive = true
       ORDER BY entry_periode.name DESC, a_class.name ASC, u_students.name ASC`,
       [homebase, activePeriode]

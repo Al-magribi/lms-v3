@@ -269,8 +269,8 @@ router.get("/get-exam-log", authorize("admin", "teacher"), async (req, res) => {
       JOIN cl_students cs ON cc.classid = cs.classid
       JOIN u_students us ON cs.student = us.id
       WHERE cc.exam = $1
-      AND us.periode = $2
-      AND us.isactive = true
+      AND cc.periode = $2
+      AND cc.isactive = true
     `;
 
     // Add class filter if provided

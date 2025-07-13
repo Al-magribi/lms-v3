@@ -28,6 +28,8 @@ const TableData = ({ setDetail }) => {
   const { students = [], totalData, totalPages } = rawData;
   const { data: periodes } = useGetPeriodeQuery();
 
+  console.log(rawData);
+
   const [deleteStudent, { isSuccess, isLoading, isError, reset }] =
     useDeleteStudentMutation();
   const [changeStatus] = useChangeStatusMutation();

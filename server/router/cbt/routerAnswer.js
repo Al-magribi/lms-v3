@@ -293,11 +293,12 @@ router.get(
               2
             ) as final_score
           FROM u_students us
+          JOIN cl_students cls ON us.id = cls.student
           JOIN c_answer ca ON us.id = ca.student
           JOIN c_exam ce ON ca.exam = ce.id
           JOIN c_question cq ON ca.question = cq.id
           WHERE ca.exam = $1
-          AND us.periode = $2
+          AND cls.periode = $2
           AND us.isactive = true
           GROUP BY us.id, ce.mc_score, ce.essay_score
         ),
@@ -414,7 +415,7 @@ router.get(
           LEFT JOIN c_answer ca ON us.id = ca.student AND ca.exam = $1
           JOIN c_exam ce ON ce.id = $1
           WHERE ($2::integer IS NULL OR cls.classid = $2)
-          AND us.periode = $3
+          AND cls.periode = $3
           AND us.isactive = true
           AND (
             LOWER(us.name) LIKE LOWER($4) OR 
@@ -540,7 +541,7 @@ router.get(
           JOIN a_grade ag ON ac.grade = ag.id
           JOIN c_class cc ON cc.exam = $1 AND cc.classid = cls.classid
           WHERE ($2::integer IS NULL OR cls.classid = $2)
-          AND us.periode = $3
+          AND cls.periode = $3
           AND us.isactive = true
           AND (
             LOWER(us.name) LIKE LOWER($4) OR 

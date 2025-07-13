@@ -33,7 +33,7 @@ router.get("/get-class", authorize("admin", "teacher"), async (req, res) => {
       client.query({
         text: `
 					SELECT a_class.*, a_grade.name AS grade_name, a_major.name AS major_name,
-					COUNT(DISTINCT CASE WHEN u_students.isactive = true AND u_students.periode = $5 THEN cl_students.id END) AS students
+					COUNT(DISTINCT CASE WHEN u_students.isactive = true AND cl_students.periode = $5 THEN cl_students.id END) AS students
 					FROM a_class
 					LEFT JOIN a_grade ON a_class.grade = a_grade.id 
 					LEFT JOIN a_major ON a_class.major = a_major.id
