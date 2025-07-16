@@ -10,6 +10,64 @@ export default router;
 // ENDPOINTS UNTUK l_reports
 // ============================================
 
+// Get students
+router.get("/get-students", authorize("admin", "teacher"), async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { page = 1, limit = 10, search, classid } = req.query;
+    const offset = (page - 1) * limit;
+    const homebase = req.user.homebase;
+
+    const periodeRes = await client.query(
+      `SELECT id FROM a_periode WHERE isactive = true AND homebase = $1`,
+      [homebase]
+    );
+    const activePeriode = periodeRes.rows[0]?.id;
+    if (!activePeriode)
+      return res.status(400).json({ message: "Periode aktif tidak ditemukan" });
+
+    let query = `SELECT u.nis, c.student_name, g.name AS grade_name, ac.name AS class_name, 
+    c.classid FROM cl_students c
+    JOIN u_students u ON c.student = u.id
+    JOIN a_class ac ON c.classid = ac.id
+    JOIN a_grade g ON ac.grade = g.id
+    WHERE c.homebase = $1 AND c.periode = $2`;
+    const params = [homebase, activePeriode];
+    let paramIdx = 3;
+
+    if (search) {
+      query += ` AND (c.student_name ILIKE $${paramIdx} OR u.nis ILIKE $${
+        paramIdx + 1
+      })`;
+      params.push(`%${search}%`, `%${search}%`);
+      paramIdx += 2;
+    }
+    if (classid) {
+      query += ` AND c.classid = $${paramIdx}`;
+      params.push(classid);
+      paramIdx++;
+    }
+    query += ` ORDER BY CAST(g.name AS INTEGER) ASC, ac.name ASC, c.student_name ASC
+    LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`;
+    params.push(Number(limit), Number(offset));
+
+    const result = await client.query(query, params);
+    const totalData = result.rowCount;
+    const totalPages = Math.ceil(totalData / limit);
+
+    res.status(200).json({
+      students: result.rows,
+      totalData,
+      totalPages,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
+  }
+});
+
 // CREATE or UPDATE l_reports
 router.post("/add-report", authorize("admin", "teacher"), async (req, res) => {
   const client = await pool.connect();
