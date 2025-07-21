@@ -499,6 +499,10 @@ router.get("/student-stats", authorize("student"), async (req, res) => {
   try {
     const studentId = req.user.id;
     const homebaseId = req.user.homebase;
+    const periode = await pool.query(
+      `SELECT * FROM a_periode WHERE isactive = true`
+    );
+    const activePeriode = periode.rows[0];
 
     // Get student's class and subjects
     const studentInfo = await pool.query(
@@ -514,10 +518,10 @@ router.get("/student-stats", authorize("student"), async (req, res) => {
       LEFT JOIN a_major m ON c.major = m.id
       LEFT JOIN at_class atc ON atc.class_id = c.id
       LEFT JOIN at_subject ats ON ats.teacher = atc.teacher_id
-      WHERE cs.student = $1 AND cs.homebase = $2
+      WHERE cs.student = $1 AND cs.homebase = $2 AND cs.periode = $3
       GROUP BY c.name, g.name, m.name
       `,
-      [studentId, homebaseId]
+      [studentId, homebaseId, activePeriode.id]
     );
 
     // Get upcoming exams
