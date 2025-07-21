@@ -246,6 +246,10 @@ router.get(
     try {
       const token = req.cookies.token;
       const { level, id } = req.user;
+      const periode = await client.query(
+        `SELECT * FROM a_periode WHERE isactive = true`
+      );
+      const activePeriode = periode.rows[0];
 
       if (!token) {
         return res.status(401).json({
@@ -311,6 +315,7 @@ router.get(
 							INNER JOIN a_homebase ON a_class.homebase = a_homebase.id
 							INNER JOIN a_periode ON cl_students.periode = a_periode.id
 							WHERE cl_students.student = $1
+							AND cl_students.periode = $2
 						)
 						SELECT * FROM student_data
 						LEFT JOIN class_data ON true`,
@@ -404,6 +409,7 @@ router.get(
 							INNER JOIN a_homebase ON a_class.homebase = a_homebase.id
 							INNER JOIN a_periode ON cl_students.periode = a_periode.id
 							WHERE cl_students.student = (SELECT student_id FROM parent_data)
+							AND cl_students.periode = $2
 						)
 						SELECT * FROM parent_data, class_data`,
           transform: (row) => ({
@@ -433,7 +439,12 @@ router.get(
         });
       }
 
-      const result = await client.query(query.text, [id]);
+      // For student and parent queries, we need to pass the active period ID as well
+      const queryParams =
+        level === "student" || level === "parent"
+          ? [id, activePeriode.id]
+          : [id];
+      const result = await client.query(query.text, queryParams);
       if (result.rows.length === 0) {
         return res.status(404).json({
           message: "Data tidak ditemukan.",

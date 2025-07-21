@@ -2,6 +2,7 @@ import { useState } from "react";
 import Table from "../../../components/table/Table";
 import { useGetStudentsQuery } from "../../../controller/api/lms/ApiScore";
 import Loading from "../../../components/loader/Loading";
+import FormData from "./FormData";
 import ReactSelect from "react-select";
 
 const TableData = () => {
@@ -9,6 +10,7 @@ const TableData = () => {
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState("");
   const [classid, setClassid] = useState("");
+  const [student, setStudent] = useState(null);
 
   const { data: rawData, isLoading } = useGetStudentsQuery({
     page,
@@ -50,24 +52,29 @@ const TableData = () => {
         <tbody>
           {students.map((student, index) => (
             <tr key={index}>
-              <td className="text-center">{(page - 1) * limit + index + 1}</td>
-              <td className="text-center">{student.nis}</td>
-              <td>{student.student_name}</td>
-              <td className="text-center">{student.grade_name}</td>
-              <td className="text-center">{student.class_name}</td>
-              <td className="text-center">
-                <button className="btn btn-sm btn-primary me-2">
+              <td className="text-center align-middle">
+                {(page - 1) * limit + index + 1}
+              </td>
+              <td className="text-center align-middle">{student.nis}</td>
+              <td className="align-middle">{student.student_name}</td>
+              <td className="text-center align-middle">{student.grade_name}</td>
+              <td className="text-center align-middle">{student.class_name}</td>
+              <td className="text-center align-middle">
+                <button
+                  className="btn btn-sm btn-primary me-2"
+                  data-bs-toggle="modal"
+                  data-bs-target="#score"
+                  onClick={() => setStudent(student)}
+                >
                   <i className="bi bi-eye"></i>
-                </button>
-
-                <button className="btn btn-sm btn-warning">
-                  <i className="bi bi-clipboard-check"></i>
                 </button>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+
+      <FormData student={student} setStudent={() => setStudent(null)} />
     </Table>
   );
 };
