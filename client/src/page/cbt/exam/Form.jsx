@@ -8,6 +8,10 @@ import { toast } from "react-hot-toast";
 import Select from "react-select";
 import { useSelector } from "react-redux";
 
+const selectStyles = {
+  menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+};
+
 const Form = ({ detail, setDetail, onSuccess }) => {
   const { user } = useSelector((state) => state.auth);
 
@@ -214,6 +218,8 @@ const Form = ({ detail, setDetail, onSuccess }) => {
               options={teacherOptions}
               onChange={handleTeacherChange}
               isDisabled={!!detail?.id}
+              menuPortalTarget={document.body}
+              styles={selectStyles}
             />
 
             <Select
@@ -227,6 +233,8 @@ const Form = ({ detail, setDetail, onSuccess }) => {
               options={bankOptions}
               onChange={handleBankChange}
               isDisabled={!formData.teacher || !!detail?.id}
+              menuPortalTarget={document.body}
+              styles={selectStyles}
             />
 
             {formData.bank
@@ -262,6 +270,8 @@ const Form = ({ detail, setDetail, onSuccess }) => {
               value={formData.classes}
               options={classOptions}
               onChange={handleClass}
+              menuPortalTarget={document.body}
+              styles={selectStyles}
             />
 
             <div className="form-floating">

@@ -31,11 +31,6 @@ const AttendanceSummary = ({ classid, subjectid }) => {
     "Desember",
   ];
 
-  const years = Array.from(
-    { length: 5 },
-    (_, i) => new Date().getFullYear() - 2 + i
-  );
-
   if (!classid || !subjectid) {
     return (
       <div className="text-center py-5 empty-state">
@@ -74,20 +69,6 @@ const AttendanceSummary = ({ classid, subjectid }) => {
               {months.map((month, index) => (
                 <option key={index + 1} value={index + 1}>
                   {month}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="col-md-6">
-            <label className="form-label fw-bold">Tahun:</label>
-            <select
-              className="form-select"
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-            >
-              {years.map((year) => (
-                <option key={year} value={year}>
-                  {year}
                 </option>
               ))}
             </select>

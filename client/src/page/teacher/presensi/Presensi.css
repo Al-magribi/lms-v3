@@ -131,7 +131,7 @@
 }
 
 /* Animation for attendance changes */
-.attendance-change {
+/* .attendance-change {
   animation: pulse 0.5s ease-in-out;
 }
 
@@ -145,7 +145,7 @@
   100% {
     transform: scale(1);
   }
-}
+} */
 
 /* Empty state styling */
 .empty-state {

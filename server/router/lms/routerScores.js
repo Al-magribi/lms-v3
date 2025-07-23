@@ -4,155 +4,17 @@ import { pool } from "../../config/config.js";
 
 const router = Router();
 
-export default router;
-
-// ============================================
-// ENDPOINTS UNTUK l_reports
-// ============================================
-
-// Get students
-router.get("/get-students", authorize("admin", "teacher"), async (req, res) => {
+// 1. GET: List laporan bulanan
+router.get("/reports", authorize("admin", "teacher"), async (req, res) => {
   const client = await pool.connect();
   try {
-    const { page = 1, limit = 10, search, classid } = req.query;
-    const offset = (page - 1) * limit;
-    const homebase = req.user.homebase;
-
-    const periodeRes = await client.query(
-      `SELECT id FROM a_periode WHERE isactive = true AND homebase = $1`,
-      [homebase]
-    );
-    const activePeriode = periodeRes.rows[0]?.id;
-    if (!activePeriode)
-      return res.status(400).json({ message: "Periode aktif tidak ditemukan" });
-
-    let query = `SELECT u.nis, c.student_name, g.name AS grade_name, ac.name AS class_name, 
-    c.classid FROM cl_students c
-    JOIN u_students u ON c.student = u.id
-    JOIN a_class ac ON c.classid = ac.id
-    JOIN a_grade g ON ac.grade = g.id
-    WHERE c.homebase = $1 AND c.periode = $2`;
-    const params = [homebase, activePeriode];
-    let paramIdx = 3;
-
-    if (search) {
-      query += ` AND (c.student_name ILIKE $${paramIdx} OR u.nis ILIKE $${
-        paramIdx + 1
-      })`;
-      params.push(`%${search}%`, `%${search}%`);
-      paramIdx += 2;
-    }
-    if (classid) {
-      query += ` AND c.classid = $${paramIdx}`;
-      params.push(classid);
-      paramIdx++;
-    }
-    query += ` ORDER BY CAST(g.name AS INTEGER) ASC, ac.name ASC, c.student_name ASC
-    LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`;
-    params.push(Number(limit), Number(offset));
-
-    const result = await client.query(query, params);
-    const totalData = result.rowCount;
-    const totalPages = Math.ceil(totalData / limit);
-
-    res.status(200).json({
-      students: result.rows,
-      totalData,
-      totalPages,
-    });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: error.message });
-  } finally {
-    client.release();
-  }
-});
-
-// CREATE or UPDATE l_reports
-router.post("/add-report", authorize("admin", "teacher"), async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const {
-      id,
-      classid,
-      subjectid,
-      studentid,
-      teacherid,
-      periodeid,
-      type_report,
-      month,
-      performance,
-      discipline,
-      activeness,
-      confidence,
-      teacher_note,
-      note,
-    } = req.body;
-    await client.query("BEGIN");
-    if (id) {
-      await client.query(
-        `UPDATE l_reports SET classid=$1, subjectid=$2, studentid=$3, teacherid=$4, periodeid=$5, type_report=$6, month=$7, performance=$8, discipline=$9, activeness=$10, confidence=$11, teacher_note=$12, note=$13 WHERE id=$14`,
-        [
-          classid,
-          subjectid,
-          studentid,
-          teacherid,
-          periodeid,
-          type_report,
-          month,
-          performance,
-          discipline,
-          activeness,
-          confidence,
-          teacher_note,
-          note,
-          id,
-        ]
-      );
-      await client.query("COMMIT");
-      return res.status(200).json({ message: "Berhasil diperbarui" });
-    } else {
-      await client.query(
-        `INSERT INTO l_reports (classid, subjectid, studentid, teacherid, periodeid, type_report, month, performance, discipline, activeness, confidence, teacher_note, note) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
-        [
-          classid,
-          subjectid,
-          studentid,
-          teacherid,
-          periodeid,
-          type_report,
-          month,
-          performance,
-          discipline,
-          activeness,
-          confidence,
-          teacher_note,
-          note,
-        ]
-      );
-      await client.query("COMMIT");
-      return res.status(200).json({ message: "Berhasil disimpan" });
-    }
-  } catch (error) {
-    await client.query("ROLLBACK");
-    res.status(500).json({ message: error.message });
-  } finally {
-    client.release();
-  }
-});
-
-// READ l_reports (with optional filters)
-router.get("/get-reports", authorize("admin", "teacher"), async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const { id, classid, subjectid, studentid, teacherid, periodeid } =
-      req.query;
+    const { periodeid, classid, subjectid, month, studentid } = req.query;
     let query = `SELECT * FROM l_reports WHERE 1=1`;
     const params = [];
     let idx = 1;
-    if (id) {
-      query += ` AND id = $${idx++}`;
-      params.push(id);
+    if (periodeid) {
+      query += ` AND periodeid = $${idx++}`;
+      params.push(periodeid);
     }
     if (classid) {
       query += ` AND classid = $${idx++}`;
@@ -162,19 +24,15 @@ router.get("/get-reports", authorize("admin", "teacher"), async (req, res) => {
       query += ` AND subjectid = $${idx++}`;
       params.push(subjectid);
     }
+    if (month) {
+      query += ` AND month = $${idx++}`;
+      params.push(month);
+    }
     if (studentid) {
       query += ` AND studentid = $${idx++}`;
       params.push(studentid);
     }
-    if (teacherid) {
-      query += ` AND teacherid = $${idx++}`;
-      params.push(teacherid);
-    }
-    if (periodeid) {
-      query += ` AND periodeid = $${idx++}`;
-      params.push(periodeid);
-    }
-    query += ` ORDER BY id DESC`;
+    query += ` ORDER BY classid, subjectid, studentid, month`;
     const result = await client.query(query, params);
     res.status(200).json(result.rows);
   } catch (error) {
@@ -184,79 +42,99 @@ router.get("/get-reports", authorize("admin", "teacher"), async (req, res) => {
   }
 });
 
-// DELETE l_reports
-router.delete(
-  "/delete-report",
-  authorize("admin", "teacher"),
-  async (req, res) => {
-    const client = await pool.connect();
-    try {
-      const { id } = req.query;
-      if (!id) return res.status(400).json({ message: "ID diperlukan" });
-      await client.query("BEGIN");
-      await client.query(`DELETE FROM l_reports WHERE id = $1`, [id]);
-      await client.query("COMMIT");
-      res.status(200).json({ message: "Berhasil dihapus" });
-    } catch (error) {
-      await client.query("ROLLBACK");
-      res.status(500).json({ message: error.message });
-    } finally {
-      client.release();
-    }
+// 2. GET: Detail laporan bulanan (header + detail nilai)
+router.get("/report/:id", authorize("admin", "teacher"), async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { id } = req.params;
+    const report = await client.query(`SELECT * FROM l_reports WHERE id = $1`, [
+      id,
+    ]);
+    if (report.rowCount === 0)
+      return res.status(404).json({ message: "Laporan tidak ditemukan" });
+    const scores = await client.query(
+      `SELECT * FROM l_scores WHERE reportid = $1`,
+      [id]
+    );
+    res.status(200).json({ ...report.rows[0], scores: scores.rows });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
   }
-);
+});
 
-// ============================================
-// ENDPOINTS UNTUK l_scores
-// ============================================
-
-// CREATE or UPDATE l_scores
-router.post("/add-score", authorize("admin", "teacher"), async (req, res) => {
+// 3. POST: Buat laporan bulanan (header + detail nilai)
+router.post("/report", authorize("admin", "teacher"), async (req, res) => {
   const client = await pool.connect();
   try {
     const {
-      id,
-      reportid,
-      contentid,
-      taks_score,
-      writing_score,
-      speaking_score,
-      lab_score,
+      periodeid,
+      classid,
+      subjectid,
+      studentid,
+      teacherid,
+      type_report = "bulanan",
+      month,
+      performance,
+      discipline,
+      activeness,
+      confidence,
+      teacher_note,
       note,
+      scores = [],
     } = req.body;
     await client.query("BEGIN");
-    if (id) {
-      await client.query(
-        `UPDATE l_scores SET reportid=$1, contentid=$2, taks_score=$3, writing_score=$4, speaking_score=$5, lab_score=$6, note=$7 WHERE id=$8`,
-        [
-          reportid,
-          contentid,
-          taks_score,
-          writing_score,
-          speaking_score,
-          lab_score,
-          note,
-          id,
-        ]
-      );
-      await client.query("COMMIT");
-      return res.status(200).json({ message: "Berhasil diperbarui" });
-    } else {
-      await client.query(
-        `INSERT INTO l_scores (reportid, contentid, taks_score, writing_score, speaking_score, lab_score, note) VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-        [
-          reportid,
-          contentid,
-          taks_score,
-          writing_score,
-          speaking_score,
-          lab_score,
-          note,
-        ]
-      );
-      await client.query("COMMIT");
-      return res.status(200).json({ message: "Berhasil disimpan" });
+    // Cek duplikasi
+    const exist = await client.query(
+      `SELECT id FROM l_reports WHERE periodeid=$1 AND classid=$2 AND subjectid=$3 AND studentid=$4 AND teacherid=$5 AND month=$6`,
+      [periodeid, classid, subjectid, studentid, teacherid, month]
+    );
+    if (exist.rowCount > 0) {
+      await client.query("ROLLBACK");
+      return res
+        .status(400)
+        .json({ message: "Laporan sudah ada untuk siswa ini di bulan ini" });
     }
+    // Insert l_reports
+    const reportRes = await client.query(
+      `INSERT INTO l_reports (periodeid, classid, subjectid, studentid, teacherid, type_report, month, performance, discipline, activeness, confidence, teacher_note, note)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id`,
+      [
+        periodeid,
+        classid,
+        subjectid,
+        studentid,
+        teacherid,
+        type_report,
+        month,
+        performance,
+        discipline,
+        activeness,
+        confidence,
+        teacher_note,
+        note,
+      ]
+    );
+    const reportid = reportRes.rows[0].id;
+    // Insert l_scores
+    for (const s of scores) {
+      await client.query(
+        `INSERT INTO l_scores (reportid, contentid, taks_score, writing_score, speaking_score, lab_score, note)
+         VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+        [
+          reportid,
+          s.contentid,
+          s.taks_score,
+          s.writing_score,
+          s.speaking_score,
+          s.lab_score,
+          s.note,
+        ]
+      );
+    }
+    await client.query("COMMIT");
+    res.status(201).json({ message: "Laporan berhasil disimpan", reportid });
   } catch (error) {
     await client.query("ROLLBACK");
     res.status(500).json({ message: error.message });
@@ -265,49 +143,66 @@ router.post("/add-score", authorize("admin", "teacher"), async (req, res) => {
   }
 });
 
-// READ l_scores (with optional filters)
-router.get("/get-scores", authorize("admin", "teacher"), async (req, res) => {
+// 4. PUT: Update laporan bulanan (header + detail nilai)
+router.put("/report/:id", authorize("admin", "teacher"), async (req, res) => {
   const client = await pool.connect();
   try {
-    const { id, reportid, contentid } = req.query;
-    let query = `SELECT * FROM l_scores WHERE 1=1`;
-    const params = [];
-    let idx = 1;
-    if (id) {
-      query += ` AND id = $${idx++}`;
-      params.push(id);
+    const { id } = req.params;
+    const {
+      performance,
+      discipline,
+      activeness,
+      confidence,
+      teacher_note,
+      note,
+      scores = [],
+    } = req.body;
+    await client.query("BEGIN");
+    // Update l_reports
+    await client.query(
+      `UPDATE l_reports SET performance=$1, discipline=$2, activeness=$3, confidence=$4, teacher_note=$5, note=$6 WHERE id=$7`,
+      [performance, discipline, activeness, confidence, teacher_note, note, id]
+    );
+    // Hapus l_scores lama
+    await client.query(`DELETE FROM l_scores WHERE reportid = $1`, [id]);
+    // Insert l_scores baru
+    for (const s of scores) {
+      await client.query(
+        `INSERT INTO l_scores (reportid, contentid, taks_score, writing_score, speaking_score, lab_score, note)
+         VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+        [
+          id,
+          s.contentid,
+          s.taks_score,
+          s.writing_score,
+          s.speaking_score,
+          s.lab_score,
+          s.note,
+        ]
+      );
     }
-    if (reportid) {
-      query += ` AND reportid = $${idx++}`;
-      params.push(reportid);
-    }
-    if (contentid) {
-      query += ` AND contentid = $${idx++}`;
-      params.push(contentid);
-    }
-    query += ` ORDER BY id DESC`;
-    const result = await client.query(query, params);
-    res.status(200).json(result.rows);
+    await client.query("COMMIT");
+    res.status(200).json({ message: "Laporan berhasil diupdate" });
   } catch (error) {
+    await client.query("ROLLBACK");
     res.status(500).json({ message: error.message });
   } finally {
     client.release();
   }
 });
 
-// DELETE l_scores
+// 5. DELETE: Hapus laporan bulanan
 router.delete(
-  "/delete-score",
+  "/report/:id",
   authorize("admin", "teacher"),
   async (req, res) => {
     const client = await pool.connect();
     try {
-      const { id } = req.query;
-      if (!id) return res.status(400).json({ message: "ID diperlukan" });
+      const { id } = req.params;
       await client.query("BEGIN");
-      await client.query(`DELETE FROM l_scores WHERE id = $1`, [id]);
+      await client.query(`DELETE FROM l_reports WHERE id = $1`, [id]);
       await client.query("COMMIT");
-      res.status(200).json({ message: "Berhasil dihapus" });
+      res.status(200).json({ message: "Laporan berhasil dihapus" });
     } catch (error) {
       await client.query("ROLLBACK");
       res.status(500).json({ message: error.message });
@@ -317,118 +212,93 @@ router.delete(
   }
 );
 
-// ============================================
-// ENDPOINT: LAPORAN SISWA BERDASARKAN SUBJECT
-// ============================================
-
-router.get(
-  "/student-report-by-subject",
-  authorize("admin", "teacher", "student"),
-  async (req, res) => {
-    const client = await pool.connect();
-    try {
-      const { studentid, subjectid, classid } = req.query;
-      if (!studentid || !subjectid || !classid) {
-        return res
-          .status(400)
-          .json({ message: "studentid, subjectid, classid diperlukan" });
-      }
-
-      // 1. Get main report (attitude, teacher note, etc)
-      const reportRes = await client.query(
-        `SELECT r.*, t.name as teacher_name
-       FROM l_reports r
-       LEFT JOIN u_teachers t ON r.teacherid = t.id
-       WHERE r.studentid = $1 AND r.subjectid = $2 AND r.classid = $3
-       ORDER BY r.id DESC LIMIT 1`,
-        [studentid, subjectid, classid]
-      );
-      const report = reportRes.rows[0];
-
-      // 2. Get attendance (sakit, izin, alpa)
-      const attendanceRes = await client.query(
-        `SELECT 
-        COUNT(*) FILTER (WHERE note ILIKE '%sakit%') as sakit,
-        COUNT(*) FILTER (WHERE note ILIKE '%ijin%') as izin,
-        COUNT(*) FILTER (WHERE note ILIKE '%alpa%') as alpa
-      FROM l_attendance
-      WHERE studentid = $1 AND subjectid = $2 AND classid = $3`,
-        [studentid, subjectid, classid]
-      );
-      const attendance = attendanceRes.rows[0];
-
-      // 3. Get all chapters and contents for this subject
-      const chaptersRes = await client.query(
-        `SELECT ch.id as chapter_id, ch.title as chapter_title
-       FROM l_chapter ch
-       WHERE ch.subject = $1
-       ORDER BY ch.order_number ASC`,
-        [subjectid]
-      );
-      const chapters = chaptersRes.rows;
-
-      // 4. Get all contents (topics/materials) for these chapters
-      const chapterIds = chapters.map((c) => c.chapter_id);
-      let contents = [];
-      if (chapterIds.length > 0) {
-        const contentsRes = await client.query(
-          `SELECT co.id, co.chapter, co.title, co.order_number
-         FROM l_content co
-         WHERE co.chapter = ANY($1)
-         ORDER BY co.chapter, co.order_number ASC`,
-          [chapterIds]
-        );
-        contents = contentsRes.rows;
-      }
-
-      // 5. Get all scores for this student and subject (by reportid)
-      let scores = [];
-      if (report) {
-        const scoresRes = await client.query(
-          `SELECT * FROM l_scores WHERE reportid = $1`,
-          [report.id]
-        );
-        scores = scoresRes.rows;
-      }
-
-      // 6. Format response to match the image
-      const topicList = contents.map((c, idx) => ({
-        number: idx + 1,
-        title: c.title,
-        tugas: scores.find((s) => s.contentid === c.id)?.taks_score ?? null,
-        tes_tulis:
-          scores.find((s) => s.contentid === c.id)?.writing_score ?? null,
-        tes_lisan:
-          scores.find((s) => s.contentid === c.id)?.speaking_score ?? null,
-        lab: scores.find((s) => s.contentid === c.id)?.lab_score ?? null,
-      }));
-
-      const response = {
-        subjectid,
-        studentid,
-        classid,
-        teacher: report?.teacher_name || null,
-        sikap: {
-          kinerja: report?.performance || null,
-          kedisiplinan: report?.discipline || null,
-          keaktifan: report?.activeness || null,
-          kepercayaan_diri: report?.confidence || null,
-        },
-        kehadiran: {
-          sakit: Number(attendance?.sakit) || 0,
-          izin: Number(attendance?.izin) || 0,
-          alpa: Number(attendance?.alpa) || 0,
-        },
-        catatan_guru: report?.teacher_note || null,
-        catatan: report?.note || null,
-        topic_list: topicList,
-      };
-
-      res.status(200).json(response);
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    } finally {
-      client.release();
+// 6. GET: Rekap absensi bulanan per siswa
+router.get("/attendance", authorize("admin", "teacher"), async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { studentid, classid, subjectid, periodeid, month } = req.query;
+    let query = `SELECT studentid, 
+      SUM(CASE WHEN note ILIKE '%sakit%' THEN 1 ELSE 0 END) AS sakit,
+      SUM(CASE WHEN note ILIKE '%izin%' THEN 1 ELSE 0 END) AS izin,
+      SUM(CASE WHEN note ILIKE '%alpa%' THEN 1 ELSE 0 END) AS alpa
+      FROM l_attendance WHERE 1=1`;
+    const params = [];
+    let idx = 1;
+    if (studentid) {
+      query += ` AND studentid = $${idx++}`;
+      params.push(studentid);
     }
+    if (classid) {
+      query += ` AND classid = $${idx++}`;
+      params.push(classid);
+    }
+    if (subjectid) {
+      query += ` AND subjectid = $${idx++}`;
+      params.push(subjectid);
+    }
+    if (periodeid) {
+      query += ` AND periode = $${idx++}`;
+      params.push(periodeid);
+    }
+    if (month) {
+      query += ` AND EXTRACT(MONTH FROM day_date) = $${idx++}`;
+      params.push(month);
+    }
+    query += ` GROUP BY studentid`;
+    const result = await client.query(query, params);
+    res.status(200).json(result.rows);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
   }
-);
+});
+
+// 7. GET: Daftar content di kelas tertentu
+router.get("/contents", authorize("admin", "teacher"), async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { subjectid, classid } = req.query;
+    if (!subjectid || !classid)
+      return res
+        .status(400)
+        .json({ message: "subjectid dan classid wajib diisi" });
+    const query = `SELECT l_content.* FROM l_content
+      JOIN l_chapter ON l_content.chapter = l_chapter.id
+      JOIN l_cclass ON l_cclass.chapter = l_chapter.id
+      WHERE l_chapter.subject = $1 AND l_cclass.classid = $2`;
+    const result = await client.query(query, [subjectid, classid]);
+    res.status(200).json(result.rows);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+// 8. GET: Daftar siswa di kelas tertentu
+router.get("/students", authorize("admin", "teacher"), async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { classid, periodeid } = req.query;
+    if (!classid)
+      return res.status(400).json({ message: "classid wajib diisi" });
+    let query = `SELECT u.id, u.name, u.nis FROM cl_students c
+      JOIN u_students u ON c.student = u.id
+      WHERE c.classid = $1`;
+    const params = [classid];
+    if (periodeid) {
+      query += ` AND c.periode = $2`;
+      params.push(periodeid);
+    }
+    query += ` ORDER BY u.name ASC`;
+    const result = await client.query(query, params);
+    res.status(200).json(result.rows);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+export default router;
