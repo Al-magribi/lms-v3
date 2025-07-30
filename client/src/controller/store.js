@@ -36,6 +36,7 @@ import { ApiAnswer } from "./api/cbt/ApiAnswer";
 import { ApiChapter } from "./api/lms/ApiChapter";
 import { ApiLms } from "./api/lms/ApiLms";
 import { ApiPresensi } from "./api/lms/ApiPresensi";
+import { ApiScore } from "./api/lms/ApiScore";
 
 // Tahfiz
 import { ApiQuran } from "./api/tahfiz/ApiQuran";
@@ -89,6 +90,7 @@ const store = configureStore({
     [ApiChapter.reducerPath]: ApiChapter.reducer,
     [ApiLms.reducerPath]: ApiLms.reducer,
     [ApiPresensi.reducerPath]: ApiPresensi.reducer,
+    [ApiScore.reducerPath]: ApiScore.reducer,
 
     [ApiQuran.reducerPath]: ApiQuran.reducer,
     [ApiScoring.reducerPath]: ApiScoring.reducer,
@@ -135,6 +137,7 @@ const store = configureStore({
       ApiChapter.middleware,
       ApiLms.middleware,
       ApiPresensi.middleware,
+      ApiScore.middleware,
 
       ApiQuran.middleware,
       ApiScoring.middleware,

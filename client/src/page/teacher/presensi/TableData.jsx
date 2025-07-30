@@ -101,7 +101,7 @@ const TableData = ({ classid, subjectid }) => {
                 <div className="col-md-6">
                   <label className="form-label fw-bold">
                     <i className="bi bi-calendar-date me-2"></i>
-                    Tanggal Presensi:
+                    Tanggal Presensi: <span>{formatDate(selectedDate)}</span>
                   </label>
                   <input
                     type="date"
@@ -111,33 +111,6 @@ const TableData = ({ classid, subjectid }) => {
                     max={new Date().toISOString().split("T")[0]}
                   />
                 </div>
-                <div className="col-md-6">
-                  <label className="form-label fw-bold">
-                    <i className="bi bi-calendar-check me-2"></i>
-                    Riwayat Tanggal:
-                  </label>
-                  <select
-                    className="form-select"
-                    onChange={(e) =>
-                      e.target.value && setSelectedDate(e.target.value)
-                    }
-                    value=""
-                  >
-                    <option value="">Pilih tanggal sebelumnya</option>
-                    {attendanceDates?.map((dateObj) => (
-                      <option key={dateObj.date} value={dateObj.date}>
-                        {formatDate(dateObj.date)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="mt-2">
-                <small className="text-muted">
-                  <i className="bi bi-info-circle me-1"></i>
-                  Menampilkan presensi untuk:{" "}
-                  <strong>{formatDate(selectedDate)}</strong>
-                </small>
               </div>
             </div>
           </div>
@@ -230,9 +203,7 @@ const TableData = ({ classid, subjectid }) => {
                         <td className="text-center align-middle">
                           {student.nis}
                         </td>
-                        <td className="align-middle fw-bold">
-                          {student.student_name}
-                        </td>
+                        <td className="align-middle">{student.student_name}</td>
                         <td className="text-center align-middle">
                           {student.grade_name}
                         </td>

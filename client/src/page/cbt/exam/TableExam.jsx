@@ -19,8 +19,6 @@ const TableExam = ({ setDetail }) => {
   });
   const { exams = [], totalData, totalPages } = rawData;
 
-  console.log(exams);
-
   const [deleteExam, { isSuccess, isLoading, isError, reset }] =
     useDeleteExamMutation();
   const [
@@ -92,46 +90,46 @@ const TableExam = ({ setDetail }) => {
       totalPages={totalPages}
       isLoading={loading}
     >
-      <div className='row g-4'>
+      <div className="row g-4">
         {exams?.length > 0 ? (
           exams?.map((exam, i) => (
-            <div key={i} className='col-12 col-lg-4'>
-              <div className='card rounded-4 shadow-sm hover-shadow h-100 overflow-hidden'>
-                <div className='card-body d-flex flex-column h-100 p-4 gap-2'>
-                  <div className='d-flex justify-content-between'>
-                    <div className='d-flex align-items-start justify-content-center flex-wrap gap-2'>
+            <div key={i} className="col-12 col-lg-4">
+              <div className="card rounded-4 shadow-sm hover-shadow h-100 overflow-hidden">
+                <div className="card-body d-flex flex-column h-100 p-4 gap-2">
+                  <div className="d-flex justify-content-between">
+                    <div className="d-flex align-items-start justify-content-center flex-wrap gap-2">
                       <div
-                        className='rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center'
+                        className="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center"
                         style={{ width: 48, height: 48 }}
                       >
-                        <i className='bi bi-laptop text-primary fs-5'></i>
+                        <i className="bi bi-laptop text-primary fs-5"></i>
                       </div>
 
-                      <div className='d-flex flex-column gap-2'>
+                      <div className="d-flex flex-column gap-2">
                         <h6
                           title={exam.name}
-                          className='lh-1 text-primary m-0 pointer'
+                          className="lh-1 text-primary m-0 pointer"
                         >
                           {exam.name.length > 20
                             ? `${exam.name.slice(0, 20)}...`
                             : exam.name}
                         </h6>
 
-                        <div className='d-flex gap-2'>
+                        <div className="d-flex gap-2">
                           <span
                             title={exam.teacher_name}
-                            className='text-muted small pointer'
+                            className="text-muted small pointer"
                           >
                             {exam.teacher_name.length > 20
                               ? `${exam.teacher_name.slice(0, 20)}...`
                               : exam.teacher_name}
                           </span>
-                          <div className='vr' />
+                          <div className="vr" />
                           <span
-                            className='badge bg-secondary pointer'
-                            data-toggle='tooltip'
-                            data-placement='top'
-                            title='Copy Token'
+                            className="badge bg-secondary pointer"
+                            data-toggle="tooltip"
+                            data-placement="top"
+                            title="Copy Token"
                             onClick={() => copyTokenHandler(exam.token)}
                           >
                             {exam.token}
@@ -139,52 +137,52 @@ const TableExam = ({ setDetail }) => {
                         </div>
                       </div>
                     </div>
-                    <div className='dropdown ms-2'>
+                    <div className="dropdown ms-2">
                       <button
-                        className='btn btn-sm btn-outline-primary'
-                        type='button'
+                        className="btn btn-sm btn-outline-primary"
+                        type="button"
                         id={`dropdownMenuButton-${i}`}
-                        data-bs-toggle='dropdown'
-                        aria-expanded='false'
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
                       >
-                        <i className='bi bi-three-dots-vertical'></i>
+                        <i className="bi bi-three-dots-vertical"></i>
                       </button>
                       <ul
-                        className='dropdown-menu dropdown-menu-end shadow'
+                        className="dropdown-menu dropdown-menu-end shadow"
                         aria-labelledby={`dropdownMenuButton-${i}`}
                       >
                         <li>
                           <button
-                            className='dropdown-item d-flex align-items-center'
+                            className="dropdown-item d-flex align-items-center"
                             onClick={() =>
                               openNewTab(exam.name, exam.id, exam.token)
                             }
                           >
-                            <i className='bi bi-people me-2'></i>
+                            <i className="bi bi-people me-2"></i>
                             Lihat
                           </button>
                         </li>
                         <li>
                           <button
-                            className='dropdown-item d-flex align-items-center'
-                            data-bs-toggle='modal'
-                            data-bs-target='#addexam'
+                            className="dropdown-item d-flex align-items-center"
+                            data-bs-toggle="modal"
+                            data-bs-target="#addexam"
                             onClick={() => setDetail(exam)}
                           >
-                            <i className='bi bi-pencil-square me-2'></i>
+                            <i className="bi bi-pencil-square me-2"></i>
                             Edit
                           </button>
                         </li>
                         <li>
-                          <hr className='dropdown-divider' />
+                          <hr className="dropdown-divider" />
                         </li>
                         <li>
                           <button
-                            className='dropdown-item d-flex align-items-center text-danger'
+                            className="dropdown-item d-flex align-items-center text-danger"
                             disabled={isLoading}
                             onClick={() => deleteHandler(exam.id)}
                           >
-                            <i className='bi bi-folder-x me-2'></i>
+                            <i className="bi bi-folder-x me-2"></i>
                             Hapus
                           </button>
                         </li>
@@ -192,18 +190,18 @@ const TableExam = ({ setDetail }) => {
                     </div>
                   </div>
 
-                  <div className='mb-2 d-flex align-items-center gap-2'>
+                  <div className="mb-2 d-flex align-items-center gap-2">
                     <div
-                      className='rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center'
+                      className="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center"
                       style={{ width: 48, height: 48 }}
                     >
-                      <i className='bi bi-folder-fill text-primary fs-5'></i>
+                      <i className="bi bi-folder-fill text-primary fs-5"></i>
                     </div>
-                    <div className='d-flex flex-column gap-1'>
+                    <div className="d-flex flex-column gap-1">
                       {exam.banks.map((bank, idx) => (
                         <span
                           key={idx}
-                          className='fs-6 fw-bold text-secondary pointer'
+                          className="fs-6 fw-bold text-secondary pointer"
                           title={bank.name}
                         >
                           {bank.type !== "paket"
@@ -222,49 +220,49 @@ const TableExam = ({ setDetail }) => {
                     </div>
                   </div>
 
-                  <div className='d-flex flex-wrap gap-2'>
+                  <div className="d-flex flex-wrap gap-2">
                     {exam.classes?.map((item, idx) => (
                       <span
                         key={idx}
-                        className='badge bg-primary bg-opacity-10 text-primary'
+                        className="badge bg-primary bg-opacity-10 text-primary"
                       >
                         {item.name}
                       </span>
                     ))}
                   </div>
 
-                  <div className='mt-2'>
-                    <div className='d-flex flex-wrap gap-3'>
-                      <div className='d-flex flex-column'>
-                        <div className='text-muted small mb-1'>PG</div>
-                        <span className='badge bg-success px-3 py-2'>
+                  <div className="mt-2">
+                    <div className="d-flex flex-wrap gap-3">
+                      <div className="d-flex flex-column">
+                        <div className="text-muted small mb-1">PG</div>
+                        <span className="badge bg-success px-3 py-2">
                           {exam.mc_score}%
                         </span>
                       </div>
-                      <div className='d-flex flex-column'>
-                        <div className='text-muted small mb-1'>Essay</div>
-                        <span className='badge bg-success px-3 py-2'>
+                      <div className="d-flex flex-column">
+                        <div className="text-muted small mb-1">Essay</div>
+                        <span className="badge bg-success px-3 py-2">
                           {exam.essay_score}%
                         </span>
                       </div>
-                      <div className='d-flex flex-column'>
-                        <div className='text-muted small mb-1'>Durasi</div>
-                        <span className='badge bg-info px-3 py-2'>
+                      <div className="d-flex flex-column">
+                        <div className="text-muted small mb-1">Durasi</div>
+                        <span className="badge bg-info px-3 py-2">
                           {exam.duration}
                         </span>
                       </div>
-                      <div className='d-flex flex-column'>
-                        <div className='text-muted small mb-1'>Acak</div>
+                      <div className="d-flex flex-column">
+                        <div className="text-muted small mb-1">Acak</div>
                         {exam.isshuffle ? (
-                          <span className='badge bg-success px-3 py-2'>Ya</span>
+                          <span className="badge bg-success px-3 py-2">Ya</span>
                         ) : (
-                          <span className='badge bg-danger px-3 py-2'>
+                          <span className="badge bg-danger px-3 py-2">
                             Tidak
                           </span>
                         )}
                       </div>
-                      <div className='d-flex flex-column'>
-                        <div className='text-muted small mb-1'>Status</div>
+                      <div className="d-flex flex-column">
+                        <div className="text-muted small mb-1">Status</div>
                         <span
                           className={`badge ${
                             exam.isactive ? "bg-success" : "bg-danger"
@@ -280,8 +278,8 @@ const TableExam = ({ setDetail }) => {
             </div>
           ))
         ) : (
-          <div className='col-12'>
-            <div className='alert alert-info mb-0'>Data belum tersedia</div>
+          <div className="col-12">
+            <div className="alert alert-info mb-0">Data belum tersedia</div>
           </div>
         )}
       </div>

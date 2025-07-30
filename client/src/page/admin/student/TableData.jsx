@@ -28,8 +28,6 @@ const TableData = ({ setDetail }) => {
   const { students = [], totalData, totalPages } = rawData;
   const { data: periodes } = useGetPeriodeQuery();
 
-  console.log(rawData);
-
   const [deleteStudent, { isSuccess, isLoading, isError, reset }] =
     useDeleteStudentMutation();
   const [changeStatus] = useChangeStatusMutation();
@@ -128,22 +126,22 @@ const TableData = ({ setDetail }) => {
         isLoading: isDownloading,
       }}
     >
-      <div className='row g-4'>
+      <div className="row g-4">
         {students.length > 0 ? (
           students.map((student, i) => (
-            <div key={i} className='col-12 col-md-6 col-lg-4 col-xl-3'>
-              <div className='card border shadow-sm hover-shadow h-100 p-0 overflow-hidden position-relative rounded-4'>
-                <div className='card-body p-4 d-flex flex-column h-100'>
-                  <div className='d-flex align-items-start justify-content-between mb-2'>
+            <div key={i} className="col-12 col-md-6 col-lg-4 col-xl-3">
+              <div className="card border shadow-sm hover-shadow h-100 p-0 overflow-hidden position-relative rounded-4">
+                <div className="card-body p-4 d-flex flex-column h-100">
+                  <div className="d-flex align-items-start justify-content-between mb-2">
                     <div>
                       <h5
-                        className='text-primary mb-1'
+                        className="text-primary mb-1"
                         style={{ fontSize: 20 }}
                       >
                         {student.name}
                       </h5>
 
-                      <span className='badge bg-secondary mb-2'>
+                      <span className="badge bg-secondary mb-2">
                         NIS: {student.nis}
                       </span>
 
@@ -159,71 +157,71 @@ const TableData = ({ setDetail }) => {
                         {student.isactive ? "Aktif" : "Nonaktif"}
                       </span>
                     </div>
-                    <div className='dropdown'>
+                    <div className="dropdown">
                       <button
-                        className='btn btn-sm btn-outline-primary'
-                        type='button'
+                        className="btn btn-sm btn-outline-primary"
+                        type="button"
                         id={`dropdownMenuButton${student.id}`}
-                        data-bs-toggle='dropdown'
-                        aria-expanded='false'
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
                       >
-                        <i className='bi bi-three-dots-vertical'></i>
+                        <i className="bi bi-three-dots-vertical"></i>
                       </button>
                       <ul
-                        className='dropdown-menu dropdown-menu-end shadow'
+                        className="dropdown-menu dropdown-menu-end shadow"
                         aria-labelledby={`dropdownMenuButton${student.id}`}
                       >
                         <li>
                           <button
-                            className='dropdown-item d-flex align-items-center gap-2'
-                            data-bs-target='#addstudent'
-                            data-bs-toggle='modal'
+                            className="dropdown-item d-flex align-items-center gap-2"
+                            data-bs-target="#addstudent"
+                            data-bs-toggle="modal"
                             onClick={() => setDetail(student)}
                           >
-                            <i className='bi bi-pencil-square'></i> Edit
+                            <i className="bi bi-pencil-square"></i> Edit
                           </button>
                         </li>
                         <li>
                           <button
-                            className='dropdown-item d-flex align-items-center gap-2 text-danger'
+                            className="dropdown-item d-flex align-items-center gap-2 text-danger"
                             disabled={isLoading}
                             onClick={() => deleteHandler(student.id)}
                           >
-                            <i className='bi bi-person-x-fill'></i> Hapus
+                            <i className="bi bi-person-x-fill"></i> Hapus
                           </button>
                         </li>
                       </ul>
                     </div>
                   </div>
 
-                  <div className='d-flex flex-column gap-2'>
-                    <div className='d-flex align-items-center gap-2'>
-                      <i className='bi bi-calendar-event text-primary'></i>
-                      <span className='small'>
+                  <div className="d-flex flex-column gap-2">
+                    <div className="d-flex align-items-center gap-2">
+                      <i className="bi bi-calendar-event text-primary"></i>
+                      <span className="small">
                         Tahun Ajaran: <b>{student.periode_name}</b>
                       </span>
                     </div>
-                    <div className='d-flex align-items-center gap-2'>
-                      <i className='bi bi-calendar-plus text-primary'></i>
-                      <span className='small'>
+                    <div className="d-flex align-items-center gap-2">
+                      <i className="bi bi-calendar-plus text-primary"></i>
+                      <span className="small">
                         Tahun Masuk: <b>{student.entry}</b>
                       </span>
                     </div>
 
-                    <div className='d-flex align-items-center gap-2'>
-                      <i className='bi bi-building text-primary'></i>
-                      <span className='small'>
+                    <div className="d-flex align-items-center gap-2">
+                      <i className="bi bi-building text-primary"></i>
+                      <span className="small">
                         Satuan: <b>{student.homebase}</b>
                       </span>
                     </div>
-                    <div className='d-flex align-items-center gap-2'>
-                      <i className='bi bi-mortarboard-fill text-primary'></i>
-                      <span className='small'>
+                    <div className="d-flex align-items-center gap-2">
+                      <i className="bi bi-mortarboard-fill text-primary"></i>
+                      <span className="small">
                         Kelas: <b>{student.classname}</b>
                       </span>
                     </div>
 
-                    <div className='d-flex align-items-center gap-2 mb-1'>
+                    <div className="d-flex align-items-center gap-2 mb-1">
                       <i
                         className={`bi ${
                           student.gender === "L"
@@ -231,7 +229,7 @@ const TableData = ({ setDetail }) => {
                             : "bi-gender-female"
                         } text-primary`}
                       ></i>
-                      <span className='small'>
+                      <span className="small">
                         Gender:{" "}
                         <b>
                           {student.gender === "L" ? "Laki-laki" : "Perempuan"}
@@ -240,7 +238,7 @@ const TableData = ({ setDetail }) => {
                     </div>
                   </div>
 
-                  <p className='m-0 text-muted small text-end'>
+                  <p className="m-0 text-muted small text-end">
                     #{(page - 1) * limit + i + 1}
                   </p>
                 </div>
@@ -248,10 +246,10 @@ const TableData = ({ setDetail }) => {
             </div>
           ))
         ) : (
-          <div className='col-12'>
-            <div className='d-flex flex-column align-items-center justify-content-center py-5 text-muted gap-2'>
-              <i className='bi bi-inbox fs-1'></i>
-              <span className='fs-5'>Data tidak tersedia</span>
+          <div className="col-12">
+            <div className="d-flex flex-column align-items-center justify-content-center py-5 text-muted gap-2">
+              <i className="bi bi-inbox fs-1"></i>
+              <span className="fs-5">Data tidak tersedia</span>
             </div>
           </div>
         )}

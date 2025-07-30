@@ -98,6 +98,13 @@ router.get(
     const client = await pool.connect();
     const { classid, subjectid, month, year } = req.query;
 
+    const periode = await client.query(
+      `SELECT id FROM a_periode WHERE homebase = $1 AND isactive = true`,
+      [req.user.homebase]
+    );
+
+    const activePeriode = periode.rows[0].id;
+
     try {
       await client.query("BEGIN");
 
@@ -106,22 +113,25 @@ router.get(
       us.id as studentid,
       us.name as student_name,
       us.nis,
+      cs.classid,
+      c.name,
       COUNT(CASE WHEN la.note = 'Hadir' THEN 1 END) as hadir,
       COUNT(CASE WHEN la.note = 'Sakit' THEN 1 END) as sakit,
       COUNT(CASE WHEN la.note = 'Izin' THEN 1 END) as izin,
       COUNT(CASE WHEN la.note = 'Alpa' THEN 1 END) as alpa,
       COUNT(la.id) as total
-    FROM u_students us
+    FROM cl_students cs
+    JOIN u_students us ON cs.student = us.id
+    JOIN a_class c ON cs.classid = c.id
     LEFT JOIN l_attendance la ON us.id = la.studentid 
-      AND la.classid = $1 
+      AND la.classid = cs.classid 
       AND la.subjectid = $2
       AND EXTRACT(MONTH FROM la.day_date) = $3
       AND EXTRACT(YEAR FROM la.day_date) = $4
-    WHERE us.id IN (
-      SELECT student FROM cl_students WHERE classid = $1
-    )
-    GROUP BY us.id, us.name, us.nis
-    ORDER BY us.name
+      AND la.periode = $5
+    WHERE cs.classid = $1 AND cs.periode = $6
+    GROUP BY cs.classid, c.name, us.id, us.name, us.nis
+    ORDER BY cs.classid, us.name
     `;
 
       const result = await client.query(query, [
@@ -129,6 +139,8 @@ router.get(
         subjectid,
         month,
         year,
+        activePeriode,
+        activePeriode,
       ]);
 
       await client.query("COMMIT");
