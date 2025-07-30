@@ -7,40 +7,111 @@ const router = Router();
 // 1. GET: List laporan bulanan
 router.get("/reports", authorize("admin", "teacher"), async (req, res) => {
   const client = await pool.connect();
+  const homebase = req.user.homebase;
+
+  const periode = await client.query(
+    `SELECT id FROM a_periode WHERE  homebase = $1 and isactive = true`,
+    [homebase]
+  );
+  const periodeid = periode.rows[0].id;
+
   try {
-    const { periodeid, classid, subjectid, month, studentid } = req.query;
-    let query = `SELECT * FROM l_reports WHERE 1=1`;
-    const params = [];
-    let idx = 1;
-    if (periodeid) {
-      query += ` AND periodeid = $${idx++}`;
-      params.push(periodeid);
+    const { classid, subjectid, month, chapterid } = req.query;
+    if (!classid)
+      return res.status(400).json({ message: "classid wajib diisi" });
+
+    // Get all students in the class
+    const studentsResult = await client.query(
+      `SELECT u.id, u.name, u.nis FROM cl_students c
+       JOIN u_students u ON c.student = u.id
+       WHERE c.classid = $1 AND c.periode = $2
+       ORDER BY u.name ASC`,
+      [classid, periodeid]
+    );
+    const students = studentsResult.rows;
+
+    // Get all reports for this class/subject/month
+    const reportsResult = await client.query(
+      `SELECT * FROM l_reports WHERE classid = $1 AND subjectid = $2 AND month = $3`,
+      [classid, subjectid, month]
+    );
+    const reports = reportsResult.rows;
+
+    // Get all scores for these reports
+    const reportIds = reports.map((r) => r.id);
+    let scoresMap = {};
+    if (reportIds.length > 0) {
+      const scoresResult = await client.query(
+        `SELECT * FROM l_scores WHERE reportid = ANY($1::int[])`,
+        [reportIds]
+      );
+      scoresResult.rows.forEach((score) => {
+        if (!scoresMap[score.reportid]) scoresMap[score.reportid] = [];
+        scoresMap[score.reportid].push({
+          chapterid: score.chapterid, // was contentid
+          taks_score: score.taks_score,
+          writing_score: score.writing_score,
+          speaking_score: score.speaking_score,
+          lab_score: score.lab_score,
+          note: score.note,
+        });
+      });
     }
-    if (classid) {
-      query += ` AND classid = $${idx++}`;
-      params.push(classid);
-    }
-    if (subjectid) {
-      query += ` AND subjectid = $${idx++}`;
-      params.push(subjectid);
-    }
-    if (month) {
-      query += ` AND month = $${idx++}`;
-      params.push(month);
-    }
-    if (studentid) {
-      query += ` AND studentid = $${idx++}`;
-      params.push(studentid);
-    }
-    query += ` ORDER BY classid, subjectid, studentid, month`;
-    const result = await client.query(query, params);
-    res.status(200).json(result.rows);
+
+    // Map student to their report (if any)
+    const result = students.map((student) => {
+      const report = reports.find((r) => r.studentid === student.id);
+      return {
+        id: report ? report.id : undefined,
+        nis: student.nis,
+        name: student.name,
+        studentid: student.id,
+        chapterid: report ? report.chapterid : chapterid,
+        classid,
+        month,
+        performance: report ? report.performance : "",
+        discipline: report ? report.discipline : "",
+        activeness: report ? report.activeness : "",
+        confidence: report ? report.confidence : "",
+        teacher_note: report ? report.teacher_note : "",
+        note: report ? report.note : "",
+        scores: report ? scoresMap[report.id] || [] : [],
+      };
+    });
+    res.status(200).json(result);
   } catch (error) {
     res.status(500).json({ message: error.message });
   } finally {
     client.release();
   }
 });
+
+// hasi reports berdasarkan chapterid, classid, dan month
+const reports = [
+  {
+    nis: "NIS siswa",
+    name: "Nama Siswa",
+    chapterid: "Chapter ID",
+    classid: "Kelas ID",
+    month: "Bulan",
+    performance: "Performance",
+    discipline: "Discipline",
+    activeness: "Activeness",
+    confidence: "Confidence",
+    teacher_note: "Catatan Guru",
+    note: "Catatan",
+    scores: [
+      {
+        chapterid: "Chapter ID",
+        taks_score: "Taks Score",
+        writing_score: "Writing Score",
+        speaking_score: "Speaking Score",
+        lab_score: "Lab Score",
+        note: "Catatan",
+      },
+    ],
+  },
+];
 
 // 2. GET: Detail laporan bulanan (header + detail nilai)
 router.get("/report/:id", authorize("admin", "teacher"), async (req, res) => {
@@ -56,7 +127,16 @@ router.get("/report/:id", authorize("admin", "teacher"), async (req, res) => {
       `SELECT * FROM l_scores WHERE reportid = $1`,
       [id]
     );
-    res.status(200).json({ ...report.rows[0], scores: scores.rows });
+    // Map contentid to chapterid in response
+    const mappedScores = scores.rows.map((s) => ({
+      chapterid: s.chapterid, // was contentid
+      taks_score: s.taks_score,
+      writing_score: s.writing_score,
+      speaking_score: s.speaking_score,
+      lab_score: s.lab_score,
+      note: s.note,
+    }));
+    res.status(200).json({ ...report.rows[0], scores: mappedScores });
   } catch (error) {
     res.status(500).json({ message: error.message });
   } finally {
@@ -65,11 +145,10 @@ router.get("/report/:id", authorize("admin", "teacher"), async (req, res) => {
 });
 
 // 3. POST: Buat laporan bulanan (header + detail nilai)
-router.post("/report", authorize("admin", "teacher"), async (req, res) => {
+router.post("/add-report", authorize("admin", "teacher"), async (req, res) => {
   const client = await pool.connect();
   try {
     const {
-      periodeid,
       classid,
       subjectid,
       studentid,
@@ -84,6 +163,16 @@ router.post("/report", authorize("admin", "teacher"), async (req, res) => {
       note,
       scores = [],
     } = req.body;
+
+    const homebase = req.user.homebase;
+
+    const periode = await client.query(
+      `SELECT id FROM a_periode WHERE  homebase = $1 and isactive = true`,
+      [homebase]
+    );
+
+    const periodeid = periode.rows[0].id;
+
     await client.query("BEGIN");
     // Cek duplikasi
     const exist = await client.query(
@@ -120,11 +209,11 @@ router.post("/report", authorize("admin", "teacher"), async (req, res) => {
     // Insert l_scores
     for (const s of scores) {
       await client.query(
-        `INSERT INTO l_scores (reportid, contentid, taks_score, writing_score, speaking_score, lab_score, note)
+        `INSERT INTO l_scores (reportid, chapterid, taks_score, writing_score, speaking_score, lab_score, note)
          VALUES ($1,$2,$3,$4,$5,$6,$7)`,
         [
           reportid,
-          s.contentid,
+          s.chapterid, // was contentid
           s.taks_score,
           s.writing_score,
           s.speaking_score,
@@ -168,11 +257,11 @@ router.put("/report/:id", authorize("admin", "teacher"), async (req, res) => {
     // Insert l_scores baru
     for (const s of scores) {
       await client.query(
-        `INSERT INTO l_scores (reportid, contentid, taks_score, writing_score, speaking_score, lab_score, note)
+        `INSERT INTO l_scores (reportid, chapterid, taks_score, writing_score, speaking_score, lab_score, note)
          VALUES ($1,$2,$3,$4,$5,$6,$7)`,
         [
           id,
-          s.contentid,
+          s.chapterid, // was contentid
           s.taks_score,
           s.writing_score,
           s.speaking_score,
