@@ -319,9 +319,9 @@ router.get("/download-students", authorize("admin"), async (req, res) => {
           ELSE 'Nonaktif'
         END AS status
       FROM u_students
+      INNER JOIN cl_students ON u_students.id = cl_students.student
       LEFT JOIN a_periode AS entry_periode ON u_students.entry = entry_periode.id
       LEFT JOIN a_periode AS periode_periode ON cl_students.periode = periode_periode.id
-      INNER JOIN cl_students ON u_students.id = cl_students.student
       LEFT JOIN a_class ON cl_students.classid = a_class.id
       LEFT JOIN a_grade ON a_class.grade = a_grade.id
       WHERE u_students.homebase = $1
