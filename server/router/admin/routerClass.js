@@ -402,8 +402,8 @@ router.get("/get-students", authorize("admin", "teacher"), async (req, res) => {
     const [count, data] = await Promise.all([
       client.query(
         `SELECT COUNT(*) FROM cl_students
-				WHERE classid = $1 AND student_name ILIKE $2 AND homebase = $3`,
-        [classid, `%${search}%`, homebase]
+				WHERE classid = $1 AND student_name ILIKE $2 AND homebase = $3 AND periode = $4`,
+        [classid, `%${search}%`, homebase, periodeid]
       ),
       client.query(
         `SELECT cl_students.*, a_class.name AS class_name,

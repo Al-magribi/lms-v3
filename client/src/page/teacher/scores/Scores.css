@@ -1,0 +1,86 @@
+/* Scores Component Styles */
+
+/* Tab styling for scores */
+.nav-tabs .nav-link {
+  border: none;
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s ease;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 0.75rem 1rem;
+  font-weight: 500;
+}
+
+.nav-tabs .nav-link:hover {
+  border-bottom-color: #dee2e6;
+  background-color: #f8f9fa;
+  color: #495057;
+}
+
+.nav-tabs .nav-link.active {
+  border-bottom-color: #0d6efd;
+  background-color: #fff;
+  font-weight: 600;
+  color: #0d6efd;
+}
+
+.nav-tabs .nav-link.pointer {
+  cursor: pointer;
+}
+
+/* Card styling */
+.card {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  border-radius: 0.5rem;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Alert styling */
+.alert {
+  border-radius: 0.5rem;
+  border: none;
+}
+
+.alert-warning {
+  background-color: #fff3cd;
+  color: #856404;
+  border-left: 4px solid #ffc107;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .nav-tabs .nav-link {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  .nav.justify-content-center {
+    flex-wrap: wrap;
+  }
+}
+
+/* Animation for tab transitions */
+.nav-tabs .nav-link {
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-tabs .nav-link::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 3px;
+  background-color: #0d6efd;
+  transition: all 0.3s ease;
+  transform: translateX(-50%);
+}
+
+.nav-tabs .nav-link.active::after {
+  width: 100%;
+}

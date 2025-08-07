@@ -349,6 +349,7 @@ router.post(
         sick_days,
         permission_days,
         absent_days,
+        attendance_percentage,
       } = req.body;
 
       const homebase = req.user.homebase;
@@ -751,7 +752,7 @@ router.get(
   async (req, res) => {
     const client = await pool.connect();
     try {
-      const { studentid, subjectid, month } = req.query;
+      const { studentid, subjectid, month, periodeid } = req.query;
 
       if (!studentid || !subjectid) {
         return res.status(400).json({ message: "Missing required parameters" });
@@ -788,13 +789,13 @@ router.get(
         ),
         client.query(
           `SELECT * FROM l_final_semester_exam 
-         WHERE student_id = $1 AND subject_id = $2`,
-          [studentid, subjectid]
+         WHERE student_id = $1 AND subject_id = $2 AND periode_id = $3`,
+          [studentid, subjectid, periodeid]
         ),
         client.query(
           `SELECT * FROM l_final_grades 
-         WHERE student_id = $1 AND subject_id = $2`,
-          [studentid, subjectid]
+         WHERE student_id = $1 AND subject_id = $2 AND periode_id = $3`,
+          [studentid, subjectid, periodeid]
         ),
       ]);
 
@@ -819,193 +820,6 @@ router.get(
         final_grade: finalGrade.rows[0] || null,
       });
     } catch (error) {
-      res.status(500).json({ message: error.message });
-    } finally {
-      client.release();
-    }
-  }
-);
-
-// Legacy endpoints for backward compatibility
-router.get("/get-students", authorize("admin", "teacher"), async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const { page = 1, limit = 10, search = "", classid } = req.query;
-    const offset = (page - 1) * limit;
-
-    let query = `
-      SELECT u.id, u.name, u.nis, u.gender
-      FROM u_students u
-      JOIN cl_students c ON u.id = c.student
-      WHERE c.classid = $1
-    `;
-    let params = [classid];
-
-    if (search) {
-      query += ` AND (u.name ILIKE $2 OR u.nis ILIKE $2)`;
-      params.push(`%${search}%`);
-    }
-
-    query += ` ORDER BY u.name ASC LIMIT $${params.length + 1} OFFSET $${
-      params.length + 2
-    }`;
-    params.push(limit, offset);
-
-    const result = await client.query(query, params);
-    res.status(200).json(result.rows);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  } finally {
-    client.release();
-  }
-});
-
-router.post("/add-report", authorize("admin", "teacher"), async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const {
-      classid,
-      subjectid,
-      studentid,
-      teacherid,
-      type_report = "bulanan",
-      month,
-      performance,
-      discipline,
-      activeness,
-      confidence,
-      teacher_note,
-      note,
-      scores = [],
-    } = req.body;
-
-    const homebase = req.user.homebase;
-    const periodeid = await getActivePeriode(client, homebase);
-
-    await client.query("BEGIN");
-
-    // Check for existing report
-    const existing = await client.query(
-      `SELECT id FROM l_reports WHERE periodeid = $1 AND classid = $2 AND subjectid = $3 AND studentid = $4 AND teacherid = $5 AND month = $6`,
-      [periodeid, classid, subjectid, studentid, teacherid, month]
-    );
-
-    if (existing.rows.length > 0) {
-      await client.query("ROLLBACK");
-      return res
-        .status(400)
-        .json({
-          message: "Report already exists for this student in this month",
-        });
-    }
-
-    // Insert report
-    const reportRes = await client.query(
-      `INSERT INTO l_reports (periodeid, classid, subjectid, studentid, teacherid, type_report, month, performance, discipline, activeness, confidence, teacher_note, note)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id`,
-      [
-        periodeid,
-        classid,
-        subjectid,
-        studentid,
-        teacherid,
-        type_report,
-        month,
-        performance,
-        discipline,
-        activeness,
-        confidence,
-        teacher_note,
-        note,
-      ]
-    );
-
-    const reportid = reportRes.rows[0].id;
-
-    // Insert scores
-    for (const score of scores) {
-      await client.query(
-        `INSERT INTO l_scores (reportid, chapterid, taks_score, writing_score, speaking_score, lab_score, note)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        [
-          reportid,
-          score.chapterid,
-          score.taks_score,
-          score.writing_score,
-          score.speaking_score,
-          score.lab_score,
-          score.note,
-        ]
-      );
-    }
-
-    await client.query("COMMIT");
-    res.status(200).json({ message: "Report created successfully", reportid });
-  } catch (error) {
-    await client.query("ROLLBACK");
-    res.status(500).json({ message: error.message });
-  } finally {
-    client.release();
-  }
-});
-
-router.put(
-  "/update-report/:id",
-  authorize("admin", "teacher"),
-  async (req, res) => {
-    const client = await pool.connect();
-    try {
-      const { id } = req.params;
-      const {
-        performance,
-        discipline,
-        activeness,
-        confidence,
-        teacher_note,
-        note,
-        scores = [],
-      } = req.body;
-
-      await client.query("BEGIN");
-
-      // Update report
-      await client.query(
-        `UPDATE l_reports SET performance = $1, discipline = $2, activeness = $3, confidence = $4, teacher_note = $5, note = $6 WHERE id = $7`,
-        [
-          performance,
-          discipline,
-          activeness,
-          confidence,
-          teacher_note,
-          note,
-          id,
-        ]
-      );
-
-      // Delete existing scores
-      await client.query(`DELETE FROM l_scores WHERE reportid = $1`, [id]);
-
-      // Insert new scores
-      for (const score of scores) {
-        await client.query(
-          `INSERT INTO l_scores (reportid, chapterid, taks_score, writing_score, speaking_score, lab_score, note)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-          [
-            id,
-            score.chapterid,
-            score.taks_score,
-            score.writing_score,
-            score.speaking_score,
-            score.lab_score,
-            score.note,
-          ]
-        );
-      }
-
-      await client.query("COMMIT");
-      res.status(200).json({ message: "Report updated successfully" });
-    } catch (error) {
-      await client.query("ROLLBACK");
       res.status(500).json({ message: error.message });
     } finally {
       client.release();

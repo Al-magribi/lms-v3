@@ -756,3 +756,107 @@ CREATE TABLE cms_visitors (
 
 CREATE INDEX idx_visitors_ip_date ON cms_visitors(ip_address, visit_date);
 CREATE INDEX idx_visitors_page_type ON cms_visitors(page_type);
+
+-- Enhanced scoring system tables
+CREATE TABLE l_attitude_scores(
+    id SERIAL PRIMARY KEY,
+    report_id INTEGER REFERENCES l_reports(id) ON DELETE CASCADE,
+    student_id INTEGER REFERENCES u_students(id) ON DELETE CASCADE,
+    subject_id INTEGER REFERENCES a_subject(id) ON DELETE CASCADE,
+    teacher_id INTEGER REFERENCES u_teachers(id) ON DELETE CASCADE,
+    month VARCHAR(20) CHECK (month IN ('Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember')),
+    performance VARCHAR(1) CHECK (performance IN ('A', 'B', 'C')),
+    discipline VARCHAR(1) CHECK (discipline IN ('A', 'B', 'C')),
+    activeness VARCHAR(1) CHECK (activeness IN ('A', 'B', 'C')),
+    confidence VARCHAR(1) CHECK (confidence IN ('A', 'B', 'C')),
+    teacher_note TEXT,
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE l_academic_scores(
+    id SERIAL PRIMARY KEY,
+    report_id INTEGER REFERENCES l_reports(id) ON DELETE CASCADE,
+    student_id INTEGER REFERENCES u_students(id) ON DELETE CASCADE,
+    subject_id INTEGER REFERENCES a_subject(id) ON DELETE CASCADE,
+    chapter_id INTEGER REFERENCES l_chapter(id) ON DELETE CASCADE,
+    content_id INTEGER REFERENCES l_content(id) ON DELETE CASCADE,
+    taks_score NUMERIC(5,2),
+    writing_score NUMERIC(5,2),
+    speaking_score NUMERIC(5,2),
+    lab_score NUMERIC(5,2),
+    material_note TEXT,
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE l_attendance_records(
+    id SERIAL PRIMARY KEY,
+    student_id INTEGER REFERENCES u_students(id) ON DELETE CASCADE,
+    subject_id INTEGER REFERENCES a_subject(id) ON DELETE CASCADE,
+    class_id INTEGER REFERENCES a_class(id) ON DELETE CASCADE,
+    periode_id INTEGER REFERENCES a_periode(id) ON DELETE CASCADE,
+    month VARCHAR(20) CHECK (month IN ('Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember')),
+    total_days INTEGER DEFAULT 0,
+    present_days INTEGER DEFAULT 0,
+    sick_days INTEGER DEFAULT 0,
+    permission_days INTEGER DEFAULT 0,
+    absent_days INTEGER DEFAULT 0,
+    attendance_percentage NUMERIC(5,2),
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE l_final_grades(
+    id SERIAL PRIMARY KEY,
+    student_id INTEGER REFERENCES u_students(id) ON DELETE CASCADE,
+    subject_id INTEGER REFERENCES a_subject(id) ON DELETE CASCADE,
+    class_id INTEGER REFERENCES a_class(id) ON DELETE CASCADE,
+    periode_id INTEGER REFERENCES a_periode(id) ON DELETE CASCADE,
+    attendance_score NUMERIC(5,2), -- 10% weight
+    attitude_score NUMERIC(5,2), -- 30% weight
+    daily_scores_avg NUMERIC(5,2), -- 30% weight
+    final_exam_score NUMERIC(5,2), -- 30% weight
+    final_grade NUMERIC(5,2), -- calculated weighted average
+    letter_grade VARCHAR(2), -- A, B, C based on final_grade
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE l_daily_summative(
+    id SERIAL PRIMARY KEY,
+    student_id INTEGER REFERENCES u_students(id) ON DELETE CASCADE,
+    subject_id INTEGER REFERENCES a_subject(id) ON DELETE CASCADE,
+    chapter_id INTEGER REFERENCES l_chapter(id) ON DELETE CASCADE,
+    summative_number INTEGER, -- 1, 2, 3, etc.
+    score NUMERIC(5,2),
+    max_score NUMERIC(5,2) DEFAULT 100,
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE l_final_semester_exam(
+    id SERIAL PRIMARY KEY,
+    student_id INTEGER REFERENCES u_students(id) ON DELETE CASCADE,
+    subject_id INTEGER REFERENCES a_subject(id) ON DELETE CASCADE,
+    periode_id INTEGER REFERENCES a_periode(id) ON DELETE CASCADE,
+    non_test_score NUMERIC(5,2),
+    test_score NUMERIC(5,2),
+    final_semester_score NUMERIC(5,2), -- calculated from test_score or average
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Modify existing l_reports table to support new structure
+ALTER TABLE l_reports ADD COLUMN IF NOT EXISTS attendance_score NUMERIC(5,2);
+ALTER TABLE l_reports ADD COLUMN IF NOT EXISTS attitude_score NUMERIC(5,2);
+ALTER TABLE l_reports ADD COLUMN IF NOT EXISTS daily_scores_avg NUMERIC(5,2);
+ALTER TABLE l_reports ADD COLUMN IF NOT EXISTS final_exam_score NUMERIC(5,2);
+ALTER TABLE l_reports ADD COLUMN IF NOT EXISTS final_grade NUMERIC(5,2);
+ALTER TABLE l_reports ADD COLUMN IF NOT EXISTS letter_grade VARCHAR(2);
+
+-- Modify existing l_scores table
+ALTER TABLE l_scores ADD COLUMN IF NOT EXISTS content_id INTEGER REFERENCES l_content(id) ON DELETE CASCADE;
+ALTER TABLE l_scores ADD COLUMN IF NOT EXISTS max_score NUMERIC(5,2) DEFAULT 100;
+
+-- Create indexes for better performance
+CREATE INDEX idx_attitude_scores_student_subject_month ON l_attitude_scores(student_id, subject_id, month);
+CREATE INDEX idx_academic_scores_student_chapter ON l_academic_scores(student_id, chapter_id);
+CREATE INDEX idx_attendance_records_student_month ON l_attendance_records(student_id, month);
+CREATE INDEX idx_final_grades_student_subject ON l_final_grades(student_id, subject_id);
+CREATE INDEX idx_daily_summative_student_subject ON l_daily_summative(student_id, subject_id);
+CREATE INDEX idx_final_semester_exam_student_subject ON l_final_semester_exam(student_id, subject_id);

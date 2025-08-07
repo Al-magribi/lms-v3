@@ -1,16 +1,27 @@
-import React from "react";
+import { useState } from "react";
 import Layout from "../../../components/layout/Layout";
 import { useSelector } from "react-redux";
 import Subjects from "./Subjects";
 import { motion } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
 import FormData from "./FormData";
-import TableScoring from "./TableScoring";
+import Tabs from "./Tabs";
+import Attitude from "./Attitude";
+import Attendance from "./Attendance";
+import Formative from "./Formative";
+import Summative from "./Summative";
+import Recap from "./Recap";
+import { useGetStudentsInClassQuery } from "../../../controller/api/admin/ApiClass";
 
 const TeacherScores = () => {
   const [searchParams] = useSearchParams();
   const subject = searchParams.get("subject");
-  const id = searchParams.get("id");
+  const subjectid = searchParams.get("id");
+  const chapterid = searchParams.get("chapterid");
+  const classid = searchParams.get("classid");
+  const month = searchParams.get("month");
+
+  const [tab, setTab] = useState("attitude");
 
   const { user } = useSelector((state) => state.auth);
 
@@ -18,12 +29,105 @@ const TeacherScores = () => {
 
   const isSubjectsEmpty = !subjects || subjects.length === 0;
 
-  if (subject && id) {
+  // Check if all required parameters are present
+  const hasRequiredParams = classid && subjectid && chapterid && month;
+
+  // Students data
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [search, setSearch] = useState("");
+
+  const { data, isLoading } = useGetStudentsInClassQuery({
+    page,
+    limit,
+    search,
+    classid,
+  });
+
+  if (subject && subjectid) {
     return (
       <Layout title="Penilaian" levels={["teacher"]}>
-        <FormData subject={subject} id={id} />
+        <div className="d-flex flex-column gap-3">
+          <FormData subject={subject} id={subjectid} />
 
-        <TableScoring />
+          <Tabs tab={tab} setTab={setTab} />
+
+          {/* Only render components when required parameters are available */}
+          {hasRequiredParams && (
+            <>
+              {tab === "attitude" && (
+                <Attitude
+                  data={data}
+                  isLoading={isLoading}
+                  page={page}
+                  setPage={setPage}
+                  limit={limit}
+                  setLimit={setLimit}
+                  search={search}
+                  setSearch={setSearch}
+                  totalData={data?.totalData}
+                  totalPages={data?.totalPages}
+                />
+              )}
+              {tab === "attendance" && (
+                <Attendance
+                  data={data}
+                  isLoading={isLoading}
+                  page={page}
+                  setPage={setPage}
+                  limit={limit}
+                  setLimit={setLimit}
+                  search={search}
+                  setSearch={setSearch}
+                  totalData={data?.totalData}
+                  totalPages={data?.totalPages}
+                />
+              )}
+              {tab === "formative" && (
+                <Formative
+                  data={data}
+                  isLoading={isLoading}
+                  page={page}
+                  setPage={setPage}
+                  limit={limit}
+                  setLimit={setLimit}
+                  search={search}
+                  setSearch={setSearch}
+                  totalData={data?.totalData}
+                  totalPages={data?.totalPages}
+                />
+              )}
+              {tab === "summative" && (
+                <Summative
+                  data={data}
+                  isLoading={isLoading}
+                  page={page}
+                  setPage={setPage}
+                  limit={limit}
+                  setLimit={setLimit}
+                  search={search}
+                  setSearch={setSearch}
+                  totalData={data?.totalData}
+                  totalPages={data?.totalPages}
+                />
+              )}
+              {tab === "recap" && (
+                <Recap
+                  data={data}
+                  isLoading={isLoading}
+                  page={page}
+                  setPage={setPage}
+                  limit={limit}
+                  setLimit={setLimit}
+                  search={search}
+                  setSearch={setSearch}
+                  totalData={data?.totalData}
+                  totalPages={data?.totalPages}
+                />
+              )}
+            </>
+          )}
+        </div>
       </Layout>
     );
   }
