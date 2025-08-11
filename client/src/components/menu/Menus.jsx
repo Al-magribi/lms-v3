@@ -45,13 +45,13 @@ export const AdminMenus = [
 
 export const TeacherMenus = [
   { label: "Mata Pelajaran", link: "/guru-mapel", icon: <Gi.GiOpenFolder /> },
-  { label: "Absensi", link: "/guru-absensi", icon: <Bs.BsFingerprint /> },
   {
     label: "Bank Soal",
     link: "/guru-bank",
     icon: <Md.MdOutlineFolderCopy />,
   },
   { label: "Ujian", link: "/guru-ujian", icon: <Bs.BsLaptopFill /> },
+  { label: "Absensi", link: "/guru-absensi", icon: <Bs.BsFingerprint /> },
   { label: "Penilaian", link: "/guru-penilaian", icon: <Gr.GrScorecard /> },
   { label: "Profile", link: "/guru-profile", icon: <Fa.FaRegUser /> },
 ];

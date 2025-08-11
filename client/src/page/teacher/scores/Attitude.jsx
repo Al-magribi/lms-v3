@@ -1,5 +1,12 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Table from "../../../components/table/Table";
+import { useSearchParams } from "react-router-dom";
+import { useSelector } from "react-redux";
+import {
+  useGetAttitudeQuery,
+  useUpsertAttitudeMutation,
+} from "../../../controller/api/lms/ApiScore";
+import { toast } from "react-hot-toast";
 
 const Attitude = ({
   data,
@@ -15,6 +22,62 @@ const Attitude = ({
 }) => {
   const [attitudeScores, setAttitudeScores] = useState({});
 
+  const [searchParams] = useSearchParams();
+  const subjectid = searchParams.get("id");
+  const chapterid = searchParams.get("chapterid");
+  const classid = searchParams.get("classid");
+  const month = searchParams.get("month");
+  const semester = searchParams.get("semester");
+
+  const { user } = useSelector((state) => state.auth);
+  const teacher_id = user?.id;
+
+  const { data: attitudeData, refetch } = useGetAttitudeQuery(
+    { classid, subjectid, chapterid, month, semester },
+    {
+      skip: !classid || !subjectid || !chapterid || !month || !semester,
+      refetchOnMountOrArgChange: true,
+    }
+  );
+
+  // Reset scores when parameters change
+  useEffect(() => {
+    setAttitudeScores({});
+  }, [classid, subjectid, chapterid, month, semester]);
+
+  useEffect(() => {
+    if (attitudeData && Array.isArray(attitudeData)) {
+      const mapped = {};
+      for (const row of attitudeData) {
+        mapped[row.student_id] = {
+          kinerja:
+            row.kinerja !== null && row.kinerja !== undefined
+              ? row.kinerja
+              : "",
+          kedisiplinan:
+            row.kedisiplinan !== null && row.kedisiplinan !== undefined
+              ? row.kedisiplinan
+              : "",
+          keaktifan:
+            row.keaktifan !== null && row.keaktifan !== undefined
+              ? row.keaktifan
+              : "",
+          percayaDiri:
+            row.percaya_diri !== null && row.percaya_diri !== undefined
+              ? row.percaya_diri
+              : "",
+          catatan: row.catatan_guru ?? "",
+        };
+      }
+      if (Object.keys(mapped).length > 0) setAttitudeScores(mapped);
+    }
+  }, [attitudeData]);
+
+  const [
+    upsertAttitude,
+    { isLoading: isSaving, isSuccess, data: upsertData, isError, error },
+  ] = useUpsertAttitudeMutation();
+
   const handleScoreChange = (studentId, field, value) => {
     setAttitudeScores((prev) => ({
       ...prev,
@@ -25,12 +88,27 @@ const Attitude = ({
     }));
   };
 
-  const handleSave = (student) => {
+  const handleSave = async (student) => {
     const studentScores = attitudeScores[student.student] || {};
-    console.log("Menyimpan nilai sikap untuk siswa:", {
-      studentId: student.student,
-      studentName: student.student_name,
-      scores: studentScores,
+    await upsertAttitude({
+      student_id: student.student,
+      subject_id: Number(subjectid),
+      class_id: Number(classid),
+      chapter_id: Number(chapterid),
+      teacher_id,
+      month,
+      semester,
+      kinerja: studentScores.kinerja ? Number(studentScores.kinerja) : null,
+      kedisiplinan: studentScores.kedisiplinan
+        ? Number(studentScores.kedisiplinan)
+        : null,
+      keaktifan: studentScores.keaktifan
+        ? Number(studentScores.keaktifan)
+        : null,
+      percaya_diri: studentScores.percayaDiri
+        ? Number(studentScores.percayaDiri)
+        : null,
+      catatan_guru: studentScores.catatan || null,
     });
   };
 
@@ -39,17 +117,29 @@ const Attitude = ({
     if (!scores) return 0;
 
     const values = [
-      scores.kinerja || 0,
-      scores.kedisiplinan || 0,
-      scores.keaktifan || 0,
-      scores.kepercayaanDiri || 0,
-    ].filter((score) => score > 0);
+      scores.kinerja,
+      scores.kedisiplinan,
+      scores.keaktifan,
+      scores.percayaDiri,
+    ].filter((score) => score !== "" && score !== null && score !== undefined);
 
     if (values.length === 0) return 0;
     return (
-      values.reduce((sum, score) => sum + score, 0) / values.length
+      values.reduce((sum, score) => sum + Number(score), 0) / values.length
     ).toFixed(1);
   };
+
+  useEffect(() => {
+    if (isSuccess) {
+      toast.success(upsertData.message);
+      // Refetch data after successful save to update the UI
+      refetch();
+    }
+
+    if (isError) {
+      toast.error(error.data.message);
+    }
+  }, [isSuccess, upsertData, isError, error, refetch]);
 
   return (
     <div className="card">
@@ -120,9 +210,9 @@ const Attitude = ({
                       <input
                         type="number"
                         className="form-control form-control-sm text-center"
-                        min="10"
+                        min="0"
                         max="100"
-                        value={attitudeScores[student.student]?.kinerja || ""}
+                        value={attitudeScores[student.student]?.kinerja ?? ""}
                         onChange={(e) =>
                           handleScoreChange(
                             student.student,
@@ -130,17 +220,17 @@ const Attitude = ({
                             e.target.value
                           )
                         }
-                        placeholder="10-100"
+                        placeholder="0-100"
                       />
                     </td>
                     <td className="text-center align-middle">
                       <input
                         type="number"
                         className="form-control form-control-sm text-center"
-                        min="10"
+                        min="0"
                         max="100"
                         value={
-                          attitudeScores[student.student]?.kedisiplinan || ""
+                          attitudeScores[student.student]?.kedisiplinan ?? ""
                         }
                         onChange={(e) =>
                           handleScoreChange(
@@ -149,16 +239,16 @@ const Attitude = ({
                             e.target.value
                           )
                         }
-                        placeholder="10-100"
+                        placeholder="0-100"
                       />
                     </td>
                     <td className="text-center align-middle">
                       <input
                         type="number"
                         className="form-control form-control-sm text-center"
-                        min="10"
+                        min="0"
                         max="100"
-                        value={attitudeScores[student.student]?.keaktifan || ""}
+                        value={attitudeScores[student.student]?.keaktifan ?? ""}
                         onChange={(e) =>
                           handleScoreChange(
                             student.student,
@@ -166,26 +256,26 @@ const Attitude = ({
                             e.target.value
                           )
                         }
-                        placeholder="10-100"
+                        placeholder="0-100"
                       />
                     </td>
                     <td className="text-center align-middle">
                       <input
                         type="number"
                         className="form-control form-control-sm text-center"
-                        min="10"
+                        min="0"
                         max="100"
                         value={
-                          attitudeScores[student.student]?.kepercayaanDiri || ""
+                          attitudeScores[student.student]?.percayaDiri ?? ""
                         }
                         onChange={(e) =>
                           handleScoreChange(
                             student.student,
-                            "kepercayaanDiri",
+                            "percayaDiri",
                             e.target.value
                           )
                         }
-                        placeholder="10-100"
+                        placeholder="0-100"
                       />
                     </td>
                     <td className="align-middle">
@@ -212,6 +302,7 @@ const Attitude = ({
                       <button
                         className="btn btn-sm btn-primary"
                         onClick={() => handleSave(student)}
+                        disabled={isSaving}
                       >
                         <i className="bi bi-check"></i> Simpan
                       </button>

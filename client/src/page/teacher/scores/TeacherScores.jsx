@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Layout from "../../../components/layout/Layout";
 import { useSelector } from "react-redux";
 import Subjects from "./Subjects";
@@ -20,8 +20,9 @@ const TeacherScores = () => {
   const chapterid = searchParams.get("chapterid");
   const classid = searchParams.get("classid");
   const month = searchParams.get("month");
+  const semester = searchParams.get("semester");
 
-  const [tab, setTab] = useState("attitude");
+  const [tab, setTab] = useState("attendance");
 
   const { user } = useSelector((state) => state.auth);
 
@@ -30,19 +31,34 @@ const TeacherScores = () => {
   const isSubjectsEmpty = !subjects || subjects.length === 0;
 
   // Check if all required parameters are present
-  const hasRequiredParams = classid && subjectid && chapterid && month;
+  const hasRequiredParams =
+    classid && subjectid && chapterid && month && semester;
+
+  // Reset tab when parameters change
+  useEffect(() => {
+    setTab("attendance");
+  }, [classid, subjectid, chapterid, month, semester]);
+
+  // Reset pagination when parameters change
+  useEffect(() => {
+    setPage(1);
+    setSearch("");
+  }, [classid, subjectid, chapterid, month, semester]);
 
   // Students data
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState("");
 
-  const { data, isLoading } = useGetStudentsInClassQuery({
-    page,
-    limit,
-    search,
-    classid,
-  });
+  const { data, isLoading } = useGetStudentsInClassQuery(
+    {
+      page,
+      limit,
+      search,
+      classid,
+    },
+    { skip: !classid }
+  );
 
   if (subject && subjectid) {
     return (
@@ -57,6 +73,7 @@ const TeacherScores = () => {
             <>
               {tab === "attitude" && (
                 <Attitude
+                  key={`attitude-${classid}-${subjectid}-${chapterid}-${month}-${semester}`}
                   data={data}
                   isLoading={isLoading}
                   page={page}
@@ -71,6 +88,7 @@ const TeacherScores = () => {
               )}
               {tab === "attendance" && (
                 <Attendance
+                  key={`attendance-${classid}-${subjectid}-${chapterid}-${month}-${semester}`}
                   data={data}
                   isLoading={isLoading}
                   page={page}
@@ -85,6 +103,7 @@ const TeacherScores = () => {
               )}
               {tab === "formative" && (
                 <Formative
+                  key={`formative-${classid}-${subjectid}-${chapterid}-${month}-${semester}`}
                   data={data}
                   isLoading={isLoading}
                   page={page}
@@ -99,6 +118,7 @@ const TeacherScores = () => {
               )}
               {tab === "summative" && (
                 <Summative
+                  key={`summative-${classid}-${subjectid}-${chapterid}-${month}-${semester}`}
                   data={data}
                   isLoading={isLoading}
                   page={page}
@@ -113,6 +133,7 @@ const TeacherScores = () => {
               )}
               {tab === "recap" && (
                 <Recap
+                  key={`recap-${classid}-${subjectid}-${chapterid}-${month}-${semester}`}
                   data={data}
                   isLoading={isLoading}
                   page={page}

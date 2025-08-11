@@ -6,8 +6,108 @@ export const ApiScore = createApi({
     baseUrl: "/api/scores",
     credentials: "include",
   }),
-  tagTypes: ["reports", "attitude", "academic", "attendance", "grades"],
+  tagTypes: [
+    "reports",
+    "attitude",
+    "formative",
+    "summative",
+    "attendance",
+    "grades",
+  ],
   endpoints: (builder) => ({
+    // Fetch per-type score data (new minimal endpoints)
+    getAttitude: builder.query({
+      query: ({ classid, subjectid, chapterid, month, semester }) => ({
+        url: "/attitude",
+        params: { classid, subjectid, chapterid, month, semester },
+      }),
+      providesTags: (
+        result,
+        error,
+        { classid, subjectid, chapterid, month, semester }
+      ) => [
+        {
+          type: "attitude",
+          id: `${classid}-${subjectid}-${chapterid}-${month}-${semester}`,
+        },
+      ],
+    }),
+    upsertAttitude: builder.mutation({
+      query: (body) => ({
+        url: "/attitude",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: (result, error, body) => [
+        {
+          type: "attitude",
+          id: `${body.class_id}-${body.subject_id}-${body.chapter_id}-${body.month}-${body.semester}`,
+        },
+        "reports",
+      ],
+    }),
+
+    getFormative: builder.query({
+      query: ({ classid, subjectid, chapterid, month, semester }) => ({
+        url: "/formative",
+        params: { classid, subjectid, chapterid, month, semester },
+      }),
+      providesTags: (
+        result,
+        error,
+        { classid, subjectid, chapterid, month, semester }
+      ) => [
+        {
+          type: "formative",
+          id: `${classid}-${subjectid}-${chapterid}-${month}-${semester}`,
+        },
+      ],
+    }),
+    upsertFormative: builder.mutation({
+      query: (body) => ({
+        url: "/formative",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: (result, error, body) => [
+        {
+          type: "formative",
+          id: `${body.class_id}-${body.subject_id}-${body.chapter_id}-${body.month}-${body.semester}`,
+        },
+        "reports",
+      ],
+    }),
+
+    getSummative: builder.query({
+      query: ({ classid, subjectid, chapterid, month, semester }) => ({
+        url: "/summative",
+        params: { classid, subjectid, chapterid, month, semester },
+      }),
+      providesTags: (
+        result,
+        error,
+        { classid, subjectid, chapterid, month, semester }
+      ) => [
+        {
+          type: "summative",
+          id: `${classid}-${subjectid}-${chapterid}-${month}-${semester}`,
+        },
+      ],
+    }),
+    upsertSummative: builder.mutation({
+      query: (body) => ({
+        url: "/summative",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: (result, error, body) => [
+        {
+          type: "summative",
+          id: `${body.class_id}-${body.subject_id}-${body.chapter_id}-${body.month}-${body.semester}`,
+        },
+        "reports",
+      ],
+    }),
     // Get reports with enhanced data
     getReports: builder.query({
       query: ({ classid, subjectid, month, chapterid }) => ({
@@ -191,6 +291,24 @@ export const ApiScore = createApi({
       invalidatesTags: ["reports", "attitude", "academic"],
     }),
 
+    // Get comprehensive recap data
+    getRecap: builder.query({
+      query: ({ classid, subjectid, chapterid, month, semester }) => ({
+        url: "/recap",
+        params: { classid, subjectid, chapterid, month, semester },
+      }),
+      providesTags: (
+        result,
+        error,
+        { classid, subjectid, chapterid, month, semester }
+      ) => [
+        {
+          type: "reports",
+          id: `recap-${classid}-${subjectid}-${chapterid}-${month}-${semester}`,
+        },
+      ],
+    }),
+
     // Export reports
     exportReport: builder.mutation({
       query: (body) => ({
@@ -204,6 +322,12 @@ export const ApiScore = createApi({
 });
 
 export const {
+  useGetAttitudeQuery,
+  useUpsertAttitudeMutation,
+  useGetFormativeQuery,
+  useUpsertFormativeMutation,
+  useGetSummativeQuery,
+  useUpsertSummativeMutation,
   useGetReportsQuery,
   useCreateReportMutation,
   useUpdateReportMutation,
@@ -224,5 +348,6 @@ export const {
   useCalculateFinalGradeMutation,
   useGetStudentReportQuery,
   useBulkSaveScoresMutation,
+  useGetRecapQuery,
   useExportReportMutation,
 } = ApiScore;

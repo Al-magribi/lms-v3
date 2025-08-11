@@ -2,6 +2,11 @@ import { Router } from "express";
 import { authorize } from "../../middleware/auth.js";
 import { pool } from "../../config/config.js";
 
+const saved = "Berhasil menyimpan data";
+const failed = "Gagal menyimpan data";
+const updated = "Berhasil mengupdate data";
+const removed = "Berhasil menghapus data";
+
 const router = Router();
 
 // Helper function to get active periode
@@ -13,845 +18,148 @@ const getActivePeriode = async (client, homebase) => {
   return periode.rows[0]?.id;
 };
 
-// Helper function to calculate final grade
-const calculateFinalGrade = (
-  attendanceScore,
-  attitudeScore,
-  dailyScoresAvg,
-  finalExamScore
-) => {
-  const attendanceWeight = 0.1; // 10%
-  const attitudeWeight = 0.3; // 30%
-  const dailyWeight = 0.3; // 30%
-  const examWeight = 0.3; // 30%
+// ==========================
+// Attitude (Sikap)
+// ==========================
 
-  const finalGrade =
-    attendanceScore * attendanceWeight +
-    attitudeScore * attitudeWeight +
-    dailyScoresAvg * dailyWeight +
-    finalExamScore * examWeight;
-
-  return Math.round(finalGrade);
-};
-
-// Helper function to get letter grade
-const getLetterGrade = (finalGrade) => {
-  if (finalGrade >= 96) return "A";
-  if (finalGrade >= 91) return "B";
-  if (finalGrade >= 85) return "C";
-  return "D";
-};
-
-// 1. GET: Enhanced reports with all score types
-router.get("/reports", authorize("admin", "teacher"), async (req, res) => {
+// Get attitude scores for a class/subject/chapter/month
+router.get("/attitude", authorize("teacher", "admin"), async (req, res) => {
   const client = await pool.connect();
-  const homebase = req.user.homebase;
-
   try {
-    const { classid, subjectid, month, chapterid } = req.query;
-    if (!classid || !subjectid || !month || !chapterid) {
+    const { classid, subjectid, chapterid, month, semester } = req.query;
+    if (!classid || !subjectid || !chapterid || !month || !semester) {
       return res.status(400).json({ message: "Missing required parameters" });
     }
 
+    const homebase = req.user.homebase;
     const periodeid = await getActivePeriode(client, homebase);
     if (!periodeid) {
       return res.status(400).json({ message: "No active periode found" });
     }
 
-    // Get all students in the class
-    const studentsResult = await client.query(
-      `SELECT u.id, u.name, u.nis, u.gender FROM cl_students c
-       JOIN u_students u ON c.student = u.id
-       WHERE c.classid = $1 AND c.periode = $2
-       ORDER BY u.name ASC`,
-      [classid, periodeid]
+    const result = await client.query(
+      `SELECT * FROM l_attitude
+         WHERE class_id = $1 AND subject_id = $2 AND chapter_id = $3
+           AND month = $4 AND semester = $5 AND periode_id = $6
+         ORDER BY student_id`,
+      [classid, subjectid, chapterid, month, semester, periodeid]
     );
-    const students = studentsResult.rows;
 
-    // Get attitude scores
-    const attitudeResult = await client.query(
-      `SELECT * FROM l_attitude_scores 
-       WHERE subject_id = $1 AND month = $2`,
-      [subjectid, month]
-    );
-    const attitudeScores = attitudeResult.rows;
-
-    // Get academic scores
-    const academicResult = await client.query(
-      `SELECT * FROM l_academic_scores 
-       WHERE subject_id = $1 AND chapter_id = $2`,
-      [subjectid, chapterid]
-    );
-    const academicScores = academicResult.rows;
-
-    // Get attendance records
-    const attendanceResult = await client.query(
-      `SELECT * FROM l_attendance_records 
-       WHERE subject_id = $1 AND month = $2`,
-      [subjectid, month]
-    );
-    const attendanceRecords = attendanceResult.rows;
-
-    // Get daily summative scores
-    const dailySummativeResult = await client.query(
-      `SELECT * FROM l_daily_summative 
-       WHERE subject_id = $1 AND chapter_id = $2`,
-      [subjectid, chapterid]
-    );
-    const dailySummativeScores = dailySummativeResult.rows;
-
-    // Get final semester exam scores
-    const finalExamResult = await client.query(
-      `SELECT * FROM l_final_semester_exam 
-       WHERE subject_id = $1 AND periode_id = $2`,
-      [subjectid, periodeid]
-    );
-    const finalExamScores = finalExamResult.rows;
-
-    // Map data to students
-    const result = students.map((student) => {
-      const attitude = attitudeScores.find((a) => a.student_id === student.id);
-      const academic = academicScores.find((a) => a.student_id === student.id);
-      const attendance = attendanceRecords.find(
-        (a) => a.student_id === student.id
-      );
-      const dailySummative = dailySummativeScores.find(
-        (d) => d.student_id === student.id
-      );
-      const finalExam = finalExamScores.find(
-        (f) => f.student_id === student.id
-      );
-
-      return {
-        studentid: student.id,
-        name: student.name,
-        nis: student.nis,
-        gender: student.gender,
-        attitude: attitude
-          ? {
-              id: attitude.id,
-              performance: attitude.performance,
-              discipline: attitude.discipline,
-              activeness: attitude.activeness,
-              confidence: attitude.confidence,
-              teacher_note: attitude.teacher_note,
-            }
-          : null,
-        academic: academic
-          ? {
-              id: academic.id,
-              taks_score: academic.taks_score,
-              writing_score: academic.writing_score,
-              speaking_score: academic.speaking_score,
-              lab_score: academic.lab_score,
-              material_note: academic.material_note,
-            }
-          : null,
-        attendance: attendance
-          ? {
-              id: attendance.id,
-              present_days: attendance.present_days,
-              sick_days: attendance.sick_days,
-              permission_days: attendance.permission_days,
-              absent_days: attendance.absent_days,
-              total_days: attendance.total_days,
-              attendance_percentage: attendance.attendance_percentage,
-            }
-          : null,
-        daily_summative: dailySummative
-          ? {
-              id: dailySummative.id,
-              summative_number: dailySummative.summative_number,
-              score: dailySummative.score,
-              max_score: dailySummative.max_score,
-            }
-          : null,
-        final_exam: finalExam
-          ? {
-              id: finalExam.id,
-              non_test_score: finalExam.non_test_score,
-              test_score: finalExam.test_score,
-              final_semester_score: finalExam.final_semester_score,
-            }
-          : null,
-      };
-    });
-
-    res.status(200).json(result);
+    res.status(200).json(result.rows);
   } catch (error) {
+    console.log(error);
     res.status(500).json({ message: error.message });
   } finally {
     client.release();
   }
 });
 
-// 2. POST: Create attitude score
-router.post(
-  "/add-attitude-score",
-  authorize("admin", "teacher"),
-  async (req, res) => {
-    const client = await pool.connect();
-    try {
-      const {
-        student_id,
-        subject_id,
-        teacher_id,
-        month,
-        performance,
-        discipline,
-        activeness,
-        confidence,
-        teacher_note,
-      } = req.body;
-
-      const homebase = req.user.homebase;
-      const periodeid = await getActivePeriode(client, homebase);
-
-      // Check for existing record
-      const existing = await client.query(
-        `SELECT id FROM l_attitude_scores 
-       WHERE student_id = $1 AND subject_id = $2 AND month = $3`,
-        [student_id, subject_id, month]
-      );
-
-      if (existing.rows.length > 0) {
-        // Update existing record
-        await client.query(
-          `UPDATE l_attitude_scores 
-         SET performance = $1, discipline = $2, activeness = $3, 
-             confidence = $4, teacher_note = $5
-         WHERE id = $6`,
-          [
-            performance,
-            discipline,
-            activeness,
-            confidence,
-            teacher_note,
-            existing.rows[0].id,
-          ]
-        );
-      } else {
-        // Create new record
-        await client.query(
-          `INSERT INTO l_attitude_scores 
-         (student_id, subject_id, teacher_id, month, performance, discipline, 
-          activeness, confidence, teacher_note)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-          [
-            student_id,
-            subject_id,
-            teacher_id,
-            month,
-            performance,
-            discipline,
-            activeness,
-            confidence,
-            teacher_note,
-          ]
-        );
-      }
-
-      res.status(200).json({ message: "Attitude score saved successfully" });
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    } finally {
-      client.release();
-    }
-  }
-);
-
-// 3. POST: Create academic score
-router.post(
-  "/add-academic-score",
-  authorize("admin", "teacher"),
-  async (req, res) => {
-    const client = await pool.connect();
-    try {
-      const {
-        student_id,
-        subject_id,
-        chapter_id,
-        content_id,
-        taks_score,
-        writing_score,
-        speaking_score,
-        lab_score,
-        material_note,
-      } = req.body;
-
-      // Check for existing record
-      const existing = await client.query(
-        `SELECT id FROM l_academic_scores 
-       WHERE student_id = $1 AND subject_id = $2 AND chapter_id = $3`,
-        [student_id, subject_id, chapter_id]
-      );
-
-      if (existing.rows.length > 0) {
-        // Update existing record
-        await client.query(
-          `UPDATE l_academic_scores 
-         SET taks_score = $1, writing_score = $2, speaking_score = $3, 
-             lab_score = $4, material_note = $5, content_id = $6
-         WHERE id = $7`,
-          [
-            taks_score,
-            writing_score,
-            speaking_score,
-            lab_score,
-            material_note,
-            content_id,
-            existing.rows[0].id,
-          ]
-        );
-      } else {
-        // Create new record
-        await client.query(
-          `INSERT INTO l_academic_scores 
-         (student_id, subject_id, chapter_id, content_id, taks_score, 
-          writing_score, speaking_score, lab_score, material_note)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-          [
-            student_id,
-            subject_id,
-            chapter_id,
-            content_id,
-            taks_score,
-            writing_score,
-            speaking_score,
-            lab_score,
-            material_note,
-          ]
-        );
-      }
-
-      res.status(200).json({ message: "Academic score saved successfully" });
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    } finally {
-      client.release();
-    }
-  }
-);
-
-// 4. POST: Create attendance record
-router.post(
-  "/add-attendance-record",
-  authorize("admin", "teacher"),
-  async (req, res) => {
-    const client = await pool.connect();
-    try {
-      const {
-        student_id,
-        subject_id,
-        class_id,
-        month,
-        present_days,
-        sick_days,
-        permission_days,
-        absent_days,
-      } = req.body;
-
-      const homebase = req.user.homebase;
-      const periodeid = await getActivePeriode(client, homebase);
-
-      // Calculate total days and percentage
-      const totalDays =
-        present_days + sick_days + permission_days + absent_days;
-      const calculatedPercentage =
-        totalDays > 0
-          ? Math.round(
-              ((present_days + sick_days + permission_days) / totalDays) * 100
-            )
-          : 0;
-
-      // Check for existing record
-      const existing = await client.query(
-        `SELECT id FROM l_attendance_records 
-       WHERE student_id = $1 AND subject_id = $2 AND month = $3`,
-        [student_id, subject_id, month]
-      );
-
-      if (existing.rows.length > 0) {
-        // Update existing record
-        await client.query(
-          `UPDATE l_attendance_records 
-         SET present_days = $1, sick_days = $2, permission_days = $3, 
-             absent_days = $4, total_days = $5, attendance_percentage = $6
-         WHERE id = $7`,
-          [
-            present_days,
-            sick_days,
-            permission_days,
-            absent_days,
-            totalDays,
-            calculatedPercentage,
-            existing.rows[0].id,
-          ]
-        );
-      } else {
-        // Create new record
-        await client.query(
-          `INSERT INTO l_attendance_records 
-         (student_id, subject_id, class_id, periode_id, month, present_days, 
-          sick_days, permission_days, absent_days, total_days, attendance_percentage)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-          [
-            student_id,
-            subject_id,
-            class_id,
-            periodeid,
-            month,
-            present_days,
-            sick_days,
-            permission_days,
-            absent_days,
-            totalDays,
-            calculatedPercentage,
-          ]
-        );
-      }
-
-      res.status(200).json({ message: "Attendance record saved successfully" });
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    } finally {
-      client.release();
-    }
-  }
-);
-
-// 5. POST: Create daily summative score
-router.post(
-  "/add-daily-summative",
-  authorize("admin", "teacher"),
-  async (req, res) => {
-    const client = await pool.connect();
-    try {
-      const {
-        student_id,
-        subject_id,
-        chapter_id,
-        summative_number,
-        score,
-        max_score = 100,
-      } = req.body;
-
-      // Check for existing record
-      const existing = await client.query(
-        `SELECT id FROM l_daily_summative 
-       WHERE student_id = $1 AND subject_id = $2 AND chapter_id = $3 AND summative_number = $4`,
-        [student_id, subject_id, chapter_id, summative_number]
-      );
-
-      if (existing.rows.length > 0) {
-        // Update existing record
-        await client.query(
-          `UPDATE l_daily_summative 
-         SET score = $1, max_score = $2
-         WHERE id = $3`,
-          [score, max_score, existing.rows[0].id]
-        );
-      } else {
-        // Create new record
-        await client.query(
-          `INSERT INTO l_daily_summative 
-         (student_id, subject_id, chapter_id, summative_number, score, max_score)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-          [
-            student_id,
-            subject_id,
-            chapter_id,
-            summative_number,
-            score,
-            max_score,
-          ]
-        );
-      }
-
-      res
-        .status(200)
-        .json({ message: "Daily summative score saved successfully" });
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    } finally {
-      client.release();
-    }
-  }
-);
-
-// 6. POST: Create final semester exam score
-router.post(
-  "/add-final-semester-exam",
-  authorize("admin", "teacher"),
-  async (req, res) => {
-    const client = await pool.connect();
-    try {
-      const { student_id, subject_id, non_test_score, test_score } = req.body;
-
-      const homebase = req.user.homebase;
-      const periodeid = await getActivePeriode(client, homebase);
-
-      // Calculate final semester score (use test_score if available, otherwise average)
-      const finalSemesterScore = test_score || non_test_score || 0;
-
-      // Check for existing record
-      const existing = await client.query(
-        `SELECT id FROM l_final_semester_exam 
-       WHERE student_id = $1 AND subject_id = $2 AND periode_id = $3`,
-        [student_id, subject_id, periodeid]
-      );
-
-      if (existing.rows.length > 0) {
-        // Update existing record
-        await client.query(
-          `UPDATE l_final_semester_exam 
-         SET non_test_score = $1, test_score = $2, final_semester_score = $3
-         WHERE id = $4`,
-          [non_test_score, test_score, finalSemesterScore, existing.rows[0].id]
-        );
-      } else {
-        // Create new record
-        await client.query(
-          `INSERT INTO l_final_semester_exam 
-         (student_id, subject_id, periode_id, non_test_score, test_score, final_semester_score)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-          [
-            student_id,
-            subject_id,
-            periodeid,
-            non_test_score,
-            test_score,
-            finalSemesterScore,
-          ]
-        );
-      }
-
-      res
-        .status(200)
-        .json({ message: "Final semester exam score saved successfully" });
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    } finally {
-      client.release();
-    }
-  }
-);
-
-// 7. POST: Calculate final grade
-router.post(
-  "/calculate-final-grade",
-  authorize("admin", "teacher"),
-  async (req, res) => {
-    const client = await pool.connect();
-    try {
-      const {
-        student_id,
-        subject_id,
-        class_id,
-        attendance_score,
-        attitude_score,
-        daily_scores_avg,
-        final_exam_score,
-      } = req.body;
-
-      const homebase = req.user.homebase;
-      const periodeid = await getActivePeriode(client, homebase);
-
-      // Calculate final grade
-      const finalGrade = calculateFinalGrade(
-        attendance_score || 0,
-        attitude_score || 0,
-        daily_scores_avg || 0,
-        final_exam_score || 0
-      );
-
-      const letterGrade = getLetterGrade(finalGrade);
-
-      // Check for existing record
-      const existing = await client.query(
-        `SELECT id FROM l_final_grades 
-       WHERE student_id = $1 AND subject_id = $2 AND periode_id = $3`,
-        [student_id, subject_id, periodeid]
-      );
-
-      if (existing.rows.length > 0) {
-        // Update existing record
-        await client.query(
-          `UPDATE l_final_grades 
-         SET attendance_score = $1, attitude_score = $2, daily_scores_avg = $3, 
-             final_exam_score = $4, final_grade = $5, letter_grade = $6
-         WHERE id = $7`,
-          [
-            attendance_score,
-            attitude_score,
-            daily_scores_avg,
-            final_exam_score,
-            finalGrade,
-            letterGrade,
-            existing.rows[0].id,
-          ]
-        );
-      } else {
-        // Create new record
-        await client.query(
-          `INSERT INTO l_final_grades 
-         (student_id, subject_id, class_id, periode_id, attendance_score, 
-          attitude_score, daily_scores_avg, final_exam_score, final_grade, letter_grade)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-          [
-            student_id,
-            subject_id,
-            class_id,
-            periodeid,
-            attendance_score,
-            attitude_score,
-            daily_scores_avg,
-            final_exam_score,
-            finalGrade,
-            letterGrade,
-          ]
-        );
-      }
-
-      res.status(200).json({
-        message: "Final grade calculated successfully",
-        final_grade: finalGrade,
-        letter_grade: letterGrade,
-      });
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    } finally {
-      client.release();
-    }
-  }
-);
-
-// 8. POST: Bulk save scores
-router.post(
-  "/bulk-save-scores",
-  authorize("admin", "teacher"),
-  async (req, res) => {
-    const client = await pool.connect();
-    try {
-      const { class_id, subject_id, chapter_id, month, teacher_id, students } =
-        req.body;
-
-      await client.query("BEGIN");
-
-      for (const student of students) {
-        const { student_id, attitude, academic, attendance } = student;
-
-        // Save attitude scores
-        if (attitude) {
-          await client.query(
-            `INSERT INTO l_attitude_scores 
-           (student_id, subject_id, teacher_id, month, performance, discipline, 
-            activeness, confidence, teacher_note)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-           ON CONFLICT (student_id, subject_id, month) 
-           DO UPDATE SET performance = EXCLUDED.performance, discipline = EXCLUDED.discipline,
-                         activeness = EXCLUDED.activeness, confidence = EXCLUDED.confidence,
-                         teacher_note = EXCLUDED.teacher_note`,
-            [
-              student_id,
-              subject_id,
-              teacher_id,
-              month,
-              attitude.performance,
-              attitude.discipline,
-              attitude.activeness,
-              attitude.confidence,
-              attitude.teacher_note,
-            ]
-          );
-        }
-
-        // Save academic scores
-        if (academic && chapter_id) {
-          await client.query(
-            `INSERT INTO l_academic_scores 
-           (student_id, subject_id, chapter_id, taks_score, writing_score, 
-            speaking_score, lab_score, material_note)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-           ON CONFLICT (student_id, subject_id, chapter_id) 
-           DO UPDATE SET taks_score = EXCLUDED.taks_score, writing_score = EXCLUDED.writing_score,
-                         speaking_score = EXCLUDED.speaking_score, lab_score = EXCLUDED.lab_score,
-                         material_note = EXCLUDED.material_note`,
-            [
-              student_id,
-              subject_id,
-              chapter_id,
-              academic.taks_score,
-              academic.writing_score,
-              academic.speaking_score,
-              academic.lab_score,
-              academic.material_note,
-            ]
-          );
-        }
-
-        // Save attendance records
-        if (attendance) {
-          const totalDays =
-            attendance.present_days +
-            attendance.sick_days +
-            attendance.permission_days +
-            attendance.absent_days;
-          const attendancePercentage =
-            totalDays > 0
-              ? Math.round(
-                  ((attendance.present_days +
-                    attendance.sick_days +
-                    attendance.permission_days) /
-                    totalDays) *
-                    100
-                )
-              : 0;
-
-          await client.query(
-            `INSERT INTO l_attendance_records 
-           (student_id, subject_id, class_id, month, present_days, sick_days, 
-            permission_days, absent_days, total_days, attendance_percentage)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-           ON CONFLICT (student_id, subject_id, month) 
-           DO UPDATE SET present_days = EXCLUDED.present_days, sick_days = EXCLUDED.sick_days,
-                         permission_days = EXCLUDED.permission_days, absent_days = EXCLUDED.absent_days,
-                         total_days = EXCLUDED.total_days, attendance_percentage = EXCLUDED.attendance_percentage`,
-            [
-              student_id,
-              subject_id,
-              class_id,
-              month,
-              attendance.present_days,
-              attendance.sick_days,
-              attendance.permission_days,
-              attendance.absent_days,
-              totalDays,
-              attendancePercentage,
-            ]
-          );
-        }
-      }
-
-      await client.query("COMMIT");
-      res.status(200).json({ message: "All scores saved successfully" });
-    } catch (error) {
-      await client.query("ROLLBACK");
-      res.status(500).json({ message: error.message });
-    } finally {
-      client.release();
-    }
-  }
-);
-
-// 9. GET: Student comprehensive report
-router.get(
-  "/student-report",
-  authorize("admin", "teacher"),
-  async (req, res) => {
-    const client = await pool.connect();
-    try {
-      const { studentid, subjectid, month } = req.query;
-
-      if (!studentid || !subjectid) {
-        return res.status(400).json({ message: "Missing required parameters" });
-      }
-
-      // Get all data for the student
-      const [
-        attitude,
-        academic,
-        attendance,
-        dailySummative,
-        finalExam,
-        finalGrade,
-      ] = await Promise.all([
-        client.query(
-          `SELECT * FROM l_attitude_scores 
-         WHERE student_id = $1 AND subject_id = $2 AND month = $3`,
-          [studentid, subjectid, month]
-        ),
-        client.query(
-          `SELECT * FROM l_academic_scores 
-         WHERE student_id = $1 AND subject_id = $2`,
-          [studentid, subjectid]
-        ),
-        client.query(
-          `SELECT * FROM l_attendance_records 
-         WHERE student_id = $1 AND subject_id = $2 AND month = $3`,
-          [studentid, subjectid, month]
-        ),
-        client.query(
-          `SELECT * FROM l_daily_summative 
-         WHERE student_id = $1 AND subject_id = $2`,
-          [studentid, subjectid]
-        ),
-        client.query(
-          `SELECT * FROM l_final_semester_exam 
-         WHERE student_id = $1 AND subject_id = $2`,
-          [studentid, subjectid]
-        ),
-        client.query(
-          `SELECT * FROM l_final_grades 
-         WHERE student_id = $1 AND subject_id = $2`,
-          [studentid, subjectid]
-        ),
-      ]);
-
-      // Get student info
-      const studentInfo = await client.query(
-        `SELECT u.name, u.nis, u.gender, c.name as class_name, g.name as grade_name
-       FROM u_students u
-       JOIN cl_students cs ON u.id = cs.student
-       JOIN a_class c ON cs.classid = c.id
-       JOIN a_grade g ON c.grade = g.id
-       WHERE u.id = $1`,
-        [studentid]
-      );
-
-      res.status(200).json({
-        student: studentInfo.rows[0],
-        attitude: attitude.rows[0] || null,
-        academic: academic.rows,
-        attendance: attendance.rows[0] || null,
-        daily_summative: dailySummative.rows,
-        final_exam: finalExam.rows[0] || null,
-        final_grade: finalGrade.rows[0] || null,
-      });
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    } finally {
-      client.release();
-    }
-  }
-);
-
-// Legacy endpoints for backward compatibility
-router.get("/get-students", authorize("admin", "teacher"), async (req, res) => {
+// Create or update attitude score (UPSERT)
+router.post("/attitude", authorize("teacher", "admin"), async (req, res) => {
   const client = await pool.connect();
   try {
-    const { page = 1, limit = 10, search = "", classid } = req.query;
-    const offset = (page - 1) * limit;
+    const {
+      student_id,
+      subject_id,
+      class_id,
+      chapter_id,
+      month,
+      semester,
+      kinerja,
+      kedisiplinan,
+      keaktifan,
+      percaya_diri,
+      catatan_guru,
+    } = req.body;
 
-    let query = `
-      SELECT u.id, u.name, u.nis, u.gender
-      FROM u_students u
-      JOIN cl_students c ON u.id = c.student
-      WHERE c.classid = $1
-    `;
-    let params = [classid];
-
-    if (search) {
-      query += ` AND (u.name ILIKE $2 OR u.nis ILIKE $2)`;
-      params.push(`%${search}%`);
+    if (
+      !student_id ||
+      !subject_id ||
+      !class_id ||
+      !chapter_id ||
+      !month ||
+      !semester
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Missing required fields in body" });
     }
 
-    query += ` ORDER BY u.name ASC LIMIT $${params.length + 1} OFFSET $${
-      params.length + 2
-    }`;
-    params.push(limit, offset);
+    const homebase = req.user.homebase;
+    const teacher_id = req.user.id;
+    const periode_id = await getActivePeriode(client, homebase);
+    if (!periode_id) {
+      return res.status(400).json({ message: "No active periode found" });
+    }
+
+    const query = `
+        INSERT INTO l_attitude (
+          student_id, subject_id, class_id, periode_id, chapter_id, teacher_id,
+                     semester, month, kinerja, kedisiplinan, keaktifan, percaya_diri, catatan_guru
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+        ON CONFLICT (student_id, subject_id, class_id, chapter_id, month)
+        DO UPDATE SET
+                     kinerja = EXCLUDED.kinerja,
+           kedisiplinan = EXCLUDED.kedisiplinan,
+           keaktifan = EXCLUDED.keaktifan,
+           percaya_diri = EXCLUDED.percaya_diri,
+           catatan_guru = EXCLUDED.catatan_guru,
+           updatedat = CURRENT_TIMESTAMP
+        RETURNING *
+      `;
+
+    const params = [
+      student_id,
+      subject_id,
+      class_id,
+      periode_id,
+      chapter_id,
+      teacher_id,
+      semester,
+      month,
+      kinerja ?? null,
+      kedisiplinan ?? null,
+      keaktifan ?? null,
+      percaya_diri ?? null,
+      catatan_guru ?? null,
+    ];
 
     const result = await client.query(query, params);
+    res.status(200).json({ message: saved, data: result.rows[0] });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+// ==========================
+// Formative
+// ==========================
+
+router.get("/formative", authorize("teacher", "admin"), async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { classid, subjectid, chapterid, month, semester } = req.query;
+    if (!classid || !subjectid || !chapterid || !month || !semester) {
+      return res.status(400).json({ message: "Missing required parameters" });
+    }
+
+    const homebase = req.user.homebase;
+    const periodeid = await getActivePeriode(client, homebase);
+    if (!periodeid) {
+      return res.status(400).json({ message: "No active periode found" });
+    }
+
+    const result = await client.query(
+      `SELECT * FROM l_formative
+         WHERE class_id = $1 AND subject_id = $2 AND chapter_id = $3
+           AND month = $4 AND semester = $5 AND periode_id = $6
+         ORDER BY student_id`,
+      [classid, subjectid, chapterid, month, semester, periodeid]
+    );
+
     res.status(200).json(result.rows);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -860,157 +168,377 @@ router.get("/get-students", authorize("admin", "teacher"), async (req, res) => {
   }
 });
 
-router.post("/add-report", authorize("admin", "teacher"), async (req, res) => {
+router.post("/formative", authorize("teacher", "admin"), async (req, res) => {
   const client = await pool.connect();
   try {
     const {
-      classid,
-      subjectid,
-      studentid,
-      teacherid,
-      type_report = "bulanan",
+      student_id,
+      subject_id,
+      class_id,
+      chapter_id,
       month,
-      performance,
-      discipline,
-      activeness,
-      confidence,
-      teacher_note,
-      note,
-      scores = [],
+      semester,
+      F_1,
+      F_2,
+      F_3,
+      F_4,
+      F_5,
+      F_6,
+      F_7,
+      F_8,
     } = req.body;
 
-    const homebase = req.user.homebase;
-    const periodeid = await getActivePeriode(client, homebase);
-
-    await client.query("BEGIN");
-
-    // Check for existing report
-    const existing = await client.query(
-      `SELECT id FROM l_reports WHERE periodeid = $1 AND classid = $2 AND subjectid = $3 AND studentid = $4 AND teacherid = $5 AND month = $6`,
-      [periodeid, classid, subjectid, studentid, teacherid, month]
-    );
-
-    if (existing.rows.length > 0) {
-      await client.query("ROLLBACK");
+    if (
+      !student_id ||
+      !subject_id ||
+      !class_id ||
+      !chapter_id ||
+      !month ||
+      !semester
+    ) {
       return res
         .status(400)
-        .json({
-          message: "Report already exists for this student in this month",
-        });
+        .json({ message: "Missing required fields in body" });
     }
 
-    // Insert report
-    const reportRes = await client.query(
-      `INSERT INTO l_reports (periodeid, classid, subjectid, studentid, teacherid, type_report, month, performance, discipline, activeness, confidence, teacher_note, note)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id`,
-      [
-        periodeid,
-        classid,
-        subjectid,
-        studentid,
-        teacherid,
-        type_report,
-        month,
-        performance,
-        discipline,
-        activeness,
-        confidence,
-        teacher_note,
-        note,
-      ]
-    );
-
-    const reportid = reportRes.rows[0].id;
-
-    // Insert scores
-    for (const score of scores) {
-      await client.query(
-        `INSERT INTO l_scores (reportid, chapterid, taks_score, writing_score, speaking_score, lab_score, note)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        [
-          reportid,
-          score.chapterid,
-          score.taks_score,
-          score.writing_score,
-          score.speaking_score,
-          score.lab_score,
-          score.note,
-        ]
-      );
+    const homebase = req.user.homebase;
+    const teacher_id = req.user.id;
+    const periode_id = await getActivePeriode(client, homebase);
+    if (!periode_id) {
+      return res.status(400).json({ message: "No active periode found" });
     }
 
-    await client.query("COMMIT");
-    res.status(200).json({ message: "Report created successfully", reportid });
+    const query = `
+        INSERT INTO l_formative (
+          student_id, subject_id, class_id, periode_id, chapter_id, teacher_id,
+          semester, month, F_1, F_2, F_3, F_4, F_5, F_6, F_7, F_8
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+        ON CONFLICT (student_id, subject_id, class_id, chapter_id, month)
+        DO UPDATE SET
+          F_1 = EXCLUDED.F_1,
+          F_2 = EXCLUDED.F_2,
+          F_3 = EXCLUDED.F_3,
+          F_4 = EXCLUDED.F_4,
+          F_5 = EXCLUDED.F_5,
+          F_6 = EXCLUDED.F_6,
+          F_7 = EXCLUDED.F_7,
+                     F_8 = EXCLUDED.F_8,
+           updatedat = CURRENT_TIMESTAMP
+        RETURNING *
+      `;
+
+    const params = [
+      student_id,
+      subject_id,
+      class_id,
+      periode_id,
+      chapter_id,
+      teacher_id,
+      semester,
+      month,
+      F_1 ?? null,
+      F_2 ?? null,
+      F_3 ?? null,
+      F_4 ?? null,
+      F_5 ?? null,
+      F_6 ?? null,
+      F_7 ?? null,
+      F_8 ?? null,
+    ];
+
+    const result = await client.query(query, params);
+    res.status(200).json({ message: saved, data: result.rows[0] });
   } catch (error) {
-    await client.query("ROLLBACK");
     res.status(500).json({ message: error.message });
   } finally {
     client.release();
   }
 });
 
-router.put(
-  "/update-report/:id",
-  authorize("admin", "teacher"),
-  async (req, res) => {
-    const client = await pool.connect();
-    try {
-      const { id } = req.params;
-      const {
-        performance,
-        discipline,
-        activeness,
-        confidence,
-        teacher_note,
-        note,
-        scores = [],
-      } = req.body;
+// ==========================
+// Summative
+// ==========================
 
-      await client.query("BEGIN");
-
-      // Update report
-      await client.query(
-        `UPDATE l_reports SET performance = $1, discipline = $2, activeness = $3, confidence = $4, teacher_note = $5, note = $6 WHERE id = $7`,
-        [
-          performance,
-          discipline,
-          activeness,
-          confidence,
-          teacher_note,
-          note,
-          id,
-        ]
-      );
-
-      // Delete existing scores
-      await client.query(`DELETE FROM l_scores WHERE reportid = $1`, [id]);
-
-      // Insert new scores
-      for (const score of scores) {
-        await client.query(
-          `INSERT INTO l_scores (reportid, chapterid, taks_score, writing_score, speaking_score, lab_score, note)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-          [
-            id,
-            score.chapterid,
-            score.taks_score,
-            score.writing_score,
-            score.speaking_score,
-            score.lab_score,
-            score.note,
-          ]
-        );
-      }
-
-      await client.query("COMMIT");
-      res.status(200).json({ message: "Report updated successfully" });
-    } catch (error) {
-      await client.query("ROLLBACK");
-      res.status(500).json({ message: error.message });
-    } finally {
-      client.release();
+router.get("/summative", authorize("teacher", "admin"), async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { classid, subjectid, chapterid, month, semester } = req.query;
+    if (!classid || !subjectid || !chapterid || !month || !semester) {
+      return res.status(400).json({ message: "Missing required parameters" });
     }
+
+    const homebase = req.user.homebase;
+    const periodeid = await getActivePeriode(client, homebase);
+    if (!periodeid) {
+      return res.status(400).json({ message: "No active periode found" });
+    }
+
+    const result = await client.query(
+      `SELECT * FROM l_summative
+         WHERE class_id = $1 AND subject_id = $2 AND chapter_id = $3
+           AND month = $4 AND semester = $5 AND periode_id = $6
+         ORDER BY student_id`,
+      [classid, subjectid, chapterid, month, semester, periodeid]
+    );
+
+    res.status(200).json(result.rows);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
   }
-);
+});
+
+router.post("/summative", authorize("teacher", "admin"), async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const {
+      student_id,
+      subject_id,
+      class_id,
+      chapter_id,
+      month,
+      semester,
+      S_1,
+      S_2,
+      S_3,
+      S_4,
+      S_5,
+      S_6,
+      S_7,
+      S_8,
+    } = req.body;
+
+    if (
+      !student_id ||
+      !subject_id ||
+      !class_id ||
+      !chapter_id ||
+      !month ||
+      !semester
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Missing required fields in body" });
+    }
+
+    const homebase = req.user.homebase;
+    const teacher_id = req.user.id;
+    const periode_id = await getActivePeriode(client, homebase);
+    if (!periode_id) {
+      return res.status(400).json({ message: "No active periode found" });
+    }
+
+    const query = `
+        INSERT INTO l_summative (
+          student_id, subject_id, class_id, periode_id, chapter_id, teacher_id,
+          semester, month, S_1, S_2, S_3, S_4, S_5, S_6, S_7, S_8
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+        ON CONFLICT (student_id, subject_id, class_id, chapter_id, month)
+        DO UPDATE SET
+          S_1 = EXCLUDED.S_1,
+          S_2 = EXCLUDED.S_2,
+          S_3 = EXCLUDED.S_3,
+          S_4 = EXCLUDED.S_4,
+          S_5 = EXCLUDED.S_5,
+          S_6 = EXCLUDED.S_6,
+          S_7 = EXCLUDED.S_7,
+                     S_8 = EXCLUDED.S_8,
+           updatedat = CURRENT_TIMESTAMP
+        RETURNING *
+      `;
+
+    const params = [
+      student_id,
+      subject_id,
+      class_id,
+      periode_id,
+      chapter_id,
+      teacher_id,
+      semester,
+      month,
+      S_1 ?? null,
+      S_2 ?? null,
+      S_3 ?? null,
+      S_4 ?? null,
+      S_5 ?? null,
+      S_6 ?? null,
+      S_7 ?? null,
+      S_8 ?? null,
+    ];
+
+    const result = await client.query(query, params);
+    res.status(200).json({ message: saved, data: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+// ==========================
+// Recap Data
+// ==========================
+
+// Helper function to convert Indonesian month name to month number
+const getMonthNumber = (monthName) => {
+  const monthMap = {
+    januari: 1,
+    februari: 2,
+    maret: 3,
+    april: 4,
+    mei: 5,
+    juni: 6,
+    juli: 7,
+    agustus: 8,
+    september: 9,
+    oktober: 10,
+    november: 11,
+    desember: 12,
+  };
+
+  return monthMap[monthName.toLowerCase()] || 1; // Default to January if not found
+};
+
+// Get comprehensive recap data for all students in a class
+router.get("/recap", authorize("teacher", "admin"), async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { classid, subjectid, chapterid, month, semester } = req.query;
+
+    if (!classid || !subjectid || !chapterid || !month || !semester) {
+      return res.status(400).json({ message: "Missing required parameters" });
+    }
+
+    const homebase = req.user.homebase;
+    const periodeid = await getActivePeriode(client, homebase);
+    if (!periodeid) {
+      return res.status(400).json({ message: "No active periode found" });
+    }
+
+    // Convert Indonesian month name to month number
+    const currentMonth = getMonthNumber(month);
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+
+    console.log("Query params:", {
+      classid,
+      subjectid,
+      chapterid,
+      month,
+      semester,
+      periodeid,
+      currentMonth,
+      currentYear,
+    });
+
+    const query = `
+      WITH student_data AS (
+        SELECT 
+          us.id as student_id,
+          us.name as student_name,
+          us.nis,
+          cs.classid
+        FROM cl_students cs
+        JOIN u_students us ON cs.student = us.id
+        WHERE cs.classid = $1 AND cs.periode = $2
+      ),
+      attendance_data AS (
+        SELECT 
+          la.studentid,
+          COUNT(CASE WHEN la.note = 'Hadir' THEN 1 END) as hadir_count,
+          COUNT(la.id) as total_days,
+          CASE 
+            WHEN COUNT(la.id) > 0 THEN 
+              ROUND((COUNT(CASE WHEN la.note = 'Hadir' THEN 1 END)::DECIMAL / COUNT(la.id)::DECIMAL) * 100, 2)
+            ELSE 0 
+          END as attendance_percentage
+        FROM l_attendance la
+        WHERE la.classid = $1 
+          AND la.subjectid = $3
+          AND EXTRACT(MONTH FROM la.day_date) = $4
+          AND EXTRACT(YEAR FROM la.day_date) = $5
+          AND la.periode = $2
+        GROUP BY la.studentid
+      ),
+      attitude_data AS (
+        SELECT 
+          lat.student_id,
+          lat.rata_rata as attitude_average,
+          lat.catatan_guru
+        FROM l_attitude lat
+        WHERE lat.class_id = $1 
+          AND lat.subject_id = $3
+          AND lat.chapter_id = $6
+          AND lat.month = $7
+          AND lat.semester = $8
+          AND lat.periode_id = $2
+      ),
+      formative_data AS (
+        SELECT 
+          lf.student_id,
+          lf.rata_rata as formative_average
+        FROM l_formative lf
+        WHERE lf.class_id = $1 
+          AND lf.subject_id = $3
+          AND lf.chapter_id = $6
+          AND lf.month = $7
+          AND lf.semester = $8
+          AND lf.periode_id = $2
+      ),
+      summative_data AS (
+        SELECT 
+          ls.student_id,
+          ls.rata_rata as summative_average
+        FROM l_summative ls
+        WHERE ls.class_id = $1 
+          AND ls.subject_id = $3
+          AND ls.chapter_id = $6
+          AND ls.month = $7
+          AND ls.semester = $8
+          AND ls.periode_id = $2
+      )
+      SELECT 
+        sd.student_id,
+        sd.student_name,
+        sd.nis,
+        COALESCE(ad.attendance_percentage, 0) as kehadiran,
+        COALESCE(atd.attitude_average, 0) as sikap,
+        COALESCE(fd.formative_average, 0) as formatif,
+        COALESCE(smd.summative_average, 0) as sumatif,
+        atd.catatan_guru as catatan,
+        ROUND(
+          (COALESCE(ad.attendance_percentage, 0) + COALESCE(atd.attitude_average, 0) + 
+           COALESCE(fd.formative_average, 0) + COALESCE(smd.summative_average, 0)) / 4.0, 2
+        ) as rata_rata
+      FROM student_data sd
+      LEFT JOIN attendance_data ad ON sd.student_id = ad.studentid
+      LEFT JOIN attitude_data atd ON sd.student_id = atd.student_id
+      LEFT JOIN formative_data fd ON sd.student_id = fd.student_id
+      LEFT JOIN summative_data smd ON sd.student_id = smd.student_id
+      ORDER BY sd.student_name
+    `;
+
+    const result = await client.query(query, [
+      classid,
+      periodeid,
+      subjectid,
+      currentMonth,
+      currentYear,
+      chapterid,
+      month, // Use original month name for attitude/formative/summative tables
+      semester,
+    ]);
+
+    console.log("Query result:", result.rows);
+
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
+  }
+});
 
 export default router;
