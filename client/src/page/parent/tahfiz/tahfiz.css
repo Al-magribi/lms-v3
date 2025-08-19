@@ -1,0 +1,340 @@
+/* Enhanced Parent Tahfiz Styles */
+.parent-tahfiz .card {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.parent-tahfiz .card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.parent-tahfiz .card-header {
+  border-bottom: none;
+  font-weight: 600;
+}
+
+/* Enhanced Header Card */
+.parent-tahfiz .bg-gradient-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.parent-tahfiz .bg-gradient-primary:hover {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+}
+
+/* Enhanced Progress Bar */
+.parent-tahfiz .progress {
+  border-radius: 10px;
+  background-color: #f8f9fa;
+  overflow: hidden;
+}
+
+.parent-tahfiz .progress-bar {
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: width 0.6s ease;
+}
+
+.parent-tahfiz .bg-gradient-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+}
+
+/* Enhanced Stats Cards */
+.parent-tahfiz .card .bg-primary.bg-opacity-10 {
+  background-color: rgba(13, 110, 253, 0.1) !important;
+}
+
+.parent-tahfiz .card .bg-success.bg-opacity-10 {
+  background-color: rgba(25, 135, 84, 0.1) !important;
+}
+
+.parent-tahfiz .card .bg-warning.bg-opacity-10 {
+  background-color: rgba(255, 193, 7, 0.1) !important;
+}
+
+.parent-tahfiz .card .bg-info.bg-opacity-10 {
+  background-color: rgba(13, 202, 240, 0.1) !important;
+}
+
+/* Enhanced Button Styles */
+.parent-tahfiz .btn-outline-primary {
+  border-color: #667eea;
+  color: #667eea;
+  transition: all 0.3s ease;
+}
+
+.parent-tahfiz .btn-outline-primary:hover {
+  background-color: #667eea;
+  border-color: #667eea;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+}
+
+/* Enhanced List Group */
+.parent-tahfiz .list-group-item {
+  border: none;
+  padding: 0.75rem 0;
+  transition: background-color 0.2s ease;
+}
+
+.parent-tahfiz .list-group-item:hover {
+  background-color: rgba(102, 126, 234, 0.05);
+}
+
+/* Enhanced Badge Styles */
+.parent-tahfiz .badge {
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+/* Enhanced Alert Styles */
+.parent-tahfiz .alert {
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Enhanced Table Styles */
+.parent-tahfiz .table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.parent-tahfiz .table thead th {
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+  font-weight: 600;
+  color: #495057;
+}
+
+.parent-tahfiz .table tbody tr:hover {
+  background-color: rgba(102, 126, 234, 0.05);
+}
+
+/* Enhanced Form Elements */
+.parent-tahfiz .form-control:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+/* Animation Effects */
+.parent-tahfiz .card {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.parent-tahfiz .progress-bar {
+  animation: progressFill 1s ease-out;
+}
+
+@keyframes progressFill {
+  from {
+    width: 0%;
+  }
+  to {
+    width: var(--progress-width);
+  }
+}
+
+/* Enhanced Icon Styles */
+.parent-tahfiz .fa-icon {
+  transition: transform 0.2s ease;
+}
+
+.parent-tahfiz .card:hover .fa-icon {
+  transform: scale(1.1);
+}
+
+/* Enhanced Border Styles */
+.parent-tahfiz .border-end.border-2 {
+  border-right: 2px solid #dee2e6 !important;
+}
+
+/* Enhanced Text Styles */
+.parent-tahfiz .fw-semibold {
+  font-weight: 600;
+}
+
+.parent-tahfiz .fs-5 {
+  font-size: 1.25rem !important;
+}
+
+.parent-tahfiz .fs-6 {
+  font-size: 1rem !important;
+}
+
+/* Responsive Design Enhancements */
+@media (max-width: 768px) {
+  .parent-tahfiz .card-body {
+    padding: 1rem;
+  }
+
+  .parent-tahfiz .card-header {
+    padding: 0.75rem;
+  }
+
+  .parent-tahfiz .card-title {
+    font-size: 1rem;
+  }
+
+  .parent-tahfiz .h4 {
+    font-size: 1.25rem;
+  }
+
+  .parent-tahfiz .h6 {
+    font-size: 0.875rem;
+  }
+
+  .parent-tahfiz .progress {
+    height: 8px !important;
+  }
+
+  .parent-tahfiz .list-group-item {
+    padding: 0.5rem 0;
+    font-size: 0.8rem;
+  }
+
+  .parent-tahfiz .badge {
+    font-size: 0.7rem;
+  }
+
+  .parent-tahfiz .container-fluid {
+    padding: 0.5rem !important;
+  }
+
+  .parent-tahfiz .card {
+    margin-bottom: 1rem;
+  }
+
+  .parent-tahfiz .row {
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+  }
+
+  .parent-tahfiz .col-12,
+  .parent-tahfiz .col-md-6,
+  .parent-tahfiz .col-lg-4,
+  .parent-tahfiz .col-lg-6,
+  .parent-tahfiz .col-xl-4 {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .parent-tahfiz .card-body {
+    padding: 0.75rem;
+  }
+
+  .parent-tahfiz .card-header {
+    padding: 0.75rem;
+  }
+
+  .parent-tahfiz .card-title {
+    font-size: 0.875rem;
+  }
+
+  .parent-tahfiz .h4 {
+    font-size: 1.125rem;
+  }
+
+  .parent-tahfiz .h6 {
+    font-size: 0.8rem;
+  }
+
+  .parent-tahfiz .list-group-item {
+    padding: 0.25rem 0;
+    font-size: 0.75rem;
+  }
+
+  .parent-tahfiz .row {
+    margin-left: -0.25rem;
+    margin-right: -0.25rem;
+  }
+
+  .parent-tahfiz .col-12,
+  .parent-tahfiz .col-md-6,
+  .parent-tahfiz .col-lg-4,
+  .parent-tahfiz .col-lg-6,
+  .parent-tahfiz .col-xl-4 {
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+  }
+
+  .parent-tahfiz .text-md-end {
+    text-align: center !important;
+  }
+
+  /* Mobile Header Card */
+  .parent-tahfiz .bg-gradient-primary .card-body {
+    padding: 1.5rem 1rem;
+  }
+
+  .parent-tahfiz .bg-gradient-primary h3 {
+    font-size: 1.25rem;
+  }
+
+  .parent-tahfiz .bg-gradient-primary p {
+    font-size: 0.875rem;
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .parent-tahfiz .card {
+    background-color: #2d3748;
+    color: #e2e8f0;
+  }
+
+  .parent-tahfiz .card-header {
+    background-color: #1a202c;
+    color: #e2e8f0;
+  }
+
+  .parent-tahfiz .table thead th {
+    background-color: #1a202c;
+    color: #e2e8f0;
+  }
+
+  .parent-tahfiz .table tbody tr:hover {
+    background-color: rgba(102, 126, 234, 0.1);
+  }
+
+  .parent-tahfiz .bg-light {
+    background-color: #4a5568 !important;
+    color: #e2e8f0;
+  }
+
+  .parent-tahfiz .text-muted {
+    color: #a0aec0 !important;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .parent-tahfiz .card {
+    box-shadow: none;
+    border: 1px solid #dee2e6;
+  }
+
+  .parent-tahfiz .btn {
+    display: none;
+  }
+
+  .parent-tahfiz .progress {
+    border: 1px solid #dee2e6;
+  }
+}

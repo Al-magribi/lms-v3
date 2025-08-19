@@ -14,6 +14,7 @@ import Homepage from "./home/Homepage";
 // Otentikasi
 const Activation = lazy(() => import("./components/auth/Activation"));
 const Signin = lazy(() => import("./components/auth/Signin"));
+const Signup = lazy(() => import("./components/auth/SignUp"));
 
 // Public
 const News = lazy(() => import("./home/news/News"));
@@ -122,6 +123,13 @@ const TahfizProfile = lazy(() => import("./page/tahfiz/profile/TahfizProfile"));
 const DbPage = lazy(() => import("./page/Database/DbPage"));
 const DbList = lazy(() => import("./page/Database/DbList"));
 
+// Wali Murid
+const ParentDash = lazy(() => import("./page/parent/dashboard/ParentDash"));
+const ParentTahfiz = lazy(() => import("./page/parent/tahfiz/ParentTahfiz"));
+const ParentAcademinc = lazy(() =>
+  import("./page/parent/academic/ParentAcademinc")
+);
+
 function App() {
   const dispatch = useDispatch();
   const [loadUser] = useLoadUserMutation();
@@ -194,6 +202,8 @@ function App() {
             <Route path="/aktivasi-akun/:code" element={<Activation />} />
 
             <Route path="/signin" element={<Signin />} />
+
+            <Route path="/signup" element={<Signup />} />
 
             {/* CMS */}
 
@@ -348,6 +358,16 @@ function App() {
             <Route path="/database/:userid/:name" element={<DbPage />} />
 
             <Route path="/database" element={<DbList />} />
+
+            {/* Wali Murid */}
+            <Route path="/wali-dashboard" element={<ParentDash />} />
+
+            <Route path="/wali-laporan-tahfiz" element={<ParentTahfiz />} />
+
+            <Route
+              path="/wali-laporan-akademik"
+              element={<ParentAcademinc />}
+            />
           </Routes>
         </Suspense>
       </BrowserRouter>

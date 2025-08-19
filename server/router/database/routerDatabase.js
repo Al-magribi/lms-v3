@@ -580,6 +580,7 @@ router.get(
   authorize("admin", "teacher", "student", "parent"),
   withDbConnection(async (req, res, client) => {
     const { userid } = req.query;
+    console.log(userid);
 
     // Get student data with all fields from db_student
     const studentResult = await executeQuery(

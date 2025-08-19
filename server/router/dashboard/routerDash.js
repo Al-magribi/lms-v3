@@ -597,6 +597,59 @@ router.get("/student-stats", authorize("student"), async (req, res) => {
 });
 
 // ======================================
+// Parent Dashboard
+// ======================================
+router.get("/parent-stats", authorize("parent"), async (req, res) => {
+  try {
+    const parentId = req.user.id;
+    const homebaseId = req.user.homebase;
+
+    // First, get the student ID linked to this parent account
+    const parentStudentQuery = await pool.query(
+      `SELECT studentid FROM u_parents WHERE id = $1`,
+      [parentId]
+    );
+
+    if (parentStudentQuery.rows.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "Parent account not found or no student linked" });
+    }
+
+    const studentId = parentStudentQuery.rows[0].studentid;
+
+    // Get Quran learning progress for the child
+    const quranProgress = await pool.query(
+      `
+      SELECT 
+        st.id as student_id,
+        st.name as student_name,
+        c.name as class_name,
+        g.name as grade_name,
+        COUNT(DISTINCT p.juz_id) as completed_juz,
+        COUNT(DISTINCT p.surah_id) as completed_surah,
+        MAX(p.createdat) as last_activity
+      FROM u_students st
+      LEFT JOIN cl_students cs ON st.id = cs.student
+      LEFT JOIN a_class c ON cs.classid = c.id
+      LEFT JOIN a_grade g ON c.grade = g.id
+      LEFT JOIN t_process p ON st.id = p.userid
+      WHERE st.id = $1
+      GROUP BY st.id, st.name, c.name, g.name
+      `,
+      [studentId]
+    );
+
+    res.json({
+      quranProgress: quranProgress.rows,
+    });
+  } catch (error) {
+    console.error("Error fetching parent dashboard stats:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// ======================================
 // Center Dashboard (Admin Pusat)
 // ======================================
 router.get("/center-stats", authorize("center"), async (req, res) => {

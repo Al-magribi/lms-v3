@@ -46,6 +46,21 @@ export const ApiScore = createApi({
         "reports",
       ],
     }),
+    bulkUpsertAttitude: builder.mutation({
+      query: ({ classid, subjectid, chapterid, month, semester, data }) => ({
+        url: "/attitude/upload-score",
+        method: "POST",
+        body: data,
+        params: {
+          classid,
+          subjectid,
+          chapterid,
+          month,
+          semester,
+        },
+      }),
+      invalidatesTags: ["attitude"],
+    }),
 
     getFormative: builder.query({
       query: ({ classid, subjectid, chapterid, month, semester }) => ({
@@ -77,6 +92,21 @@ export const ApiScore = createApi({
         "reports",
       ],
     }),
+    bulkUpsertFormative: builder.mutation({
+      query: ({ classid, subjectid, chapterid, month, semester, data }) => ({
+        url: "/formative/upload-score",
+        method: "POST",
+        body: data,
+        params: {
+          classid,
+          subjectid,
+          chapterid,
+          month,
+          semester,
+        },
+      }),
+      invalidatesTags: ["formative"],
+    }),
 
     getSummative: builder.query({
       query: ({ classid, subjectid, chapterid, month, semester }) => ({
@@ -107,6 +137,21 @@ export const ApiScore = createApi({
         },
         "reports",
       ],
+    }),
+    bulkUpsertSummative: builder.mutation({
+      query: ({ classid, subjectid, chapterid, month, semester, data }) => ({
+        url: "/summative/upload-score",
+        method: "POST",
+        body: data,
+        params: {
+          classid,
+          subjectid,
+          chapterid,
+          month,
+          semester,
+        },
+      }),
+      invalidatesTags: ["summative"],
     }),
     // Get reports with enhanced data
     getReports: builder.query({
@@ -318,16 +363,35 @@ export const ApiScore = createApi({
         responseHandler: (response) => response.blob(),
       }),
     }),
+
+    // Parent Monthly Reports
+    getParentMonthlyReport: builder.query({
+      query: ({ month, semester }) => ({
+        url: "/parent-monthly-report",
+        params: { month, semester },
+      }),
+      providesTags: ["parent-reports"],
+    }),
+
+    getParentAvailableMonths: builder.query({
+      query: () => ({
+        url: "/parent-available-months",
+      }),
+      providesTags: ["parent-months"],
+    }),
   }),
 });
 
 export const {
   useGetAttitudeQuery,
   useUpsertAttitudeMutation,
+  useBulkUpsertAttitudeMutation,
   useGetFormativeQuery,
   useUpsertFormativeMutation,
+  useBulkUpsertFormativeMutation,
   useGetSummativeQuery,
   useUpsertSummativeMutation,
+  useBulkUpsertSummativeMutation,
   useGetReportsQuery,
   useCreateReportMutation,
   useUpdateReportMutation,
@@ -350,4 +414,6 @@ export const {
   useBulkSaveScoresMutation,
   useGetRecapQuery,
   useExportReportMutation,
+  useGetParentMonthlyReportQuery,
+  useGetParentAvailableMonthsQuery,
 } = ApiScore;

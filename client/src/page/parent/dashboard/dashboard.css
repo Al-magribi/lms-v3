@@ -1,0 +1,290 @@
+/* Enhanced Parent Dashboard Styles */
+.parent-dashboard .card {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.parent-dashboard .card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.parent-dashboard .card-header {
+  border-bottom: none;
+  font-weight: 600;
+}
+
+.parent-dashboard .progress {
+  border-radius: 10px;
+  background-color: #f8f9fa;
+}
+
+.parent-dashboard .progress-bar {
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.parent-dashboard .badge {
+  font-size: 0.75rem;
+  padding: 0.5em 0.75em;
+}
+
+.parent-dashboard .timeline .d-flex:not(:last-child) {
+  border-bottom: 1px solid #f8f9fa;
+  padding-bottom: 1rem;
+}
+
+.parent-dashboard .list-group-item {
+  border: none;
+  padding: 0.75rem 0;
+}
+
+.parent-dashboard .list-group-item:not(:last-child) {
+  border-bottom: 1px solid #f8f9fa;
+}
+
+/* Enhanced Header Card */
+.parent-dashboard .bg-gradient-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.parent-dashboard .bg-gradient-primary:hover {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+}
+
+/* Enhanced Stats Cards */
+.parent-dashboard .card .bg-primary.bg-opacity-10 {
+  background-color: rgba(13, 110, 253, 0.1) !important;
+}
+
+.parent-dashboard .card .bg-success.bg-opacity-10 {
+  background-color: rgba(25, 135, 84, 0.1) !important;
+}
+
+.parent-dashboard .card .bg-warning.bg-opacity-10 {
+  background-color: rgba(255, 193, 7, 0.1) !important;
+}
+
+.parent-dashboard .card .bg-info.bg-opacity-10 {
+  background-color: rgba(13, 202, 240, 0.1) !important;
+}
+
+/* Enhanced Navigation Pills */
+.parent-dashboard .nav-pills .nav-link {
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+}
+
+.parent-dashboard .nav-pills .nav-link:hover {
+  background-color: rgba(13, 110, 253, 0.1);
+  border-color: rgba(13, 110, 253, 0.2);
+}
+
+.parent-dashboard .nav-pills .nav-link.active {
+  box-shadow: 0 2px 4px rgba(13, 110, 253, 0.3);
+}
+
+/* Enhanced Tab Content */
+.parent-dashboard .tab-content {
+  background-color: #fff;
+}
+
+.parent-dashboard .tab-pane {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Enhanced Form Elements */
+.parent-dashboard .form-control:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.parent-dashboard .btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.parent-dashboard .btn-primary:hover {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+}
+
+/* Enhanced Table Styles */
+.parent-dashboard .table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.parent-dashboard .table thead th {
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+  font-weight: 600;
+  color: #495057;
+}
+
+.parent-dashboard .table tbody tr:hover {
+  background-color: rgba(102, 126, 234, 0.05);
+}
+
+/* Enhanced Alert Styles */
+.parent-dashboard .alert {
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Enhanced Badge Styles */
+.parent-dashboard .badge {
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+/* Responsive Design Enhancements */
+@media (max-width: 768px) {
+  .parent-dashboard .card-body {
+    padding: 1rem;
+  }
+
+  .parent-dashboard .table-responsive {
+    font-size: 0.875rem;
+  }
+
+  .parent-dashboard .badge {
+    font-size: 0.7rem;
+    padding: 0.4em 0.6em;
+  }
+
+  .parent-dashboard .container-fluid {
+    padding: 0.5rem !important;
+  }
+
+  .parent-dashboard .card {
+    margin-bottom: 1rem;
+  }
+
+  .parent-dashboard .row {
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+  }
+
+  .parent-dashboard .col-12,
+  .parent-dashboard .col-md-6,
+  .parent-dashboard .col-lg-4,
+  .parent-dashboard .col-lg-6,
+  .parent-dashboard .col-xl-4 {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  /* Mobile Navigation Pills */
+  .parent-dashboard .nav-pills {
+    flex-direction: column;
+  }
+
+  .parent-dashboard .nav-pills .nav-item {
+    margin-bottom: 0.5rem;
+  }
+
+  .parent-dashboard .nav-pills .nav-link {
+    text-align: center;
+    padding: 0.75rem 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .parent-dashboard .col-md-3 {
+    margin-bottom: 1rem;
+  }
+
+  .parent-dashboard .card-title {
+    font-size: 0.875rem;
+  }
+
+  .parent-dashboard h3 {
+    font-size: 1.5rem;
+  }
+
+  .parent-dashboard .card-body {
+    padding: 0.75rem;
+  }
+
+  .parent-dashboard .row {
+    margin-left: -0.25rem;
+    margin-right: -0.25rem;
+  }
+
+  .parent-dashboard .col-12,
+  .parent-dashboard .col-md-6,
+  .parent-dashboard .col-lg-4,
+  .parent-dashboard .col-lg-6,
+  .parent-dashboard .col-xl-4 {
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+  }
+
+  .parent-dashboard .card-header {
+    padding: 0.75rem;
+  }
+
+  .parent-dashboard .card-header h6 {
+    font-size: 0.875rem;
+  }
+
+  .parent-dashboard .card-header h4 {
+    font-size: 1rem;
+  }
+
+  .parent-dashboard .text-md-end {
+    text-align: center !important;
+  }
+
+  /* Mobile Header Card */
+  .parent-dashboard .bg-gradient-primary .card-body {
+    padding: 1.5rem 1rem;
+  }
+
+  .parent-dashboard .bg-gradient-primary h4 {
+    font-size: 1.25rem;
+  }
+
+  .parent-dashboard .bg-gradient-primary p {
+    font-size: 0.875rem;
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .parent-dashboard .card {
+    background-color: #2d3748;
+    color: #e2e8f0;
+  }
+
+  .parent-dashboard .card-header {
+    background-color: #1a202c;
+    color: #e2e8f0;
+  }
+
+  .parent-dashboard .table thead th {
+    background-color: #1a202c;
+    color: #e2e8f0;
+  }
+
+  .parent-dashboard .table tbody tr:hover {
+    background-color: rgba(102, 126, 234, 0.1);
+  }
+}

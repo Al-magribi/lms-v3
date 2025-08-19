@@ -11,9 +11,16 @@ const router = Router();
 
 // Helper function to get active periode
 const getActivePeriode = async (client, homebase) => {
+  // Ensure homebase is an integer
+  const homebaseId = parseInt(homebase);
+  if (isNaN(homebaseId)) {
+    console.error("Invalid homebase ID:", homebase);
+    return null;
+  }
+
   const periode = await client.query(
     `SELECT id FROM a_periode WHERE homebase = $1 AND isactive = true`,
-    [homebase]
+    [homebaseId]
   );
   return periode.rows[0]?.id;
 };
@@ -97,7 +104,7 @@ router.post("/attitude", authorize("teacher", "admin"), async (req, res) => {
           student_id, subject_id, class_id, periode_id, chapter_id, teacher_id,
                      semester, month, kinerja, kedisiplinan, keaktifan, percaya_diri, catatan_guru
         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
-        ON CONFLICT (student_id, subject_id, class_id, chapter_id, month)
+        ON CONFLICT (student_id, subject_id, class_id, chapter_id, month, semester)
         DO UPDATE SET
                      kinerja = EXCLUDED.kinerja,
            kedisiplinan = EXCLUDED.kedisiplinan,
@@ -133,6 +140,293 @@ router.post("/attitude", authorize("teacher", "admin"), async (req, res) => {
     client.release();
   }
 });
+
+// Bulk upload attitude scores from Excel file
+router.post(
+  "/attitude/upload-score",
+  authorize("teacher", "admin"),
+  async (req, res) => {
+    const client = await pool.connect();
+    try {
+      const { classid, subjectid, chapterid, month, semester } = req.query;
+      const data = req.body; // Array of arrays from Excel
+
+      if (!classid || !subjectid || !chapterid || !month || !semester) {
+        return res.status(400).json({ message: "Missing required parameters" });
+      }
+
+      if (!Array.isArray(data) || data.length === 0) {
+        return res.status(400).json({ message: "No data provided for upload" });
+      }
+
+      const homebase = req.user.homebase;
+      const teacher_id = req.user.id;
+      const periode_id = await getActivePeriode(client, homebase);
+      if (!periode_id) {
+        return res.status(400).json({ message: "No active periode found" });
+      }
+
+      // Get all students in the class to map NIS to student_id
+      const studentsQuery = `
+      SELECT us.id as student_id, us.nis, us.name as student_name
+      FROM cl_students cs
+      JOIN u_students us ON cs.student = us.id
+      WHERE cs.classid = $1 AND cs.periode = $2
+    `;
+      const studentsResult = await client.query(studentsQuery, [
+        classid,
+        periode_id,
+      ]);
+      const studentsMap = {};
+      studentsResult.rows.forEach((student) => {
+        studentsMap[student.nis] = student.student_id;
+      });
+
+      // Begin transaction
+      await client.query("BEGIN");
+
+      // First, let's check if there are existing records for this combination
+      const checkExistingQuery = `
+        SELECT id, student_id, kinerja, kedisiplinan, keaktifan, percaya_diri, catatan_guru
+        FROM l_attitude 
+        WHERE class_id = $1 
+          AND subject_id = $2 
+          AND chapter_id = $3 
+          AND month = $4 
+          AND semester = $5 
+          AND periode_id = $6
+      `;
+
+      const existingRecords = await client.query(checkExistingQuery, [
+        Number(classid),
+        Number(subjectid),
+        Number(chapterid),
+        month,
+        Number(semester),
+        periode_id,
+      ]);
+
+      console.log(
+        `Found ${existingRecords.rows.length} existing records for this combination`
+      );
+
+      // Use a more robust approach with DELETE and INSERT to avoid constraint issues
+      const deleteQuery = `
+        DELETE FROM l_attitude 
+        WHERE student_id = $1 
+          AND subject_id = $2 
+          AND class_id = $3 
+          AND chapter_id = $4 
+          AND month = $5 
+          AND semester = $6
+      `;
+
+      const insertQuery = `
+        INSERT INTO l_attitude (
+          student_id, subject_id, class_id, periode_id, chapter_id, teacher_id,
+          semester, month, kinerja, kedisiplinan, keaktifan, percaya_diri, catatan_guru
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        RETURNING *
+      `;
+
+      let successCount = 0;
+      let errorCount = 0;
+      const errors = [];
+
+      // Process each row from Excel
+      for (let i = 0; i < data.length; i++) {
+        const row = data[i];
+        if (!Array.isArray(row) || row.length < 8) {
+          errorCount++;
+          errors.push(`Row ${i + 1}: Invalid data format`);
+          continue;
+        }
+
+        const [
+          nis,
+          namaSiswa,
+          kinerja,
+          kedisiplinan,
+          keaktifan,
+          percayaDiri,
+          catatan,
+          rataRata,
+        ] = row;
+
+        // Skip header row or empty rows
+        if (!nis || nis === "NIS" || nis === "") {
+          continue;
+        }
+
+        const student_id = studentsMap[nis];
+        if (!student_id) {
+          errorCount++;
+          errors.push(
+            `Row ${i + 1}: Student with NIS ${nis} not found in class`
+          );
+          continue;
+        }
+
+        try {
+          const params = [
+            student_id,
+            Number(subjectid),
+            Number(classid),
+            periode_id,
+            Number(chapterid),
+            teacher_id,
+            Number(semester),
+            month,
+            kinerja && kinerja !== "" ? Number(kinerja) : null,
+            kedisiplinan && kedisiplinan !== "" ? Number(kedisiplinan) : null,
+            keaktifan && keaktifan !== "" ? Number(keaktifan) : null,
+            percayaDiri && percayaDiri !== "" ? Number(percayaDiri) : null,
+            catatan && catatan !== "" ? catatan : null,
+          ];
+
+          console.log(
+            `Processing student ${nis} (ID: ${student_id}) with values:`,
+            {
+              kinerja: kinerja && kinerja !== "" ? Number(kinerja) : null,
+              kedisiplinan:
+                kedisiplinan && kedisiplinan !== ""
+                  ? Number(kedisiplinan)
+                  : null,
+              keaktifan:
+                keaktifan && keaktifan !== "" ? Number(keaktifan) : null,
+              percayaDiri:
+                percayaDiri && percayaDiri !== "" ? Number(percayaDiri) : null,
+              catatan: catatan && catatan !== "" ? catatan : null,
+            }
+          );
+
+          // Check if this student already has a record for this combination
+          const existingRecord = existingRecords.rows.find(
+            (record) => record.student_id === student_id
+          );
+          if (existingRecord) {
+            console.log(`Student ${nis} has existing record:`, {
+              existing: {
+                kinerja: existingRecord.kinerja,
+                kedisiplinan: existingRecord.kedisiplinan,
+                keaktifan: existingRecord.keaktifan,
+                percaya_diri: existingRecord.percaya_diri,
+                catatan_guru: existingRecord.catatan_guru,
+              },
+              new: {
+                kinerja: kinerja && kinerja !== "" ? Number(kinerja) : null,
+                kedisiplinan:
+                  kedisiplinan && kedisiplinan !== ""
+                    ? Number(kedisiplinan)
+                    : null,
+                keaktifan:
+                  keaktifan && keaktifan !== "" ? Number(keaktifan) : null,
+                percaya_diri:
+                  percayaDiri && percayaDiri !== ""
+                    ? Number(percayaDiri)
+                    : null,
+                catatan_guru: catatan && catatan !== "" ? catatan : null,
+              },
+            });
+          } else {
+            console.log(`Student ${nis} will create new record`);
+          }
+
+          // First delete any existing record for this combination
+          await client.query(deleteQuery, [
+            student_id,
+            Number(subjectid),
+            Number(classid),
+            Number(chapterid),
+            month,
+            Number(semester),
+          ]);
+
+          // Then insert the new record
+          const result = await client.query(insertQuery, params);
+          console.log(
+            `Row ${i + 1}: Successfully processed student ${nis}`,
+            result.rows[0]
+          );
+          successCount++;
+        } catch (error) {
+          errorCount++;
+          console.error(
+            `Row ${i + 1}: Error processing student ${nis}:`,
+            error
+          );
+
+          // Check if it's a constraint violation error
+          if (error.code === "23505") {
+            // Unique violation
+            errors.push(
+              `Row ${
+                i + 1
+              }: Duplicate record for student ${nis} - constraint violation`
+            );
+          } else if (error.code === "25P02") {
+            // Transaction aborted
+            errors.push(
+              `Row ${i + 1}: Transaction aborted for student ${nis} - ${
+                error.message
+              }`
+            );
+            // Break the loop since transaction is aborted
+            break;
+          } else {
+            errors.push(`Row ${i + 1}: ${error.message}`);
+          }
+        }
+      }
+
+      // Commit transaction
+      await client.query("COMMIT");
+
+      // Verify the upload by checking the final state
+      const verifyQuery = `
+         SELECT COUNT(*) as total_records
+         FROM l_attitude 
+         WHERE class_id = $1 
+           AND subject_id = $2 
+           AND chapter_id = $3 
+           AND month = $4 
+           AND semester = $5 
+           AND periode_id = $6
+       `;
+
+      const verifyResult = await client.query(verifyQuery, [
+        Number(classid),
+        Number(subjectid),
+        Number(chapterid),
+        month,
+        Number(semester),
+        periode_id,
+      ]);
+
+      console.log(
+        `After upload: ${verifyResult.rows[0].total_records} total records for this combination`
+      );
+
+      const message = `Berhasil mengupload ${successCount} data${
+        errorCount > 0 ? `, ${errorCount} error` : ""
+      }`;
+      res.status(200).json({
+        message,
+        successCount,
+        errorCount,
+        errors: errors.length > 0 ? errors : undefined,
+        totalRecordsAfterUpload: verifyResult.rows[0].total_records,
+      });
+    } catch (error) {
+      // Rollback transaction on error
+      await client.query("ROLLBACK");
+      console.log(error);
+      res.status(500).json({ message: error.message });
+    } finally {
+      client.release();
+    }
+  }
+);
 
 // ==========================
 // Formative
@@ -213,7 +507,7 @@ router.post("/formative", authorize("teacher", "admin"), async (req, res) => {
           student_id, subject_id, class_id, periode_id, chapter_id, teacher_id,
           semester, month, F_1, F_2, F_3, F_4, F_5, F_6, F_7, F_8
         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
-        ON CONFLICT (student_id, subject_id, class_id, chapter_id, month)
+        ON CONFLICT (student_id, subject_id, class_id, chapter_id, month, semester)
         DO UPDATE SET
           F_1 = EXCLUDED.F_1,
           F_2 = EXCLUDED.F_2,
@@ -254,6 +548,319 @@ router.post("/formative", authorize("teacher", "admin"), async (req, res) => {
     client.release();
   }
 });
+
+// Bulk upload summative scores from Excel file
+router.post(
+  "/summative/upload-score",
+  authorize("teacher", "admin"),
+  async (req, res) => {
+    const client = await pool.connect();
+    try {
+      const { classid, subjectid, chapterid, month, semester } = req.query;
+      const data = req.body; // Array of arrays from Excel
+
+      if (!classid || !subjectid || !chapterid || !month || !semester) {
+        return res.status(400).json({ message: "Missing required parameters" });
+      }
+
+      if (!Array.isArray(data) || data.length === 0) {
+        return res.status(400).json({ message: "No data provided for upload" });
+      }
+
+      const homebase = req.user.homebase;
+      const teacher_id = req.user.id;
+      const periode_id = await getActivePeriode(client, homebase);
+      if (!periode_id) {
+        return res.status(400).json({ message: "No active periode found" });
+      }
+
+      // Get all students in the class to map NIS to student_id
+      const studentsQuery = `
+        SELECT us.id as student_id, us.nis, us.name as student_name
+        FROM cl_students cs
+        JOIN u_students us ON cs.student = us.id
+        WHERE cs.classid = $1 AND cs.periode = $2
+      `;
+      const studentsResult = await client.query(studentsQuery, [
+        classid,
+        periode_id,
+      ]);
+      const studentsMap = {};
+      studentsResult.rows.forEach((student) => {
+        studentsMap[student.nis] = student.student_id;
+      });
+
+      // Begin transaction
+      await client.query("BEGIN");
+
+      // Use a more robust approach with DELETE and INSERT to avoid constraint issues
+      const deleteQuery = `
+        DELETE FROM l_summative 
+        WHERE student_id = $1 
+          AND subject_id = $2 
+          AND class_id = $3 
+          AND chapter_id = $4 
+          AND month = $5 
+          AND semester = $6
+      `;
+
+      const insertQuery = `
+        INSERT INTO l_summative (
+          student_id, subject_id, class_id, periode_id, chapter_id, teacher_id,
+          semester, month, oral, written, project, performace
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        RETURNING *
+      `;
+
+      let successCount = 0;
+      let errorCount = 0;
+      const errors = [];
+
+      // Process each row from Excel
+      for (let i = 0; i < data.length; i++) {
+        const row = data[i];
+        if (!Array.isArray(row) || row.length < 7) {
+          errorCount++;
+          errors.push(`Row ${i + 1}: Invalid data format`);
+          continue;
+        }
+
+        const [nis, namaSiswa, oral, written, project, performace, rataRata] =
+          row;
+
+        // Skip header row or empty rows
+        if (!nis || nis === "NIS" || nis === "") {
+          continue;
+        }
+
+        const student_id = studentsMap[nis];
+        if (!student_id) {
+          errorCount++;
+          errors.push(
+            `Row ${i + 1}: Student with NIS ${nis} not found in class`
+          );
+          continue;
+        }
+
+        try {
+          const params = [
+            student_id,
+            Number(subjectid),
+            Number(classid),
+            periode_id,
+            Number(chapterid),
+            teacher_id,
+            Number(semester),
+            month,
+            oral && oral !== "" ? Number(oral) : null,
+            written && written !== "" ? Number(written) : null,
+            project && project !== "" ? Number(project) : null,
+            performace && performace !== "" ? Number(performace) : null,
+          ];
+
+          // First delete any existing record for this combination
+          await client.query(deleteQuery, [
+            student_id,
+            Number(subjectid),
+            Number(classid),
+            Number(chapterid),
+            month,
+            Number(semester),
+          ]);
+
+          // Then insert the new record
+          const result = await client.query(insertQuery, params);
+          successCount++;
+        } catch (error) {
+          errorCount++;
+          console.error(
+            `Row ${i + 1}: Error processing student ${nis}:`,
+            error
+          );
+          errors.push(`Row ${i + 1}: ${error.message}`);
+        }
+      }
+
+      // Commit transaction
+      await client.query("COMMIT");
+
+      const message = `Berhasil mengupload ${successCount} data${
+        errorCount > 0 ? `, ${errorCount} error` : ""
+      }`;
+      res.status(200).json({
+        message,
+        successCount,
+        errorCount,
+        errors: errors.length > 0 ? errors : undefined,
+      });
+    } catch (error) {
+      // Rollback transaction on error
+      await client.query("ROLLBACK");
+      console.log(error);
+      res.status(500).json({ message: error.message });
+    } finally {
+      client.release();
+    }
+  }
+);
+
+// Bulk upload formative scores from Excel file
+router.post(
+  "/formative/upload-score",
+  authorize("teacher", "admin"),
+  async (req, res) => {
+    const client = await pool.connect();
+    try {
+      const { classid, subjectid, chapterid, month, semester } = req.query;
+      const data = req.body; // Array of arrays from Excel
+
+      if (!classid || !subjectid || !chapterid || !month || !semester) {
+        return res.status(400).json({ message: "Missing required parameters" });
+      }
+
+      if (!Array.isArray(data) || data.length === 0) {
+        return res.status(400).json({ message: "No data provided for upload" });
+      }
+
+      const homebase = req.user.homebase;
+      const teacher_id = req.user.id;
+      const periode_id = await getActivePeriode(client, homebase);
+      if (!periode_id) {
+        return res.status(400).json({ message: "No active periode found" });
+      }
+
+      // Get all students in the class to map NIS to student_id
+      const studentsQuery = `
+        SELECT us.id as student_id, us.nis, us.name as student_name
+        FROM cl_students cs
+        JOIN u_students us ON cs.student = us.id
+        WHERE cs.classid = $1 AND cs.periode = $2
+      `;
+      const studentsResult = await client.query(studentsQuery, [
+        classid,
+        periode_id,
+      ]);
+      const studentsMap = {};
+      studentsResult.rows.forEach((student) => {
+        studentsMap[student.nis] = student.student_id;
+      });
+
+      // Begin transaction
+      await client.query("BEGIN");
+
+      // Use a more robust approach with DELETE and INSERT to avoid constraint issues
+      const deleteQuery = `
+        DELETE FROM l_formative 
+        WHERE student_id = $1 
+          AND subject_id = $2 
+          AND class_id = $3 
+          AND chapter_id = $4 
+          AND month = $5 
+          AND semester = $6
+      `;
+
+      const insertQuery = `
+        INSERT INTO l_formative (
+          student_id, subject_id, class_id, periode_id, chapter_id, teacher_id,
+          semester, month, F_1, F_2, F_3, F_4, F_5, F_6, F_7, F_8
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+        RETURNING *
+      `;
+
+      let successCount = 0;
+      let errorCount = 0;
+      const errors = [];
+
+      // Process each row from Excel
+      for (let i = 0; i < data.length; i++) {
+        const row = data[i];
+        if (!Array.isArray(row) || row.length < 11) {
+          errorCount++;
+          errors.push(`Row ${i + 1}: Invalid data format`);
+          continue;
+        }
+
+        const [nis, namaSiswa, f1, f2, f3, f4, f5, f6, f7, f8, rataRata] = row;
+
+        // Skip header row or empty rows
+        if (!nis || nis === "NIS" || nis === "") {
+          continue;
+        }
+
+        const student_id = studentsMap[nis];
+        if (!student_id) {
+          errorCount++;
+          errors.push(
+            `Row ${i + 1}: Student with NIS ${nis} not found in class`
+          );
+          continue;
+        }
+
+        try {
+          const params = [
+            student_id,
+            Number(subjectid),
+            Number(classid),
+            periode_id,
+            Number(chapterid),
+            teacher_id,
+            Number(semester),
+            month,
+            f1 && f1 !== "" ? Number(f1) : null,
+            f2 && f2 !== "" ? Number(f2) : null,
+            f3 && f3 !== "" ? Number(f3) : null,
+            f4 && f4 !== "" ? Number(f4) : null,
+            f5 && f5 !== "" ? Number(f5) : null,
+            f6 && f6 !== "" ? Number(f6) : null,
+            f7 && f7 !== "" ? Number(f7) : null,
+            f8 && f8 !== "" ? Number(f8) : null,
+          ];
+
+          // First delete any existing record for this combination
+          await client.query(deleteQuery, [
+            student_id,
+            Number(subjectid),
+            Number(classid),
+            Number(chapterid),
+            month,
+            Number(semester),
+          ]);
+
+          // Then insert the new record
+          const result = await client.query(insertQuery, params);
+          successCount++;
+        } catch (error) {
+          errorCount++;
+          console.error(
+            `Row ${i + 1}: Error processing student ${nis}:`,
+            error
+          );
+          errors.push(`Row ${i + 1}: ${error.message}`);
+        }
+      }
+
+      // Commit transaction
+      await client.query("COMMIT");
+
+      const message = `Berhasil mengupload ${successCount} data${
+        errorCount > 0 ? `, ${errorCount} error` : ""
+      }`;
+      res.status(200).json({
+        message,
+        successCount,
+        errorCount,
+        errors: errors.length > 0 ? errors : undefined,
+      });
+    } catch (error) {
+      // Rollback transaction on error
+      await client.query("ROLLBACK");
+      console.log(error);
+      res.status(500).json({ message: error.message });
+    } finally {
+      client.release();
+    }
+  }
+);
 
 // ==========================
 // Summative
@@ -299,14 +906,10 @@ router.post("/summative", authorize("teacher", "admin"), async (req, res) => {
       chapter_id,
       month,
       semester,
-      S_1,
-      S_2,
-      S_3,
-      S_4,
-      S_5,
-      S_6,
-      S_7,
-      S_8,
+      oral,
+      written,
+      project,
+      performace,
     } = req.body;
 
     if (
@@ -332,19 +935,15 @@ router.post("/summative", authorize("teacher", "admin"), async (req, res) => {
     const query = `
         INSERT INTO l_summative (
           student_id, subject_id, class_id, periode_id, chapter_id, teacher_id,
-          semester, month, S_1, S_2, S_3, S_4, S_5, S_6, S_7, S_8
-        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
-        ON CONFLICT (student_id, subject_id, class_id, chapter_id, month)
+          semester, month, oral, written, project, performace
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+        ON CONFLICT (student_id, subject_id, class_id, chapter_id, month, semester)
         DO UPDATE SET
-          S_1 = EXCLUDED.S_1,
-          S_2 = EXCLUDED.S_2,
-          S_3 = EXCLUDED.S_3,
-          S_4 = EXCLUDED.S_4,
-          S_5 = EXCLUDED.S_5,
-          S_6 = EXCLUDED.S_6,
-          S_7 = EXCLUDED.S_7,
-                     S_8 = EXCLUDED.S_8,
-           updatedat = CURRENT_TIMESTAMP
+          oral = EXCLUDED.oral,
+          written = EXCLUDED.written,
+          project = EXCLUDED.project,
+          performace = EXCLUDED.performace,
+          updatedat = CURRENT_TIMESTAMP
         RETURNING *
       `;
 
@@ -357,14 +956,10 @@ router.post("/summative", authorize("teacher", "admin"), async (req, res) => {
       teacher_id,
       semester,
       month,
-      S_1 ?? null,
-      S_2 ?? null,
-      S_3 ?? null,
-      S_4 ?? null,
-      S_5 ?? null,
-      S_6 ?? null,
-      S_7 ?? null,
-      S_8 ?? null,
+      oral ?? null,
+      written ?? null,
+      project ?? null,
+      performace ?? null,
     ];
 
     const result = await client.query(query, params);
@@ -420,17 +1015,6 @@ router.get("/recap", authorize("teacher", "admin"), async (req, res) => {
     const currentMonth = getMonthNumber(month);
     const currentDate = new Date();
     const currentYear = currentDate.getFullYear();
-
-    console.log("Query params:", {
-      classid,
-      subjectid,
-      chapterid,
-      month,
-      semester,
-      periodeid,
-      currentMonth,
-      currentYear,
-    });
 
     const query = `
       WITH student_data AS (
@@ -530,8 +1114,6 @@ router.get("/recap", authorize("teacher", "admin"), async (req, res) => {
       semester,
     ]);
 
-    console.log("Query result:", result.rows);
-
     res.status(200).json(result.rows);
   } catch (error) {
     console.log(error);
@@ -540,5 +1122,395 @@ router.get("/recap", authorize("teacher", "admin"), async (req, res) => {
     client.release();
   }
 });
+
+// ==========================
+// Parent Monthly Reports
+// ==========================
+
+// Get student's monthly report for parent
+router.get("/parent-monthly-report", authorize("parent"), async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { month, semester } = req.query;
+    const parentId = req.user.id;
+
+    if (!month || !semester) {
+      return res.status(400).json({ message: "Missing required parameters" });
+    }
+
+    // Get student info from parent
+    const studentQuery = `
+      SELECT 
+        us.id as student_id,
+        us.name as student_name,
+        us.nis,
+        ac.id as class_id,
+        ac.name as class_name,
+        ag.name as grade_name,
+        ap.name as periode_name,
+        ut.name as homeroom_teacher,
+        ah.id as homebase_id,
+        ah.name as homebase_name
+      FROM u_parents up
+      JOIN u_students us ON up.studentid = us.id
+      JOIN cl_students cs ON us.id = cs.student
+      JOIN a_class ac ON cs.classid = ac.id
+      JOIN a_grade ag ON ac.grade = ag.id
+      JOIN a_periode ap ON cs.periode = ap.id
+      JOIN a_homebase ah ON us.homebase = ah.id
+      LEFT JOIN u_teachers ut ON ac.id = ut.class
+      WHERE up.id = $1 AND ap.isactive = true
+    `;
+
+    const studentResult = await client.query(studentQuery, [parentId]);
+    if (studentResult.rows.length === 0) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    const student = studentResult.rows[0];
+
+    if (!student.homebase_id) {
+      return res.status(400).json({ message: "Student homebase not found" });
+    }
+
+    const periodeId = await getActivePeriode(client, student.homebase_id);
+
+    if (!periodeId) {
+      return res.status(400).json({ message: "No active periode found" });
+    }
+
+    // Get all subjects for the student's class
+    const subjectsQuery = `
+      SELECT DISTINCT 
+        s.id as subject_id,
+        s.name as subject_name,
+        s.cover as subject_cover,
+        ut.name as teacher_name
+      FROM a_subject s
+      JOIN at_subject ats ON s.id = ats.subject
+      JOIN u_teachers ut ON ats.teacher = ut.id
+      JOIN at_class atc ON ut.id = atc.teacher_id
+      WHERE atc.class_id = $1 AND s.homebase = $2
+      ORDER BY s.name
+    `;
+
+    const subjectsResult = await client.query(subjectsQuery, [
+      student.class_id,
+      student.homebase_id,
+    ]);
+
+    let subjects = subjectsResult.rows;
+
+    // Fallback: if no subjects found, get all subjects from homebase
+    if (subjects.length === 0) {
+      const fallbackSubjectsQuery = `
+        SELECT DISTINCT 
+          s.id as subject_id,
+          s.name as subject_name,
+          s.cover as subject_cover,
+          'Guru Mata Pelajaran' as teacher_name
+        FROM a_subject s
+        WHERE s.homebase = $1
+        ORDER BY s.name
+      `;
+
+      const fallbackResult = await client.query(fallbackSubjectsQuery, [
+        student.homebase_id,
+      ]);
+      subjects = fallbackResult.rows;
+    }
+
+    const reportData = [];
+
+    // Get data for each subject
+    for (const subject of subjects) {
+      // Get attitude data
+      const attitudeQuery = `
+        SELECT 
+          kinerja,
+          kedisiplinan,
+          keaktifan,
+          percaya_diri,
+          catatan_guru,
+          rata_rata
+        FROM l_attitude
+        WHERE student_id = $1 
+          AND subject_id = $2 
+          AND month = $3 
+          AND semester = $4 
+          AND periode_id = $5
+      `;
+
+      const attitudeResult = await client.query(attitudeQuery, [
+        student.student_id,
+        subject.subject_id,
+        month,
+        semester,
+        periodeId,
+      ]);
+
+      // Get chapter/topic data and chapter_id first
+      const chapterQuery = `
+        SELECT 
+          lc.id as chapter_id,
+          lc.title as topic,
+          lc.target as target_description
+        FROM l_chapter lc
+        WHERE lc.subject = $1
+        ORDER BY lc.order_number
+        LIMIT 1
+      `;
+
+      const chapterResult = await client.query(chapterQuery, [
+        subject.subject_id,
+      ]);
+
+      // Get formative data - try to find any formative scores for this subject
+      let formativeResult;
+
+      // First, try to get any formative scores for this subject regardless of chapter
+      const formativeQueryAny = `
+        SELECT 
+          f_1, f_2, f_3, f_4, f_5, f_6, f_7, f_8,
+          rata_rata
+        FROM l_formative
+        WHERE student_id = $1 
+          AND subject_id = $2 
+          AND month = $3 
+          AND semester = $4 
+          AND periode_id = $5
+        ORDER BY chapter_id
+        LIMIT 1
+      `;
+
+      formativeResult = await client.query(formativeQueryAny, [
+        student.student_id,
+        subject.subject_id,
+        month,
+        semester,
+        periodeId,
+      ]);
+
+      // If we found formative data, also try with specific chapter_id for better accuracy
+      if (
+        formativeResult.rows.length === 0 &&
+        chapterResult.rows[0] &&
+        chapterResult.rows[0].chapter_id
+      ) {
+        const formativeQueryWithChapter = `
+          SELECT 
+            f_1, f_2, f_3, f_4, f_5, f_6, f_7, f_8,
+            rata_rata
+          FROM l_formative
+          WHERE student_id = $1 
+            AND subject_id = $2 
+            AND chapter_id = $3
+            AND month = $4 
+            AND semester = $5 
+            AND periode_id = $6
+        `;
+
+        formativeResult = await client.query(formativeQueryWithChapter, [
+          student.student_id,
+          subject.subject_id,
+          chapterResult.rows[0].chapter_id,
+          month,
+          semester,
+          periodeId,
+        ]);
+      }
+
+      // Get summative data
+      const summativeQuery = `
+        SELECT 
+          oral,
+          written,
+          project,
+          performace,
+          rata_rata
+        FROM l_summative
+        WHERE student_id = $1 
+          AND subject_id = $2 
+          AND month = $3 
+          AND semester = $4 
+          AND periode_id = $5
+      `;
+
+      const summativeResult = await client.query(summativeQuery, [
+        student.student_id,
+        subject.subject_id,
+        month,
+        semester,
+        periodeId,
+      ]);
+
+      // Get attendance data
+      const attendanceQuery = `
+        SELECT 
+          COUNT(CASE WHEN note = 'Hadir' THEN 1 END) as hadir,
+          COUNT(CASE WHEN note = 'Sakit' THEN 1 END) as sakit,
+          COUNT(CASE WHEN note = 'Ijin' THEN 1 END) as ijin,
+          COUNT(CASE WHEN note = 'Alpa' THEN 1 END) as alpa,
+          COUNT(*) as total
+        FROM l_attendance
+        WHERE studentid = $1 
+          AND subjectid = $2 
+          AND EXTRACT(MONTH FROM day_date) = $3
+          AND periode = $4
+      `;
+
+      const attendanceResult = await client.query(attendanceQuery, [
+        student.student_id,
+        subject.subject_id,
+        getMonthNumber(month),
+        periodeId,
+      ]);
+
+      const attitude = attitudeResult.rows[0] || null;
+      const formative = formativeResult.rows[0] || null;
+      const summative = summativeResult.rows[0] || null;
+
+      // Only include subjects that have at least one type of score
+      const hasAttitudeScore =
+        attitude &&
+        (attitude.kinerja !== null ||
+          attitude.kedisiplinan !== null ||
+          attitude.keaktifan !== null ||
+          attitude.percaya_diri !== null);
+
+      const hasFormativeScore =
+        formative &&
+        (formative.f_1 !== null ||
+          formative.f_2 !== null ||
+          formative.f_3 !== null ||
+          formative.f_4 !== null ||
+          formative.f_5 !== null ||
+          formative.f_6 !== null ||
+          formative.f_7 !== null ||
+          formative.f_8 !== null);
+
+      const hasSummativeScore =
+        summative &&
+        (summative.oral !== null ||
+          summative.written !== null ||
+          summative.project !== null ||
+          summative.performace !== null);
+
+      // Only add subject if it has at least one type of score
+      if (hasAttitudeScore || hasFormativeScore || hasSummativeScore) {
+        const subjectData = {
+          subject_id: subject.subject_id,
+          subject_name: subject.subject_name,
+          subject_cover: subject.subject_cover,
+          teacher_name: subject.teacher_name,
+          attitude: attitude,
+          formative: formative,
+          summative: summative,
+          attendance: attendanceResult.rows[0] || null,
+          chapter: chapterResult.rows[0] || null,
+        };
+
+        reportData.push(subjectData);
+      }
+    }
+
+    const response = {
+      report_period: {
+        month: month,
+        semester: semester,
+        academic_year: `${new Date().getFullYear()}/${
+          new Date().getFullYear() + 1
+        }`,
+      },
+      subjects: reportData,
+    };
+
+    res.status(200).json(response);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+// Get available months for parent
+router.get(
+  "/parent-available-months",
+  authorize("parent"),
+  async (req, res) => {
+    const client = await pool.connect();
+    try {
+      const parentId = req.user.id;
+
+      // Get student info from parent
+      const studentQuery = `
+        SELECT 
+          us.id as student_id,
+          ah.id as homebase_id,
+          ah.name as homebase_name
+        FROM u_parents up
+        JOIN u_students us ON up.studentid = us.id
+        JOIN a_homebase ah ON us.homebase = ah.id
+        WHERE up.id = $1
+      `;
+
+      const studentResult = await client.query(studentQuery, [parentId]);
+      if (studentResult.rows.length === 0) {
+        return res.status(404).json({ message: "Student not found" });
+      }
+
+      const student = studentResult.rows[0];
+
+      if (!student.homebase_id) {
+        return res.status(400).json({ message: "Student homebase not found" });
+      }
+
+      const periodeId = await getActivePeriode(client, student.homebase_id);
+
+      if (!periodeId) {
+        return res.status(400).json({ message: "No active periode found" });
+      }
+
+      // Get available months from attitude table
+      const monthsQuery = `
+      SELECT month, semester FROM (
+        SELECT DISTINCT 
+          month,
+          semester
+        FROM l_attitude
+        WHERE student_id = $1 AND periode_id = $2
+      ) subquery
+      ORDER BY semester, 
+        CASE month
+          WHEN 'Januari' THEN 1
+          WHEN 'Februari' THEN 2
+          WHEN 'Maret' THEN 3
+          WHEN 'April' THEN 4
+          WHEN 'Mei' THEN 5
+          WHEN 'Juni' THEN 6
+          WHEN 'Juli' THEN 7
+          WHEN 'Agustus' THEN 8
+          WHEN 'September' THEN 9
+          WHEN 'Oktober' THEN 10
+          WHEN 'November' THEN 11
+          WHEN 'Desember' THEN 12
+        END
+    `;
+
+      const monthsResult = await client.query(monthsQuery, [
+        student.student_id,
+        periodeId,
+      ]);
+
+      res.status(200).json(monthsResult.rows);
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: error.message });
+    } finally {
+      client.release();
+    }
+  }
+);
 
 export default router;

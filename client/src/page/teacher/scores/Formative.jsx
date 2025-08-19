@@ -1,12 +1,15 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Table from "../../../components/table/Table";
 import { useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
   useGetFormativeQuery,
   useUpsertFormativeMutation,
+  useBulkUpsertFormativeMutation,
 } from "../../../controller/api/lms/ApiScore";
 import { toast } from "react-hot-toast";
+import * as XLSX from "xlsx";
+import Upload from "./Upload";
 
 const Formative = ({
   data,
@@ -67,6 +70,21 @@ const Formative = ({
     { isLoading: isSaving, isSuccess, data: upsertData, isError, error },
   ] = useUpsertFormativeMutation();
 
+  // Upload file
+  const inputRef = useRef(null);
+  const [
+    bulkUpsertFormative,
+    {
+      isLoading: isBulkUpserting,
+      isSuccess: isBulkUpsertSuccess,
+      isError: isBulkUpsertError,
+      error: bulkUpsertError,
+      data: bulkUpsertData,
+    },
+  ] = useBulkUpsertFormativeMutation();
+
+  const [file, setFile] = useState(null);
+
   const handleScoreChange = (studentId, taskNumber, value) => {
     setFormativeScores((prev) => ({
       ...prev,
@@ -115,6 +133,157 @@ const Formative = ({
     ).toFixed(1);
   };
 
+  const onDownload = () => {
+    // Prepare data for Excel export
+    const excelData = [
+      // Header row
+      [
+        "NIS",
+        "Nama Siswa",
+        "F_1",
+        "F_2",
+        "F_3",
+        "F_4",
+        "F_5",
+        "F_6",
+        "F_7",
+        "F_8",
+        "Rerata",
+      ],
+    ];
+
+    // Add student data rows
+    if (data?.students) {
+      data.students.forEach((student) => {
+        const studentScores = formativeScores[student.student] || {};
+        const average = calculateAverage(student.student);
+
+        excelData.push([
+          student.nis || "",
+          student.student_name || "",
+          studentScores.tugas1 || "",
+          studentScores.tugas2 || "",
+          studentScores.tugas3 || "",
+          studentScores.tugas4 || "",
+          studentScores.tugas5 || "",
+          studentScores.tugas6 || "",
+          studentScores.tugas7 || "",
+          studentScores.tugas8 || "",
+          average || "",
+        ]);
+      });
+    }
+
+    // Create workbook and worksheet
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.aoa_to_sheet(excelData);
+
+    // Set column widths for better formatting
+    const columnWidths = [
+      { wch: 15 }, // NIS
+      { wch: 30 }, // Nama Siswa
+      { wch: 12 }, // F_1
+      { wch: 12 }, // F_2
+      { wch: 12 }, // F_3
+      { wch: 12 }, // F_4
+      { wch: 12 }, // F_5
+      { wch: 12 }, // F_6
+      { wch: 12 }, // F_7
+      { wch: 12 }, // F_8
+      { wch: 12 }, // rata-rata
+    ];
+    worksheet["!cols"] = columnWidths;
+
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Penilaian Formatif");
+
+    // Generate filename with current date
+    const currentDate = new Date().toISOString().split("T")[0];
+    const filename = `penilaian_formatif_${currentDate}.xlsx`;
+
+    // Write and download the file
+    XLSX.writeFile(workbook, filename);
+
+    toast.success("File Excel berhasil diunduh!");
+  };
+
+  const onSubmit = (e) => {
+    e.preventDefault();
+
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(sheet, {
+          header: 1,
+          range: 1,
+        });
+
+        // Filter data to only include columns A, B, C, D, E, F, G, H, I, J and rows that are not null
+        const filteredData = jsonData
+          .map((row) => {
+            const [
+              colA,
+              colB,
+              colC,
+              colD,
+              colE,
+              colF,
+              colG,
+              colH,
+              colI,
+              colJ,
+              colK,
+            ] = row;
+            return [
+              colA,
+              colB,
+              colC,
+              colD,
+              colE,
+              colF,
+              colG,
+              colH,
+              colI,
+              colJ,
+              colK,
+            ];
+          })
+          .filter((row) =>
+            row.every((cell) => cell !== null && cell !== undefined)
+          );
+
+        // Pastikan filteredData adalah array
+        const result = Array.isArray(filteredData)
+          ? filteredData
+          : [filteredData];
+
+        toast.promise(
+          bulkUpsertFormative({
+            classid: Number(classid),
+            subjectid: Number(subjectid),
+            chapterid: Number(chapterid),
+            month,
+            semester,
+            data: result,
+          })
+            .unwrap()
+            .then((res) => res.message),
+          {
+            loading: "Menyimpan data...",
+            success: (message) => message,
+            error: (err) => err.data.message,
+          }
+        );
+      };
+
+      reader.readAsArrayBuffer(file);
+    }
+  };
+
   const renderTaskColumns = () => {
     const columns = [];
     for (let i = 1; i <= 8; i++) {
@@ -154,6 +323,33 @@ const Formative = ({
   };
 
   useEffect(() => {
+    if (isBulkUpsertSuccess) {
+      inputRef.current.value = null;
+      setFile(null);
+      const closeModal = document.querySelector("[data-bs-dismiss='modal']");
+      closeModal.click();
+    }
+
+    if (isBulkUpsertError) {
+      toast.error(bulkUpsertError.data.message);
+      inputRef.current.value = null;
+      setFile(null);
+    }
+  }, [isBulkUpsertSuccess, isBulkUpsertError, bulkUpsertData, refetch]);
+
+  useEffect(() => {
+    const modal = document.getElementById("upload-score");
+    if (!modal) return;
+    const handler = () => {
+      // Reset state/input jika perlu
+      setFile(null);
+      if (inputRef.current) inputRef.current.value = null;
+    };
+    modal.addEventListener("hidden.bs.modal", handler);
+    return () => modal.removeEventListener("hidden.bs.modal", handler);
+  }, []);
+
+  useEffect(() => {
     if (isSuccess) {
       toast.success(upsertData.message);
       // Refetch data after successful save to update the UI
@@ -166,64 +362,91 @@ const Formative = ({
   }, [isSuccess, upsertData, isError, error, refetch]);
 
   return (
-    <div className="card">
-      <div className="card-header">
-        <h5 className="card-title mb-0">Penilaian Formatif</h5>
-      </div>
-      <div className="card-body">
-        <div className="table-responsive">
-          <Table
-            isLoading={isLoading}
-            totalData={totalData}
-            totalPages={totalPages}
-            page={page}
-            limit={limit}
-            setPage={setPage}
-            setLimit={setLimit}
-            setSearch={setSearch}
-          >
-            <table className="table table-bordered table-striped table-hover">
-              <thead>
-                <tr>
-                  <th className="text-center align-middle">No</th>
-                  <th className="text-center align-middle">NIS</th>
-                  <th className="text-center align-middle">Nama Siswa</th>
-                  {renderTaskColumns()}
-                  <th className="text-center align-middle">Rata2</th>
-                  <th className="text-center align-middle">Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data?.students?.map((student, index) => (
-                  <tr key={student.id}>
-                    <td className="text-center align-middle">
-                      {(page - 1) * limit + index + 1}
-                    </td>
-                    <td className="text-center align-middle">{student.nis}</td>
-                    <td className="align-middle">{student.student_name}</td>
-                    {renderTaskInputs(student)}
-                    <td className="text-center align-middle">
-                      <span className="fw-bold text-primary">
-                        {calculateAverage(student.student)}
-                      </span>
-                    </td>
-                    <td className="text-center align-middle">
-                      <button
-                        className="btn btn-sm btn-primary"
-                        onClick={() => handleSave(student)}
-                        disabled={isSaving}
-                      >
-                        <i className="bi bi-check"></i> Simpan
-                      </button>
-                    </td>
+    <>
+      <Upload
+        type="formative"
+        title="Upload Penilaian Formatif"
+        onSubmit={onSubmit}
+        inputRef={inputRef}
+        setFile={setFile}
+      />
+      <div className="card">
+        <div className="card-header d-flex justify-content-between align-items-center">
+          <h5 className="card-title mb-0">Penilaian Formatif</h5>
+
+          <div className="d-flex gap-2">
+            <button
+              className="btn btn-sm btn-outline-success"
+              data-bs-toggle="modal"
+              data-bs-target="#upload-score"
+            >
+              <i className="bi bi-upload"></i> Upload
+            </button>
+            <button
+              className="btn btn-sm btn-outline-success"
+              onClick={onDownload}
+            >
+              <i className="bi bi-download"></i> Download
+            </button>
+          </div>
+        </div>
+        <div className="card-body">
+          <div className="table-responsive">
+            <Table
+              isLoading={isLoading}
+              totalData={totalData}
+              totalPages={totalPages}
+              page={page}
+              limit={limit}
+              setPage={setPage}
+              setLimit={setLimit}
+              setSearch={setSearch}
+            >
+              <table className="table table-bordered table-striped table-hover">
+                <thead>
+                  <tr>
+                    <th className="text-center align-middle">No</th>
+                    <th className="text-center align-middle">NIS</th>
+                    <th className="text-center align-middle">Nama Siswa</th>
+                    {renderTaskColumns()}
+                    <th className="text-center align-middle">Rerata</th>
+                    <th className="text-center align-middle">Aksi</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </Table>
+                </thead>
+                <tbody>
+                  {data?.students?.map((student, index) => (
+                    <tr key={student.id}>
+                      <td className="text-center align-middle">
+                        {(page - 1) * limit + index + 1}
+                      </td>
+                      <td className="text-center align-middle">
+                        {student.nis}
+                      </td>
+                      <td className="align-middle">{student.student_name}</td>
+                      {renderTaskInputs(student)}
+                      <td className="text-center align-middle">
+                        <span className="fw-bold text-primary">
+                          {calculateAverage(student.student)}
+                        </span>
+                      </td>
+                      <td className="text-center align-middle">
+                        <button
+                          className="btn btn-sm btn-primary"
+                          onClick={() => handleSave(student)}
+                          disabled={isSaving}
+                        >
+                          <i className="bi bi-floppy"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </Table>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

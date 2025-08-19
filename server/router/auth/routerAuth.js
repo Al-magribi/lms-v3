@@ -6,16 +6,127 @@ import jwt from "jsonwebtoken";
 
 const router = express.Router();
 
+router.post("/signup", async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { nis, name, email, password } = req.body;
+
+    const checkNis = await client.query(
+      `SELECT * FROM u_students WHERE nis = $1`,
+      [nis]
+    );
+
+    if (checkNis.rowCount === 0) {
+      return res.status(400).json({ message: "NIS tidak ditemukan" });
+    }
+
+    const checkDoubleParent = await client.query(
+      `SELECT * FROM u_parents WHERE student = $1`,
+      [checkNis.rows[0].id]
+    );
+
+    if (checkDoubleParent.rowCount > 0) {
+      return res.status(400).json({ message: "NIS sudah terdaftar" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    await client.query(
+      `INSERT INTO u_parents (student, email, name, password) VALUES ($1, $2, $3, $4)`,
+      [checkNis.rows[0].id, email, name, hashedPassword]
+    );
+
+    return res.status(200).json({ message: "Pendaftaran berhasil" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
+  }
+});
+
 router.post("/signin", async (req, res) => {
   const client = await pool.connect();
   try {
     const { nis, username, email, name, password } = req.body;
 
+    // Special handling for parent authentication
+    if (req.body.email && !req.body.nis && !req.body.username) {
+      // Check if this email belongs to a parent
+      const parentCheck = await client.query(
+        `SELECT * FROM u_parents WHERE email = $1`,
+        [req.body.email]
+      );
+
+      if (parentCheck.rowCount > 0) {
+        const user = parentCheck.rows[0];
+        const match = await bcrypt.compare(req.body.password, user.password);
+        if (!match) return res.status(401).json({ message: "Password salah" });
+
+        const token = jwt.sign(
+          { id: user.id, level: user.level },
+          process.env.JWT,
+          { expiresIn: "7d" }
+        );
+        res.cookie("token", token, {
+          httpOnly: true,
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+
+        // Get parent data with student information
+        const parentData = await client.query(
+          `SELECT 
+            u_parents.*,
+            u_students.name AS student_name,
+            u_students.nis,
+            u_students.id AS student_id,
+            cl_students.periode,
+            a_periode.name AS periode_name,
+            a_periode.isactive AS periode_active,
+            a_class.id AS class_id,
+            a_class.name AS class_name,
+            a_grade.id AS grade_id,
+            a_grade.name AS grade_name,
+            a_homebase.name AS homebase_name
+          FROM u_parents
+          INNER JOIN u_students ON u_parents.studentid = u_students.id
+          LEFT JOIN cl_students ON u_students.id = cl_students.student
+          LEFT JOIN a_class ON cl_students.classid = a_class.id
+          LEFT JOIN a_grade ON a_class.grade = a_grade.id
+          LEFT JOIN a_homebase ON a_class.homebase = a_homebase.id
+          LEFT JOIN a_periode ON cl_students.periode = a_periode.id
+          WHERE u_parents.id = $1`,
+          [user.id]
+        );
+
+        let userData = { ...user };
+        if (parentData.rowCount > 0) {
+          userData = {
+            ...userData,
+            student: parentData.rows[0].student_name,
+            nis: parentData.rows[0].nis,
+            homebase: parentData.rows[0].homebase_name,
+            periode: parentData.rows[0].periode,
+            periode_name: parentData.rows[0].periode_name,
+            periode_active: parentData.rows[0].periode_active,
+            grade_id: parentData.rows[0].grade_id,
+            grade: parentData.rows[0].grade_name,
+            class_id: parentData.rows[0].class_id,
+            class: parentData.rows[0].class_name,
+          };
+        }
+
+        return res
+          .status(200)
+          .json({ message: "Otentikasi Berhasil", user: userData });
+      }
+    }
+
+    // Handle other user types
     const userTypes = {
       nis: "u_students",
       username: "u_teachers",
       email: "u_admin",
-      name: "u_parents",
     };
 
     const key = Object.keys(userTypes).find((k) => req.body[k]);
@@ -31,7 +142,7 @@ router.post("/signin", async (req, res) => {
       return res.status(401).json({ message: "User tidak ditemukan" });
 
     const user = data.rows[0];
-    if ((user.level === "admin" || user.level === "parent") && !user.isactive) {
+    if (user.level === "admin" && !user.isactive) {
       return res.status(400).json({ message: "Email belum terverifikasi" });
     }
 
@@ -185,46 +296,6 @@ router.post("/signin", async (req, res) => {
           class: teacherData.rows[0].class_name,
           class_id: teacherData.rows[0].class_id,
           subjects: teacherData.rows[0].subjects,
-        };
-      }
-    } else if (user.level === "parent") {
-      const parentData = await client.query(
-        `SELECT 
-					u_parents.*,
-					u_students.name AS student_name,
-					u_students.nis,
-					u_students.id AS student_id,
-					cl_students.periode,
-					a_periode.name AS periode_name,
-					a_periode.isactive AS periode_active,
-					a_class.id AS class_id,
-					a_class.name AS class_name,
-					a_grade.id AS grade_id,
-					a_grade.name AS grade_name,
-					a_homebase.name AS homebase_name
-				FROM u_parents
-				INNER JOIN u_students ON u_parents.student = u_students.id
-				LEFT JOIN cl_students ON u_students.id = cl_students.student
-				LEFT JOIN a_class ON cl_students.classid = a_class.id
-				LEFT JOIN a_grade ON a_class.grade = a_grade.id
-				LEFT JOIN a_homebase ON a_class.homebase = a_homebase.id
-				LEFT JOIN a_periode ON cl_students.periode = a_periode.id
-				WHERE u_parents.id = $1`,
-        [user.id]
-      );
-      if (parentData.rowCount > 0) {
-        userData = {
-          ...userData,
-          student: parentData.rows[0].student_name,
-          nis: parentData.rows[0].nis,
-          homebase: parentData.rows[0].homebase_name,
-          periode: parentData.rows[0].periode,
-          periode_name: parentData.rows[0].periode_name,
-          periode_active: parentData.rows[0].periode_active,
-          grade_id: parentData.rows[0].grade_id,
-          grade: parentData.rows[0].grade_name,
-          class_id: parentData.rows[0].class_id,
-          class: parentData.rows[0].class_name,
         };
       }
     }
@@ -383,46 +454,45 @@ router.get(
         },
         parent: {
           text: `
-						WITH parent_data AS (
-							SELECT 
-								u_parents.*,
-								u_students.name AS student_name,
-								u_students.nis,
-								u_students.id AS student_id
-							FROM u_parents
-							INNER JOIN u_students ON u_parents.student = u_students.id
-							WHERE u_parents.id = $1
-						),
-						class_data AS (
-							SELECT 
-								cl_students.periode,
-								a_periode.name AS periode_name,
-								a_periode.isactive AS periode_active,
-								a_class.id AS class_id,
-								a_class.name AS class_name,
-								a_grade.id AS grade_id,
-								a_grade.name AS grade_name,
-								a_homebase.name AS homebase_name
-							FROM cl_students
-							INNER JOIN a_class ON cl_students.classid = a_class.id
-							INNER JOIN a_grade ON a_class.grade = a_grade.id
-							INNER JOIN a_homebase ON a_class.homebase = a_homebase.id
-							INNER JOIN a_periode ON cl_students.periode = a_periode.id
-							WHERE cl_students.student = (SELECT student_id FROM parent_data)
-							AND cl_students.periode = $2
-						)
-						SELECT * FROM parent_data, class_data`,
+						SELECT 
+							u_parents.*,
+							u_students.name AS student_name,
+							u_students.nis,
+							u_students.id AS student_id,
+							cl_students.periode,
+							a_periode.name AS periode_name,
+							a_periode.isactive AS periode_active,
+							a_class.id AS class_id,
+							a_class.name AS class_name,
+							a_class.major AS major_id,
+							a_major.name AS major_name,
+							a_grade.id AS grade_id,
+							a_grade.name AS grade_name,
+							a_homebase.name AS homebase_name
+						FROM u_parents
+						INNER JOIN u_students ON u_parents.studentid = u_students.id
+						LEFT JOIN cl_students ON u_students.id = cl_students.student
+						LEFT JOIN a_class ON cl_students.classid = a_class.id
+						LEFT JOIN a_grade ON a_class.grade = a_grade.id
+						LEFT JOIN a_major ON a_class.major = a_major.id
+						LEFT JOIN a_homebase ON a_class.homebase = a_homebase.id
+						LEFT JOIN a_periode ON cl_students.periode = a_periode.id
+						WHERE u_parents.id = $1
+						AND (cl_students.periode = $2 OR cl_students.periode IS NULL)`,
           transform: (row) => ({
             id: row.id,
-            name: row.username,
+            name: row.name,
             email: row.email,
             phone: row.phone,
             student: row.student_name,
+            student_id: row.student_id,
             nis: row.nis,
             homebase: row.homebase_name,
             periode: row.periode,
             periode_name: row.periode_name,
             periode_active: row.periode_active,
+            major_id: row.major_id,
+            major: row.major_name,
             grade_id: row.grade_id,
             grade: row.grade_name,
             class_id: row.class_id,
@@ -445,6 +515,7 @@ router.get(
           ? [id, activePeriode.id]
           : [id];
       const result = await client.query(query.text, queryParams);
+
       if (result.rows.length === 0) {
         return res.status(404).json({
           message: "Data tidak ditemukan.",

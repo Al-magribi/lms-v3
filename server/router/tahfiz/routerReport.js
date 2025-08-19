@@ -228,6 +228,8 @@ router.get("/get-report/:userid", async (req, res) => {
     const { userid } = req.params;
     const { page = 1, limit = 10 } = req.query;
 
+    console.log(userid);
+
     // Konversi page dan limit ke angka
     const numericLimit = parseInt(limit, 10);
     const numericOffset = (parseInt(page, 10) - 1) * numericLimit;
@@ -868,20 +870,16 @@ router.get("/get-student-report", async (req, res) => {
   try {
     const { userid } = req.query;
 
-    // Get student basic info with class details
+    console.log("Getting report for userid:", userid);
+
+    // 1. Find student data with userid
     const studentQuery = `
       SELECT 
         us.id as student_id,
         us.nis as student_nis,
         us.name as student_name,
-        g.name as grade,
-        c.name as class,
-        h.name as homebase
+        us.homebase as homebase_id
       FROM u_students us
-      INNER JOIN cl_students cs ON us.id = cs.student
-      INNER JOIN a_class c ON cs.classid = c.id
-      INNER JOIN a_grade g ON c.grade = g.id
-      INNER JOIN a_homebase h ON g.homebase = h.id
       WHERE us.id = $1
     `;
 
@@ -891,9 +889,68 @@ router.get("/get-student-report", async (req, res) => {
       return res.status(404).json({ message: "Student not found" });
     }
 
-    // Get target juz based on student's grade
-    const targetQuery = `
+    const student = studentInfo[0];
+    const homebaseId = student.homebase_id;
+
+    // 2. Find active period based on homebase_id
+    const activePeriodQuery = `
       SELECT 
+        p.id as periode_id,
+        p.name as periode_name
+      FROM a_periode p
+      WHERE p.homebase = $1 AND p.isactive = true
+      LIMIT 1
+    `;
+
+    const activePeriod = await fetchQueryResults(activePeriodQuery, [
+      homebaseId,
+    ]);
+
+    if (activePeriod.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No active period found for this homebase" });
+    }
+
+    const periodeId = activePeriod[0].periode_id;
+
+    // 3. Get student information based on active period
+    const studentDetailQuery = `
+      SELECT 
+        us.id as student_id,
+        us.nis as student_nis,
+        us.name as student_name,
+        g.name as grade,
+        c.name as class,
+        h.name as homebase,
+        p.name as periode
+      FROM u_students us
+      INNER JOIN cl_students cs ON us.id = cs.student AND cs.periode = $1
+      INNER JOIN a_class c ON cs.classid = c.id
+      INNER JOIN a_grade g ON c.grade = g.id
+      INNER JOIN a_homebase h ON g.homebase = h.id
+      INNER JOIN a_periode p ON cs.periode = p.id
+      WHERE us.id = $2
+    `;
+
+    const studentDetail = await fetchQueryResults(studentDetailQuery, [
+      periodeId,
+      userid,
+    ]);
+
+    if (studentDetail.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "Student not found in active period" });
+    }
+
+    const studentData = studentDetail[0];
+
+    // 4. Get all target juz for all grades based on student's homebase
+    const allTargetsQuery = `
+      SELECT 
+        g.id as grade_id,
+        g.name as grade_name,
         tj.id as juz_id,
         tj.name as juz,
         SUM(tji.lines) as total_lines,
@@ -901,16 +958,45 @@ router.get("/get-student-report", async (req, res) => {
       FROM t_target tt
       INNER JOIN t_juz tj ON tt.juz_id = tj.id
       INNER JOIN t_juzitems tji ON tj.id = tji.juz_id
-      WHERE tt.grade_id = (
-        SELECT c.grade 
-        FROM cl_students cs
-        INNER JOIN a_class c ON cs.classid = c.id
-        WHERE cs.student = $1
-      )
-      GROUP BY tj.id, tj.name
+      INNER JOIN a_grade g ON tt.grade_id = g.id
+      WHERE g.homebase = $1
+      GROUP BY g.id, g.name, tj.id, tj.name
+      ORDER BY g.id, tj.id
     `;
 
-    const targets = await fetchQueryResults(targetQuery, [userid]);
+    const allTargets = await fetchQueryResults(allTargetsQuery, [homebaseId]);
+
+    // Group targets by grade
+    const targetsByGrade = allTargets.reduce((acc, target) => {
+      if (!acc[target.grade_id]) {
+        acc[target.grade_id] = {
+          grade_id: target.grade_id,
+          grade_name: target.grade_name,
+          targets: [],
+        };
+      }
+      acc[target.grade_id].targets.push({
+        juz_id: target.juz_id,
+        juz: target.juz,
+        total_lines: parseInt(target.total_lines),
+        total_verses: parseInt(target.total_verses),
+      });
+      return acc;
+    }, {});
+
+    // Get student's current grade targets
+    const studentGradeTargets = allTargets.filter(
+      (target) =>
+        target.grade_id ===
+        allTargets.find((t) => t.grade_name === studentData.grade)?.grade_id
+    );
+
+    const targets = studentGradeTargets.map((target) => ({
+      juz_id: target.juz_id,
+      juz: target.juz,
+      total_lines: parseInt(target.total_lines),
+      total_verses: parseInt(target.total_verses),
+    }));
 
     // Get student's progress for each juz (ambil baris tertinggi per surah)
     const memorization = await Promise.all(
@@ -997,7 +1083,8 @@ router.get("/get-student-report", async (req, res) => {
           SELECT c.grade 
           FROM cl_students cs
           INNER JOIN a_class c ON cs.classid = c.id
-          WHERE cs.student = $1
+          WHERE cs.student = $1 AND cs.periode = $2
+          LIMIT 1
         )
       ),
       student_process AS (
@@ -1018,7 +1105,10 @@ router.get("/get-student-report", async (req, res) => {
       ORDER BY tj.id ASC
     `;
 
-    const exceedTargets = await fetchQueryResults(exceedQuery, [userid]);
+    const exceedTargets = await fetchQueryResults(exceedQuery, [
+      userid,
+      periodeId,
+    ]);
 
     // Get student's progress for each exceed juz
     const exceed = await Promise.all(
@@ -1098,14 +1188,9 @@ router.get("/get-student-report", async (req, res) => {
     );
 
     const result = {
-      student_id: studentInfo[0].student_id,
-      student_nis: studentInfo[0].student_nis,
-      student_name: studentInfo[0].student_name,
-      grade: studentInfo[0].grade,
-      class: studentInfo[0].class,
-      homebase: studentInfo[0].homebase,
       memorization,
       exceed,
+      targets_by_grade: Object.values(targetsByGrade),
     };
 
     res.status(200).json(result);
@@ -1118,73 +1203,3 @@ router.get("/get-student-report", async (req, res) => {
 });
 
 export default router;
-
-const result = [
-  {
-    student_id: "id siswa diambil dari u_students",
-    student_nis: "id siswa diambil dari u_students",
-    student_name: "nama siswa diambil dari u_students",
-    grade: "kelas siswa diambil dari cl_students",
-    class: "kelas siswa diambil dari cl_students",
-    homebase: "homebase siswa diambil dari cl_students",
-    memorization: [
-      {
-        juz: "juz diambil dari t_target berdasarkan garde",
-        lines: "total baris yang harus dibaca berdasarkan juz",
-        verses: "total ayat yang harus dibaca berdasarkan juz",
-        completed: "total ayat yang sudah dibaca berdasarkan juz",
-        uncompleted: "total ayat yang belum dibaca berdasarkan juz",
-        progress: "persentase ketuntasan siswa berdasarkan juz",
-        surah: [
-          {
-            surah_id: "id surah diambil dari t_process",
-            surah_name: "nama surah diambil dari t_process",
-            verse: "ayat akhir diambil dari t_process",
-            line: "baris akhir diambil dari t_process",
-          },
-        ],
-      },
-    ],
-    exceed: [
-      {
-        juz: "juz yang melebihi target yang sudah ditentukan, detail juz dapat dilihat di t_juz dan t_juizitems ",
-        lines: "total baris dari juz ini",
-        verses: "total ayat dari juz ini",
-        completed: "total ayat yang sudah dibaca dari juz ini",
-        uncompleted: "total ayat yang belum dibaca dari juz ini",
-        progress: "persentase ketuntasan siswa berdasarkan juz ini",
-        surah: [
-          {
-            surah_id: "id surah diambil dari t_process",
-            surah_name: "nama surah diambil dari t_process",
-            verse: "ayat akhir diambil dari t_process",
-            line: "baris akhir diambil dari t_process",
-          },
-        ],
-      },
-    ],
-  },
-];
-
-const result2 = [
-  {
-    // data sebelumnya
-    grade: [
-      {
-        // data sebelumnya
-        // hapus variable murid ganti denggan
-        classes: [
-          {
-            class_name: "nama kelas diambil dari a_class",
-            class_id: "id kelas diambil dari a_class",
-            students: [
-              {
-                // data student yang sudah ada
-              },
-            ],
-          },
-        ],
-      },
-    ],
-  },
-];

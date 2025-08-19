@@ -6,6 +6,7 @@ import {
   StudentMenus,
   TeacherMenus,
   TahfizMenus,
+  ParentMenus,
 } from "../menu/Menus";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -15,6 +16,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useLogoutMutation } from "../../controller/api/auth/ApiAuth";
 import * as Pi from "react-icons/pi";
 import { useGetAppQuery } from "../../controller/api/center/ApiApp";
+
 const center = "/center-dashboard";
 const admin = "/admin-dashboard";
 const teacher = "/guru-dashboard";
@@ -27,9 +29,11 @@ const Layout = ({ children, title, desc, levels }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 992);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const { user, isSignin } = useSelector((state) => state.auth);
+
   const [logout, { isSuccess, isLoading, error, reset }] = useLogoutMutation();
   const { data: appData } = useGetAppQuery();
 
@@ -67,18 +71,29 @@ const Layout = ({ children, title, desc, levels }) => {
 
   useEffect(() => {
     const handleResize = () => {
-      setWindowWidth(window.innerWidth);
-      if (window.innerWidth >= 992) {
-        setIsMenuOpen(false);
+      const newWidth = window.innerWidth;
+      setWindowWidth(newWidth);
+      if (newWidth >= 992) {
+        setIsSidebarOpen(true);
+        setIsMobileMenuOpen(false);
+      } else {
+        setIsSidebarOpen(false);
+        setIsMobileMenuOpen(false);
       }
     };
+
+    // Set initial state
+    handleResize();
+
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const goToLink = (link) => {
     navigate(link);
-    setIsMenuOpen(false);
+    if (windowWidth < 992) {
+      setIsMobileMenuOpen(false);
+    }
   };
 
   const dynamicHeight = windowWidth >= 820 ? "88vh" : "98vh";
@@ -93,7 +108,7 @@ const Layout = ({ children, title, desc, levels }) => {
           window.location.href = "/signin";
         }
       }
-    }, 500);
+    }, 1000);
 
     return () => clearTimeout(timeout);
   }, [user, isSignin, levels]);
@@ -102,8 +117,12 @@ const Layout = ({ children, title, desc, levels }) => {
     return location.pathname === menuLink;
   };
 
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
   const goToDatabase = () => {
@@ -128,165 +147,278 @@ const Layout = ({ children, title, desc, levels }) => {
     navigate("/guru-penilaian");
   };
 
+  const currentMenus =
+    level === "center"
+      ? CenterMenus
+      : level === "admin"
+      ? AdminMenus
+      : level === "teacher"
+      ? TeacherMenus
+      : level === "student"
+      ? StudentMenus
+      : level === "parent"
+      ? ParentMenus
+      : level === "tahfiz"
+      ? TahfizMenus
+      : StudentMenus;
+
   return (
-    <div className="min-vh-100 d-flex bg-light flex-column">
-      {/* Navbar */}
-      <nav className="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm">
-        <div className="container-fluid px-4">
-          <a
-            className="navbar-brand fw-bold d-flex align-items-center"
-            href={
-              level === "center"
-                ? center
-                : level === "admin"
-                ? admin
-                : level === "teacher"
-                ? teacher
-                : level === "student"
-                ? student
-                : level === "parent"
-                ? parent
-                : tahfiz
-            }
-          >
-            <i className="bi bi-person-circle me-2"></i>
-            <h5 className="mb-0">{truncateName(user?.name)}</h5>
-          </a>
-          <button
-            className="navbar-toggler"
-            type="button"
-            onClick={toggleMenu}
-            aria-label="Toggle navigation"
-          >
-            <i className={`bi bi-${isMenuOpen ? "x-lg" : "list"}`}></i>
-          </button>
-          <div
-            className={`collapse navbar-collapse ${isMenuOpen ? "show" : ""}`}
-            id="navbarNav"
-          >
-            <div className="navbar-nav ms-auto">
-              <div className="d-flex flex-wrap gap-2">
-                {(level === "center"
-                  ? CenterMenus
-                  : level === "admin"
-                  ? AdminMenus
-                  : level === "teacher"
-                  ? TeacherMenus
-                  : level === "student"
-                  ? StudentMenus
-                  : level === "parent"
-                  ? ParentMenus
-                  : level === "tahfiz"
-                  ? TahfizMenus
-                  : StudentMenus
-                ).map((menu, i) => (
-                  <button
-                    key={i}
-                    className={`btn btn-sm d-flex align-items-center gap-2 ${
-                      isActiveMenu(menu.link)
-                        ? "btn-light"
-                        : "btn-outline-light"
-                    }`}
-                    onClick={() => goToLink(menu.link)}
-                  >
-                    {menu.icon}
-                    <span className="d-none d-md-inline">{menu.label}</span>
-                  </button>
-                ))}
+    <div className="d-flex bg-light" style={{ minHeight: "100vh" }}>
+      <style>{`
+        @media (max-width: 991px) {
+          .desktop-sidebar {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            transform: translateX(-100%) !important;
+          }
+          
+          .mobile-content {
+            margin-left: 0 !important;
+            width: 100% !important;
+          }
+        }
+      `}</style>
+      {/* Mobile Overlay */}
+      {isMobileMenuOpen && (
+        <div
+          className="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50"
+          style={{ zIndex: 1040 }}
+          onClick={() => setIsMobileMenuOpen(false)}
+        ></div>
+      )}
 
-                {user?.homeroom && (
-                  <button
-                    className="btn btn-sm btn-outline-light d-flex align-items-center gap-2"
-                    onClick={goToHomeroom}
-                  >
-                    <i className="bi bi-database"></i>
-                    <span className="d-none d-md-inline">Database</span>
-                  </button>
-                )}
-
-                <button
-                  className="btn btn-sm btn-outline-light d-flex align-items-center gap-2"
-                  disabled={isLoading}
-                  onClick={logoutHandler}
-                >
-                  <i className="bi bi-box-arrow-right"></i>
-                  <span className="d-none d-md-inline">Logout</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <main
-        className="flex-grow-1 transition-all"
+      {/* Sidebar */}
+      <div
+        className={`bg-primary text-white d-flex flex-column flex-shrink-0 desktop-sidebar ${
+          isSidebarOpen ? "sidebar-open" : "sidebar-closed"
+        }`}
         style={{
-          marginTop: "70px",
-          minHeight: dynamicHeight,
-          transition: "all 0.3s ease",
+          width: isSidebarOpen ? "250px" : "80px",
+          minHeight: "100vh",
+          position: "fixed",
+          top: 0,
+          left: 0,
+          zIndex: 1050,
+          transition: "width 0.3s ease",
+          boxShadow: "2px 0 10px rgba(0,0,0,0.1)",
+          display: windowWidth < 992 ? "none" : "flex",
+          visibility: windowWidth < 992 ? "hidden" : "visible",
         }}
       >
-        <div className="container-fluid">
-          <Meta title={title} desc={desc} />
-          <div className="content-wrapper">
-            <div className="d-flex flex-wrap align-items-center justify-content-between mb-4">
-              {title !== "Profile" && (
-                <div className="d-flex align-items-center gap-2">
-                  <i className="bi bi-house-door-fill me-2 text-primary"></i>
-                  <h4 className="mb-0">{title}</h4>
+        {/* Sidebar Header */}
+        <div className="p-3 border-bottom border-light border-opacity-25">
+          {!isSidebarOpen && <i className="bi bi-person-circle fs-4 ms-3"></i>}
+
+          <div className="d-flex align-items-center justify-content-between">
+            <div className="d-flex align-items-center flex-grow-1">
+              {isSidebarOpen && (
+                <div className="flex-grow-1">
+                  <h6 className="mb-0 fw-bold text-truncate">
+                    {truncateName(user?.name)}
+                  </h6>
+                  <small className="text-light opacity-75">{user?.level}</small>
                 </div>
               )}
+            </div>
+            {isSidebarOpen && (
+              <button
+                className="btn btn-sm btn-outline-light"
+                onClick={toggleSidebar}
+                style={{ minWidth: "32px", height: "32px" }}
+              >
+                <i className="bi bi-chevron-left"></i>
+              </button>
+            )}
+          </div>
+        </div>
 
+        {/* Sidebar Navigation */}
+        <nav className="flex-grow-1 p-3">
+          <ul className="nav nav-pills flex-column gap-1">
+            {currentMenus.map((menu, i) => (
+              <li key={i} className="nav-item">
+                <button
+                  className={`nav-link w-100 text-start d-flex align-items-center gap-2 ${
+                    isActiveMenu(menu.link)
+                      ? "active bg-light text-primary"
+                      : "text-white"
+                  }`}
+                  onClick={() => goToLink(menu.link)}
+                  style={{
+                    borderRadius: "8px",
+                    padding: "12px 16px",
+                    border: "none",
+                    transition: "all 0.2s ease",
+                    minHeight: "44px",
+                  }}
+                >
+                  <span style={{ minWidth: "20px", textAlign: "center" }}>
+                    {menu.icon}
+                  </span>
+                  {isSidebarOpen && (
+                    <span className="flex-grow-1">{menu.label}</span>
+                  )}
+                </button>
+              </li>
+            ))}
+
+            {user?.homeroom && (
+              <li className="nav-item">
+                <button
+                  className="nav-link w-100 text-start d-flex align-items-center gap-3 text-white"
+                  onClick={goToHomeroom}
+                  style={{
+                    borderRadius: "8px",
+                    padding: "12px 16px",
+                    border: "none",
+                    transition: "all 0.2s ease",
+                    minHeight: "44px",
+                  }}
+                >
+                  <i
+                    className="bi bi-database fs-5"
+                    style={{ minWidth: "20px", textAlign: "center" }}
+                  ></i>
+                  {isSidebarOpen && (
+                    <span className="fw-medium flex-grow-1">Database</span>
+                  )}
+                </button>
+              </li>
+            )}
+          </ul>
+        </nav>
+
+        {/* Sidebar Footer */}
+        <div className="p-3 border-top border-light border-opacity-25">
+          <button
+            className="btn btn-outline-light w-100 d-flex align-items-center gap-3"
+            disabled={isLoading}
+            onClick={logoutHandler}
+            style={{
+              borderRadius: "8px",
+              padding: "12px 16px",
+              minHeight: "44px",
+            }}
+          >
+            <i
+              className="bi bi-box-arrow-right fs-5"
+              style={{ minWidth: "20px", textAlign: "center" }}
+            ></i>
+            {isSidebarOpen && (
+              <span className="flex-grow-1 text-start">Logout</span>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div
+        className={`flex-grow-1 d-flex flex-column ${
+          windowWidth < 992 ? "mobile-content" : ""
+        }`}
+        style={{
+          marginLeft:
+            windowWidth >= 992 ? (isSidebarOpen ? "250px" : "80px") : "0px",
+          width: windowWidth < 992 ? "100%" : "auto",
+          transition: "margin-left 0.3s ease, width 0.3s ease",
+          minHeight: "100vh",
+        }}
+      >
+        {/* Top Header */}
+        <header
+          className="bg-white border-bottom px-4 py-3"
+          style={{
+            position: "sticky",
+            top: 0,
+            zIndex: 1030,
+            paddingLeft: windowWidth < 768 ? "1rem" : "1.5rem",
+            paddingRight: windowWidth < 768 ? "1rem" : "1.5rem",
+          }}
+        >
+          <div className="d-flex align-items-center justify-content-between">
+            <div className="d-flex align-items-center  gap-3">
+              <button
+                className="btn btn-outline-primary d-lg-none"
+                onClick={toggleMobileMenu}
+                style={{ width: 40 }}
+              >
+                <i className="bi bi-list"></i>
+              </button>
+              {!isSidebarOpen && windowWidth >= 992 && (
+                <button
+                  className="btn btn-outline-primary d-none d-lg-block"
+                  onClick={toggleSidebar}
+                >
+                  <i className="bi bi-chevron-right"></i>
+                </button>
+              )}
+
+              <h5
+                className="mb-0  text-dark"
+                style={{
+                  fontSize: windowWidth < 768 ? "1rem" : "1.25rem",
+                }}
+              >
+                {title}
+              </h5>
+            </div>
+
+            {/* Action Buttons */}
+            <div
+              className="d-flex gap-2"
+              style={{
+                display: windowWidth < 768 ? "none" : "flex",
+              }}
+            >
               {title === "Kelas" && (
-                <div className="d-flex gap-2">
+                <>
                   <button
                     className="btn btn-sm btn-outline-success"
                     data-bs-toggle="modal"
                     data-bs-target="#addclass"
                   >
                     <i className="bi bi-plus-lg"></i>
-                    <span className="ms-2">Kelas</span>
+                    <span className="ms-2 d-none d-md-inline">Kelas</span>
                   </button>
-
                   <button
                     className="btn btn-sm btn-outline-success"
                     data-bs-toggle="modal"
                     data-bs-target="#uploadstudents"
                   >
                     <i className="bi bi-file-earmark-arrow-up-fill"></i>
-                    <span className="ms-2">Upload Siswa</span>
+                    <span className="ms-2 d-none d-md-inline">
+                      Upload Siswa
+                    </span>
                   </button>
-                </div>
+                </>
               )}
 
               {title === "Siswa" && (
-                <div className="d-flex gap-2">
+                <>
                   <button
                     className="btn btn-sm btn-outline-primary"
                     onClick={goToDatabase}
                   >
                     <i className="bi bi-database"></i>
-                    <span className="ms-2">Database</span>
+                    <span className="ms-2 d-none d-md-inline">Database</span>
                   </button>
-
                   <button
                     className="btn btn-sm btn-outline-success"
                     onClick={goToGraduation}
                   >
                     <i className="bi bi-mortarboard-fill"></i>
-                    <span className="ms-2">Lulusan</span>
+                    <span className="ms-2 d-none d-md-inline">Lulusan</span>
                   </button>
-
                   <button
                     className="btn btn-sm btn-outline-success"
                     data-bs-toggle="modal"
                     data-bs-target="#addstudent"
                   >
                     <i className="bi bi-plus-lg"></i>
-                    <span className="ms-2">Siswa</span>
+                    <span className="ms-2 d-none d-md-inline">Siswa</span>
                   </button>
-                </div>
+                </>
               )}
 
               {title === "Mata Pelajaran" && (
@@ -296,7 +428,9 @@ const Layout = ({ children, title, desc, levels }) => {
                   data-bs-target="#addsubject"
                 >
                   <i className="bi bi-plus-lg"></i>
-                  <span className="ms-2">Mata Pelajaran</span>
+                  <span className="ms-2 d-none d-md-inline">
+                    Mata Pelajaran
+                  </span>
                 </button>
               )}
 
@@ -306,33 +440,32 @@ const Layout = ({ children, title, desc, levels }) => {
                   onClick={goToStudent}
                 >
                   <Pi.PiStudentFill />
-                  <span className="ms-2">Siswa</span>
+                  <span className="ms-2 d-none d-md-inline">Siswa</span>
                 </button>
               )}
 
               {title === "Lulusan" && (
-                <div className="d-flex align-items-center gap-2">
+                <>
                   <button
                     className="btn btn-sm btn-outline-info"
                     onClick={goToStudent}
                   >
                     <Pi.PiStudentFill />
-                    <span className="ms-2">Siswa</span>
+                    <span className="ms-2 d-none d-md-inline">Siswa</span>
                   </button>
-
                   <button
                     className="btn btn-sm btn-outline-success"
                     data-bs-toggle="modal"
                     data-bs-target="#addgraduation"
                   >
                     <i className="bi bi-plus-lg"></i>
-                    <span className="ms-2">Lulusan</span>
+                    <span className="ms-2 d-none d-md-inline">Lulusan</span>
                   </button>
-                </div>
+                </>
               )}
 
               {title === "Guru" && (
-                <div className="d-flex align-items-center gap-2">
+                <>
                   <button
                     className="btn btn-sm btn-outline-success"
                     data-bs-toggle="modal"
@@ -341,7 +474,6 @@ const Layout = ({ children, title, desc, levels }) => {
                     <i className="bi bi-plus-lg"></i>
                     <span className="ms-2 d-none d-md-inline">Guru</span>
                   </button>
-
                   <button
                     className="btn btn-sm btn-outline-success"
                     data-bs-toggle="modal"
@@ -350,7 +482,7 @@ const Layout = ({ children, title, desc, levels }) => {
                     <i className="bi bi-file-earmark-arrow-up-fill"></i>
                     <span className="ms-2 d-none d-md-inline">Upload</span>
                   </button>
-                </div>
+                </>
               )}
 
               {title === "Daftar Bank Soal" && (
@@ -371,7 +503,7 @@ const Layout = ({ children, title, desc, levels }) => {
                   data-bs-target="#addexam"
                 >
                   <i className="bi bi-plus-lg me-2"></i>
-                  Tambah Ujian
+                  <span className="d-none d-md-inline">Tambah Ujian</span>
                 </button>
               )}
 
@@ -381,27 +513,145 @@ const Layout = ({ children, title, desc, levels }) => {
                   onClick={goToScores}
                 >
                   <i className="bi bi-arrow-left-right me-2"></i>
-                  Reset
+                  <span className="d-none d-md-inline">Reset</span>
                 </button>
               )}
             </div>
+          </div>
+        </header>
 
-            {children}
+        {/* Page Content */}
+        <main
+          className="flex-grow-1 p-4"
+          style={{
+            padding: windowWidth < 768 ? "0.5rem" : "1.5rem",
+          }}
+        >
+          <Meta title={title} desc={desc} />
+          <div className="content-wrapper">{children}</div>
+        </main>
+
+        {/* Footer */}
+        <footer className="bg-white border-top py-3 px-4">
+          <div className="text-center">
+            <div className="d-flex align-items-center justify-content-center gap-2">
+              <i className="bi bi-c-circle text-primary"></i>
+              <small className="text-muted">
+                ALMADEV {new Date().getFullYear()} | {appData?.app_name}
+              </small>
+            </div>
+          </div>
+        </footer>
+      </div>
+
+      {/* Mobile Sidebar */}
+      <div
+        className={`position-fixed top-0 start-0 h-100 bg-primary text-white d-lg-none ${
+          isMobileMenuOpen ? "show" : ""
+        }`}
+        style={{
+          width: "280px",
+          zIndex: 1050,
+          transform: isMobileMenuOpen ? "translateX(0)" : "translateX(-100%)",
+          transition: "transform 0.3s ease",
+          boxShadow: "2px 0 10px rgba(0,0,0,0.1)",
+        }}
+      >
+        {/* Mobile Sidebar Header */}
+        <div className="p-3 border-bottom border-light border-opacity-25">
+          <div className="d-flex align-items-center justify-content-between">
+            <div className="flex-grow-1">
+              <h6 className="mb-0 fw-bold text-truncate">
+                {truncateName(user?.name)}
+              </h6>
+              <small className="text-light opacity-75">{user?.level}</small>
+            </div>
+
+            <button
+              className="btn btn-sm btn-outline-light ms-2"
+              onClick={() => setIsMobileMenuOpen(false)}
+              style={{ width: "32px", height: "32px" }}
+            >
+              <i className="bi bi-x-lg"></i>
+            </button>
           </div>
         </div>
-      </main>
 
-      {/* Footer */}
-      <footer className="bg-primary text-white py-2">
-        <div className="container-fluid text-center">
-          <div className="d-flex align-items-center justify-content-center gap-2">
-            <i className="bi bi-c-circle"></i>
-            <small>
-              ALMADEV {new Date().getFullYear()} | {appData?.app_name}
-            </small>
-          </div>
+        {/* Mobile Sidebar Navigation */}
+        <nav className="flex-grow-1 p-3">
+          <ul className="nav nav-pills flex-column gap-2">
+            {currentMenus.map((menu, i) => (
+              <li key={i} className="nav-item">
+                <button
+                  className={`nav-link w-100 text-start d-flex align-items-center gap-3 ${
+                    isActiveMenu(menu.link)
+                      ? "active bg-light text-primary"
+                      : "text-white"
+                  }`}
+                  onClick={() => goToLink(menu.link)}
+                  style={{
+                    borderRadius: "8px",
+                    padding: "12px 16px",
+                    border: "none",
+                    transition: "all 0.2s ease",
+                    minHeight: "48px",
+                  }}
+                >
+                  <span
+                    className="fs-5"
+                    style={{ minWidth: "20px", textAlign: "center" }}
+                  >
+                    {menu.icon}
+                  </span>
+                  <span className="fw-medium flex-grow-1">{menu.label}</span>
+                </button>
+              </li>
+            ))}
+
+            {user?.homeroom && (
+              <li className="nav-item">
+                <button
+                  className="nav-link w-100 text-start d-flex align-items-center gap-3 text-white"
+                  onClick={goToHomeroom}
+                  style={{
+                    borderRadius: "8px",
+                    padding: "12px 16px",
+                    border: "none",
+                    transition: "all 0.2s ease",
+                    minHeight: "48px",
+                  }}
+                >
+                  <i
+                    className="bi bi-database fs-5"
+                    style={{ minWidth: "20px", textAlign: "center" }}
+                  ></i>
+                  <span className="fw-medium flex-grow-1">Database</span>
+                </button>
+              </li>
+            )}
+          </ul>
+        </nav>
+
+        {/* Mobile Sidebar Footer */}
+        <div className="p-3 border-top border-light border-opacity-25">
+          <button
+            className="btn btn-outline-light w-100 d-flex align-items-center gap-3"
+            disabled={isLoading}
+            onClick={logoutHandler}
+            style={{
+              borderRadius: "8px",
+              padding: "12px 16px",
+              minHeight: "48px",
+            }}
+          >
+            <i
+              className="bi bi-box-arrow-right fs-5"
+              style={{ minWidth: "20px", textAlign: "center" }}
+            ></i>
+            <span className="flex-grow-1 text-start">Logout</span>
+          </button>
         </div>
-      </footer>
+      </div>
     </div>
   );
 };

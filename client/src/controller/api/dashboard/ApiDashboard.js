@@ -16,6 +16,10 @@ export const ApiDashboard = createApi({
       query: () => "/student-stats",
       providesTags: ["StudentDash"],
     }),
+    getParentDashboard: builder.query({
+      query: () => "/parent-stats",
+      providesTags: ["ParentDash"],
+    }),
     getCenterDashboard: builder.query({
       query: () => "/center-stats",
       providesTags: ["CenterDash"],
@@ -35,6 +39,7 @@ export const {
   useGetAdminDashboardQuery,
   useGetTeacherDashboardQuery,
   useGetStudentDashboardQuery,
+  useGetParentDashboardQuery,
   useGetCenterDashboardQuery,
   useGetHomeInfografisQuery,
   useGetCmsDashboardQuery,
