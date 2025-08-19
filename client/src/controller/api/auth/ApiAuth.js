@@ -74,6 +74,14 @@ export const ApiAuth = createApi({
       }),
       invalidatesTags: ["User"],
     }),
+    updateParentProfile: builder.mutation({
+      query: (body) => ({
+        url: "/parent-update-profile",
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["User"],
+    }),
   }),
 });
 
