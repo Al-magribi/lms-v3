@@ -6,7 +6,7 @@ import TableData from "./TableData";
 const AdminStudents = () => {
   const [detail, setDetail] = useState("");
   return (
-    <Layout title={"Siswa"} levels={["admin"]}>
+    <Layout title={"Management Siswa"} levels={["admin"]}>
       <Form detail={detail} setDetail={setDetail} />
 
       <TableData setDetail={setDetail} />

@@ -913,3 +913,81 @@ CREATE TRIGGER trigger_calculate_summative_average
     BEFORE INSERT OR UPDATE ON l_summative
     FOR EACH ROW
     EXECUTE FUNCTION calculate_summative_average();
+
+-- ======================================
+-- Database Indexes for Center Dashboard Performance
+-- ======================================
+
+-- Indexes for basic statistics queries
+CREATE INDEX IF NOT EXISTS idx_u_students_active ON u_students(isactive);
+CREATE INDEX IF NOT EXISTS idx_u_teachers_homeroom ON u_teachers(homeroom);
+CREATE INDEX IF NOT EXISTS idx_c_exam_active ON c_exam(isactive);
+CREATE INDEX IF NOT EXISTS idx_c_exam_teacher ON c_exam(teacher);
+CREATE INDEX IF NOT EXISTS idx_l_chapter_teacher ON l_chapter(teacher);
+
+-- Indexes for student-grade relationships
+CREATE INDEX IF NOT EXISTS idx_cl_students_classid ON cl_students(classid);
+CREATE INDEX IF NOT EXISTS idx_cl_students_student ON cl_students(student);
+CREATE INDEX IF NOT EXISTS idx_a_class_grade ON a_class(grade);
+CREATE INDEX IF NOT EXISTS idx_a_class_homebase ON a_class(homebase);
+
+-- Indexes for geographical queries
+CREATE INDEX IF NOT EXISTS idx_db_student_provinceid ON db_student(provinceid);
+CREATE INDEX IF NOT EXISTS idx_db_student_cityid ON db_student(cityid);
+CREATE INDEX IF NOT EXISTS idx_db_student_districtid ON db_student(districtid);
+CREATE INDEX IF NOT EXISTS idx_db_student_villageid ON db_student(villageid);
+CREATE INDEX IF NOT EXISTS idx_db_student_birth_date ON db_student(birth_date);
+CREATE INDEX IF NOT EXISTS idx_db_student_gender ON db_student(gender);
+
+-- Indexes for recent activities
+CREATE INDEX IF NOT EXISTS idx_c_exam_createdat ON c_exam(createdat);
+CREATE INDEX IF NOT EXISTS idx_a_subject_createdat ON a_subject(createdat);
+CREATE INDEX IF NOT EXISTS idx_l_chapter_createdat ON l_chapter(createdat);
+
+-- Indexes for homebase statistics
+CREATE INDEX IF NOT EXISTS idx_u_students_homebase ON u_students(homebase);
+CREATE INDEX IF NOT EXISTS idx_u_teachers_homebase ON u_teachers(homebase);
+CREATE INDEX IF NOT EXISTS idx_a_subject_homebase ON a_subject(homebase);
+
+-- Indexes for activity logs
+CREATE INDEX IF NOT EXISTS idx_logs_createdat ON logs(createdat);
+CREATE INDEX IF NOT EXISTS idx_logs_student ON logs(student);
+CREATE INDEX IF NOT EXISTS idx_logs_teacher ON logs(teacher);
+CREATE INDEX IF NOT EXISTS idx_logs_admin ON logs(admin);
+
+-- Indexes for exam and learning material relationships
+CREATE INDEX IF NOT EXISTS idx_c_class_exam ON c_class(exam);
+CREATE INDEX IF NOT EXISTS idx_c_ebank_exam ON c_ebank(exam);
+CREATE INDEX IF NOT EXISTS idx_c_ebank_bank ON c_ebank(bank);
+CREATE INDEX IF NOT EXISTS idx_l_content_chapter ON l_content(chapter);
+CREATE INDEX IF NOT EXISTS idx_l_file_content ON l_file(content);
+
+-- Indexes for teacher assignments
+CREATE INDEX IF NOT EXISTS idx_at_subject_teacher ON at_subject(teacher);
+CREATE INDEX IF NOT EXISTS idx_at_subject_subject ON at_subject(subject);
+
+-- Composite indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_db_student_homebaseid_birth_date ON db_student(homebaseid, birth_date);
+CREATE INDEX IF NOT EXISTS idx_cl_students_periode_classid ON cl_students(periode, classid);
+CREATE INDEX IF NOT EXISTS idx_u_students_homebase_active ON u_students(homebase, isactive);
+
+-- Indexes for entry statistics
+CREATE INDEX IF NOT EXISTS idx_db_student_entryid ON db_student(entryid);
+
+-- Indexes for student completeness queries
+CREATE INDEX IF NOT EXISTS idx_db_student_userid ON db_student(userid);
+CREATE INDEX IF NOT EXISTS idx_db_family_userid ON db_family(userid);
+
+-- Analyze tables to update statistics
+ANALYZE u_students;
+ANALYZE u_teachers;
+ANALYZE a_class;
+ANALYZE a_grade;
+ANALYZE a_subject;
+ANALYZE a_homebase;
+ANALYZE c_exam;
+ANALYZE c_bank;
+ANALYZE l_chapter;
+ANALYZE db_student;
+ANALYZE logs;
+ANALYZE cl_students;

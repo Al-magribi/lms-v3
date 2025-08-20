@@ -55,9 +55,8 @@ const Form = ({ detail, setDetail }) => {
   return (
     <form
       onSubmit={addHandler}
-      className='rounded bg-white p-2 border d-flex flex-column gap-2'>
-      <p className='m-0 h6'>Periode</p>
-
+      className='d-flex align-items-center justify-content-between gap-2'
+    >
       <input
         type='text'
         name='periode'
@@ -73,13 +72,15 @@ const Form = ({ detail, setDetail }) => {
         <button
           type='button'
           className='btn btn-sm btn-warning'
-          onClick={cancel}>
+          onClick={cancel}
+        >
           Batal
         </button>
         <button
           type='submit'
           className='btn btn-sm btn-success'
-          disabled={isLoading}>
+          disabled={isLoading}
+        >
           Simpan
         </button>
       </div>

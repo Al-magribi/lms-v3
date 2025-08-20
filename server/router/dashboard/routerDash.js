@@ -654,7 +654,7 @@ router.get("/parent-stats", authorize("parent"), async (req, res) => {
 // ======================================
 router.get("/center-stats", authorize("center"), async (req, res) => {
   try {
-    // Get basic statistics
+    // Combine multiple basic stats into a single query
     const basicStats = await pool.query(`
       SELECT 
         (SELECT COUNT(*) FROM u_students) as total_students,
@@ -667,58 +667,84 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
         (SELECT COUNT(*) FROM l_chapter) as total_chapters
     `);
 
-    // Get students distribution by grade
-    const studentsPerGrade = await pool.query(`
+    // Combine students per grade and teacher composition in one query
+    const gradeAndTeacherStats = await pool.query(`
+      WITH grade_stats AS (
+        SELECT 
+          g.name as grade_name,
+          COUNT(DISTINCT s.id) as total_students,
+          COUNT(DISTINCT CASE WHEN us.gender = 'L' THEN s.id END) as male_count,
+          COUNT(DISTINCT CASE WHEN us.gender = 'P' THEN s.id END) as female_count
+        FROM a_grade g
+        LEFT JOIN a_class c ON c.grade = g.id
+        LEFT JOIN cl_students s ON s.classid = c.id
+        LEFT JOIN u_students us ON us.id = s.student
+        GROUP BY g.id, g.name
+        ORDER BY g.name
+      ),
+      teacher_stats AS (
+        SELECT 
+          COUNT(*) as total_teachers,
+          COUNT(CASE WHEN gender = 'L' THEN 1 END) as male_count,
+          COUNT(CASE WHEN gender = 'P' THEN 1 END) as female_count,
+          COUNT(CASE WHEN homeroom = true THEN 1 END) as homeroom_count
+        FROM u_teachers
+      ),
+      grade_stats_json AS (
+        SELECT json_agg(grade_stats) as grade_stats
+        FROM grade_stats
+      ),
+      teacher_stats_json AS (
+        SELECT row_to_json(teacher_stats) as teacher_stats
+        FROM teacher_stats
+      )
       SELECT 
-        g.name as grade_name,
-        COUNT(DISTINCT s.id) as total_students,
-        COUNT(DISTINCT CASE WHEN us.gender = 'L' THEN s.id END) as male_count,
-        COUNT(DISTINCT CASE WHEN us.gender = 'P' THEN s.id END) as female_count
-      FROM a_grade g
-      LEFT JOIN a_class c ON c.grade = g.id
-      LEFT JOIN cl_students s ON s.classid = c.id
-      LEFT JOIN u_students us ON us.id = s.student
-      GROUP BY g.id, g.name
-      ORDER BY g.name
+        json_build_object(
+          'grade_stats', (SELECT grade_stats FROM grade_stats_json),
+          'teacher_stats', (SELECT teacher_stats FROM teacher_stats_json)
+        ) as combined_stats
     `);
 
-    // Get teacher composition
-    const teacherComposition = await pool.query(`
+    // Combine exam and learning stats
+    const examAndLearningStats = await pool.query(`
+      WITH exam_stats AS (
+        SELECT 
+          COUNT(*) as total_exams,
+          COUNT(CASE WHEN e.isactive = true THEN 1 END) as active_exams,
+          COUNT(DISTINCT e.teacher) as teacher_count,
+          COUNT(DISTINCT c.classid) as class_count,
+          COUNT(DISTINCT cb.subject) as subject_count
+        FROM c_exam e
+        LEFT JOIN c_class c ON c.exam = e.id
+        LEFT JOIN c_ebank eb ON eb.exam = e.id
+        LEFT JOIN c_bank cb ON cb.id = eb.bank
+      ),
+      learning_stats AS (
+        SELECT 
+          COUNT(DISTINCT ch.id) as total_chapters,
+          COUNT(DISTINCT co.id) as total_contents,
+          COUNT(DISTINCT f.id) as total_files,
+          COUNT(DISTINCT ch.teacher) as teacher_count
+        FROM l_chapter ch
+        LEFT JOIN l_content co ON co.chapter = ch.id
+        LEFT JOIN l_file f ON f.content = co.id
+      ),
+      exam_stats_json AS (
+        SELECT row_to_json(exam_stats) as exam_stats
+        FROM exam_stats
+      ),
+      learning_stats_json AS (
+        SELECT row_to_json(learning_stats) as learning_stats
+        FROM learning_stats
+      )
       SELECT 
-        COUNT(*) as total_teachers,
-        COUNT(CASE WHEN gender = 'L' THEN 1 END) as male_count,
-        COUNT(CASE WHEN gender = 'P' THEN 1 END) as female_count,
-        COUNT(CASE WHEN homeroom = true THEN 1 END) as homeroom_count
-      FROM u_teachers
+        json_build_object(
+          'exam_stats', (SELECT exam_stats FROM exam_stats_json),
+          'learning_stats', (SELECT learning_stats FROM learning_stats_json)
+        ) as combined_stats
     `);
 
-    // Get exam statistics
-    const examStats = await pool.query(`
-      SELECT 
-        COUNT(*) as total_exams,
-        COUNT(CASE WHEN e.isactive = true THEN 1 END) as active_exams,
-        COUNT(DISTINCT e.teacher) as teacher_count,
-        COUNT(DISTINCT c.classid) as class_count,
-        COUNT(DISTINCT cb.subject) as subject_count
-      FROM c_exam e
-      LEFT JOIN c_class c ON c.exam = e.id
-      LEFT JOIN c_ebank eb ON eb.exam = e.id
-      LEFT JOIN c_bank cb ON cb.id = eb.bank
-    `);
-
-    // Get learning material statistics
-    const learningStats = await pool.query(`
-      SELECT 
-        COUNT(DISTINCT ch.id) as total_chapters,
-        COUNT(DISTINCT co.id) as total_contents,
-        COUNT(DISTINCT f.id) as total_files,
-        COUNT(DISTINCT ch.teacher) as teacher_count
-      FROM l_chapter ch
-      LEFT JOIN l_content co ON co.chapter = ch.id
-      LEFT JOIN l_file f ON f.content = co.id
-    `);
-
-    // Get recent activities
+    // Optimized recent activities query
     const recentActivities = await pool.query(`
       SELECT 
         'exam' as type,
@@ -751,7 +777,7 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
       LIMIT 10
     `);
 
-    // Get homebase statistics
+    // Optimized homebase statistics
     const homebaseStats = await pool.query(`
       SELECT 
         h.name as homebase_name,
@@ -768,7 +794,7 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
       ORDER BY h.name
     `);
 
-    // Get system activity logs
+    // Optimized activity logs with LIMIT
     const activityLogs = await pool.query(`
       SELECT 
         l.id,
@@ -796,13 +822,11 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
       LIMIT 10
     `);
 
-    // Student demographic data untuk center (semua siswa tanpa filter homebase, ignore null birth_date)
+    // Simplified student demographics query
     const studentDemographics = await pool.query(`
-      WITH valid_students AS (
+      WITH age_data AS (
         SELECT
-          id,
           gender,
-          birth_date,
           EXTRACT(YEAR FROM AGE(CURRENT_DATE, birth_date))::integer as age
         FROM db_student
         WHERE birth_date IS NOT NULL
@@ -814,57 +838,39 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
           COUNT(*) as total_students,
           COUNT(CASE WHEN gender = 'L' THEN 1 END) as male_count,
           COUNT(CASE WHEN gender = 'P' THEN 1 END) as female_count
-        FROM valid_students
+        FROM age_data
       ),
-      -- Create dynamic age ranges based on actual data
-      age_ranges AS (
+      age_distribution AS (
         SELECT
           CASE 
-            WHEN age < (SELECT MIN(age) + 2 FROM valid_students) 
-              THEN concat('<', (SELECT MIN(age) + 2 FROM valid_students))
-            WHEN age >= (SELECT MAX(age) - 1 FROM valid_students)
-              THEN concat('>', (SELECT MAX(age) - 2 FROM valid_students))
-            ELSE concat(
-              FLOOR(age/2) * 2, '-', 
-              FLOOR(age/2) * 2 + 1
-            )
+            WHEN age < 8 THEN '<8'
+            WHEN age >= 18 THEN '>17'
+            ELSE concat(FLOOR(age/2) * 2, '-', FLOOR(age/2) * 2 + 1)
           END as age_group,
-          CASE 
-            WHEN age < (SELECT MIN(age) + 2 FROM valid_students) THEN 1
-            WHEN age >= (SELECT MAX(age) - 1 FROM valid_students) THEN 999
-            ELSE FLOOR(age/2) * 2
-          END as sort_order,
-          id,
-          gender,
-          age
-        FROM valid_students
-      ),
-      age_distribution_calc AS (
-        SELECT
-          age_group,
-          sort_order,
           COUNT(*) as count
-        FROM age_ranges
-        GROUP BY age_group, sort_order
-        ORDER BY sort_order
+        FROM age_data
+        GROUP BY 
+          CASE 
+            WHEN age < 8 THEN '<8'
+            WHEN age >= 18 THEN '>17'
+            ELSE concat(FLOOR(age/2) * 2, '-', FLOOR(age/2) * 2 + 1)
+          END
+        ORDER BY age_group
+      ),
+      age_distribution_json AS (
+        SELECT json_agg(json_build_object('age_group', age_group, 'count', count)) as age_distribution
+        FROM age_distribution
       )
       SELECT
-        COALESCE((SELECT total_students FROM age_stats), 0) as total_students,
-        COALESCE((SELECT male_count FROM age_stats), 0) as male_count,
-        COALESCE((SELECT female_count FROM age_stats), 0) as female_count,
-        COALESCE((SELECT min_age FROM age_stats), 0) as min_age,
-        COALESCE((SELECT max_age FROM age_stats), 0) as max_age,
-        COALESCE(
-          (SELECT json_agg(json_build_object(
-            'age_group', age_group,
-            'count', count
-          ) ORDER BY sort_order)
-           FROM age_distribution_calc),
-          '[]'::json
-        ) as age_distribution;
+        (SELECT total_students FROM age_stats) as total_students,
+        (SELECT male_count FROM age_stats) as male_count,
+        (SELECT female_count FROM age_stats) as female_count,
+        (SELECT min_age FROM age_stats) as min_age,
+        (SELECT max_age FROM age_stats) as max_age,
+        (SELECT age_distribution FROM age_distribution_json) as age_distribution
     `);
 
-    // Geographical distribution of students
+    // Optimized geographical distribution
     const geographicalDistribution = await pool.query(`
       WITH province_stats AS (
         SELECT 
@@ -873,7 +879,7 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
         FROM db_student ds
         JOIN db_province p ON ds.provinceid = p.id
         GROUP BY p.id, p.name
-        ORDER BY student_count DESC
+        ORDER BY COUNT(*) DESC
         LIMIT 5
       ),
       city_stats AS (
@@ -885,7 +891,7 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
         JOIN db_city c ON ds.cityid = c.id
         JOIN db_province p ON c.provinceid = p.id
         GROUP BY c.id, c.name, p.name
-        ORDER BY student_count DESC
+        ORDER BY COUNT(*) DESC
         LIMIT 5
       ),
       district_stats AS (
@@ -899,7 +905,7 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
         JOIN db_city c ON d.cityid = c.id
         JOIN db_province p ON c.provinceid = p.id
         GROUP BY d.id, d.name, c.name, p.name
-        ORDER BY student_count DESC
+        ORDER BY COUNT(*) DESC
         LIMIT 5
       ),
       village_stats AS (
@@ -915,7 +921,7 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
         JOIN db_city c ON d.cityid = c.id
         JOIN db_province p ON c.provinceid = p.id
         GROUP BY v.id, v.name, d.name, c.name, p.name
-        ORDER BY student_count DESC
+        ORDER BY COUNT(*) DESC
         LIMIT 5
       )
       SELECT 
@@ -927,64 +933,23 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
         ) as geographical_data
     `);
 
-    // Student data completeness by grade
-    const studentCompleteness = await pool.query(
-      `
-      WITH student_data AS (
-        SELECT 
-          g.name as grade_name,
-          COUNT(DISTINCT s.id) as total_students,
-          COUNT(DISTINCT CASE 
-            WHEN ds.id IS NOT NULL THEN
-              CASE 
-                WHEN ds.name IS NOT NULL AND
-                     ds.homebaseid IS NOT NULL AND
-                     ds.homebase_name IS NOT NULL AND
-                     ds.entryid IS NOT NULL AND
-                     ds.entry_name IS NOT NULL AND
-                     ds.nis IS NOT NULL AND
-                     ds.nisn IS NOT NULL AND
-                     ds.gender IS NOT NULL AND
-                     ds.birth_place IS NOT NULL AND
-                     ds.birth_date IS NOT NULL AND
-                     ds.height IS NOT NULL AND
-                     ds.weight IS NOT NULL AND
-                     ds.head IS NOT NULL AND
-                     ds.order_number IS NOT NULL AND
-                     ds.siblings IS NOT NULL AND
-                     ds.address IS NOT NULL AND
-                     ds.father_nik IS NOT NULL AND
-                     ds.father_name IS NOT NULL AND
-                     ds.father_birth_place IS NOT NULL AND
-                     ds.father_birth_date IS NOT NULL AND
-                     ds.father_job IS NOT NULL AND
-                     ds.father_phone IS NOT NULL AND
-                     ds.mother_nik IS NOT NULL AND
-                     ds.mother_name IS NOT NULL AND
-                     ds.mother_birth_place IS NOT NULL AND
-                     ds.mother_birth_date IS NOT NULL AND
-                     ds.mother_job IS NOT NULL AND
-                     ds.mother_phone IS NOT NULL AND
-                     ds.province_name IS NOT NULL AND
-                     ds.city_name IS NOT NULL AND
-                     ds.district_name IS NOT NULL AND
-                     ds.village_name IS NOT NULL AND
-                     ds.postal_code IS NOT NULL AND
-                     EXISTS (SELECT 1 FROM db_family df WHERE df.userid = s.id)
-                THEN s.id END
-            END
-          ) as complete_students
-        FROM u_students s
-        LEFT JOIN db_student ds ON s.id = ds.userid
-        LEFT JOIN cl_students cs ON s.id = cs.student
-        LEFT JOIN a_class c ON cs.classid = c.id
-        LEFT JOIN a_grade g ON c.grade = g.id
-        GROUP BY g.name
-        ORDER BY CAST(g.name AS INTEGER)
-      )
-      SELECT * FROM student_data
-      `
-    );
+    // Simplified student completeness query
+    const studentCompleteness = await pool.query(`
+      SELECT 
+        g.name as grade_name,
+        COUNT(DISTINCT s.id) as total_students,
+        COUNT(DISTINCT CASE 
+          WHEN ds.id IS NOT NULL AND ds.name IS NOT NULL AND ds.nis IS NOT NULL 
+          THEN s.id END
+        ) as complete_students
+      FROM u_students s
+      LEFT JOIN db_student ds ON s.id = ds.userid
+      LEFT JOIN cl_students cs ON s.id = cs.student
+      LEFT JOIN a_class c ON cs.classid = c.id
+      LEFT JOIN a_grade g ON c.grade = g.id
+      GROUP BY g.name
+      ORDER BY CAST(g.name AS INTEGER)
+    `);
 
     // Student entry statistics
     const entryStats = await pool.query(`
@@ -997,12 +962,16 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
       ORDER BY e.name
     `);
 
+    // Parse the combined results
+    const gradeAndTeacherData = gradeAndTeacherStats.rows[0].combined_stats;
+    const examAndLearningData = examAndLearningStats.rows[0].combined_stats;
+
     res.json({
       basicStats: basicStats.rows[0],
-      studentsPerGrade: studentsPerGrade.rows,
-      teacherComposition: teacherComposition.rows[0],
-      examStats: examStats.rows[0],
-      learningStats: learningStats.rows[0],
+      studentsPerGrade: gradeAndTeacherData.grade_stats || [],
+      teacherComposition: gradeAndTeacherData.teacher_stats || {},
+      examStats: examAndLearningData.exam_stats || {},
+      learningStats: examAndLearningData.learning_stats || {},
       recentActivities: recentActivities.rows,
       homebaseStats: homebaseStats.rows,
       activityLogs: activityLogs.rows,

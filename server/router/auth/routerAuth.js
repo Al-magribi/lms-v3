@@ -748,4 +748,48 @@ router.put(
   }
 );
 
+router.put("/parent-update-profile", authorize("parent"), async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { id } = req.user;
+    const { name, email, newPassword, oldPassword } = req.body;
+
+    const user = await client.query(`SELECT * FROM u_parents WHERE id = $1`, [
+      id,
+    ]);
+
+    if (user.rowCount === 0) {
+      return res.status(404).json({ message: "User tidak ditemukan" });
+    }
+
+    const userData = user.rows[0];
+
+    if (oldPassword) {
+      const match = await bcrypt.compare(oldPassword, userData.password);
+      if (!match) {
+        return res.status(401).json({ message: "Password lama salah" });
+      }
+
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      await client.query(
+        `UPDATE u_parents SET name = $1, email = $2, password = $3 WHERE id = $4`,
+        [name, email, hashedPassword, id]
+      );
+    } else {
+      await client.query(
+        `UPDATE u_parents SET name = $1, email = $2 WHERE id = $3`,
+        [name, email, id]
+      );
+    }
+
+    return res.status(200).json({ message: "Profile berhasil diubah" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
+  }
+});
+
 export default router;

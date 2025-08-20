@@ -8,8 +8,9 @@ const AdminClass = () => {
   const [detail, setDetail] = useState("");
 
   return (
-    <Layout title={"Kelas"} levels={["admin"]}>
+    <Layout title={"Management Kelas"} levels={["admin"]}>
       <Form detail={detail} setDetail={setDetail} />
+
       <TableData setDetail={setDetail} />
 
       <Upload />

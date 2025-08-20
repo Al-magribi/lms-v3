@@ -52,32 +52,32 @@ const Form = ({ detail, setDetail }) => {
   }, [detail]);
 
   return (
-    <form onSubmit={addHandler} className="bg-white rounded border p-3">
-      <div className="form-floating">
-        <input
-          type="text"
-          name="major"
-          id="major"
-          className="form-control"
-          placeholder="Jurusan"
-          required
-          value={name || ""}
-          onChange={(e) => setName(e.target.value)}
-        />
+    <form
+      onSubmit={addHandler}
+      className='d-flex align-items-center justify-content-between gap-2'
+    >
+      <input
+        type='text'
+        name='major'
+        id='major'
+        className='form-control'
+        placeholder='Jurusan'
+        required
+        value={name || ""}
+        onChange={(e) => setName(e.target.value)}
+      />
 
-        <label htmlFor="major">Nama Jurusan</label>
-      </div>
-      <div className="d-flex justify-content-end gap-2 mt-2">
+      <div className='d-flex justify-content-end gap-2'>
         <button
-          type="button"
-          className="btn btn-sm btn-warning"
+          type='button'
+          className='btn btn-sm btn-warning'
           onClick={cancel}
         >
           Batal
         </button>
         <button
-          type="submit"
-          className="btn btn-sm btn-success"
+          type='submit'
+          className='btn btn-sm btn-success'
           disabled={isLoading}
         >
           Simpan

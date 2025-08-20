@@ -8,7 +8,7 @@ import toast from "react-hot-toast";
 
 const TableData = ({ setDetail }) => {
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(12);
+  const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState("");
 
   const { data: rawData = {}, isLoading: dataLoading } = useGetTeachersQuery({
@@ -58,137 +58,122 @@ const TableData = ({ setDetail }) => {
       totalPages={totalPages}
       isLoading={dataLoading}
     >
-      <div className="row g-4">
-        {teachers?.length > 0 ? (
-          teachers?.map((teacher, i) => (
-            <div key={i} className="col-12 col-md-6 col-lg-4">
-              <div className="card shadow-sm hover-shadow h-100">
-                <div className="card-body">
-                  <div className="d-flex justify-content-between align-items-start mb-3">
-                    <div className="d-flex align-items-center">
-                      <span
-                        style={{ height: 50, width: 50 }}
-                        className="badge bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
-                      >
-                        <i
-                          className="bi bi-person-circle text-primary"
-                          style={{ fontSize: 25 }}
-                        ></i>
-                      </span>
-                      <div className="ms-3">
-                        <h5 className="card-title mb-1 text-primary">
-                          {teacher.name}
-                        </h5>
-                        <p className="text-muted small mb-0">
-                          {teacher.username}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="d-flex gap-2">
-                      <div className="dropdown">
-                        <button
-                          className="btn btn-sm btn-outline-primary"
-                          type="button"
-                          data-bs-toggle="dropdown"
-                          aria-expanded="false"
-                        >
-                          <i className="bi bi-three-dots-vertical"></i>
-                        </button>
-                        <ul className="dropdown-menu dropdown-menu-end">
-                          <li>
-                            <button
-                              className="dropdown-item"
-                              onClick={() => setDetail(teacher)}
-                              data-bs-toggle="modal"
-                              data-bs-target="#addteacher"
-                            >
-                              <i className="bi bi-pencil-square me-2"></i>
-                              Edit
-                            </button>
-                          </li>
-                          <li>
-                            <button
-                              className="dropdown-item text-danger"
-                              disabled={isLoading}
-                              onClick={() => deleteHandler(teacher.id)}
-                            >
-                              <i className="bi bi-folder-minus me-2"></i>
-                              Hapus
-                            </button>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="row g-3">
-                    <div className="col-4">
-                      <div className="d-flex align-items-center">
-                        <i className="bi bi-building me-2 text-primary"></i>
-                        <div>
-                          <small className="text-muted d-block">Satuan</small>
-                          <span className="fw-medium">{teacher.homebase}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="col-4">
-                      <div className="d-flex align-items-center">
-                        <i className="bi bi-gender-ambiguous me-2 text-primary"></i>
-                        <div>
-                          <small className="text-muted d-block">
-                            Jenis Kelamin
-                          </small>
-                          <span className="fw-medium">
-                            {teacher.gender === "L" ? "Laki-laki" : "Perempuan"}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="col-4">
-                      <div className="d-flex align-items-center">
-                        <i className="bi bi-mortarboard me-2 text-primary"></i>
-                        <div>
-                          <small className="text-muted d-block">
-                            Wali Kelas
-                          </small>
-                          <span className="fw-medium">
-                            {teacher.homeroom ? teacher.class_name : "-"}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="col-12">
-                      <div className="d-flex align-items-start">
-                        <i className="bi bi-book me-2 text-primary mt-1"></i>
-                        <div>
-                          <small className="text-muted d-block">
-                            Mata Pelajaran
-                          </small>
-                          <div className="d-flex flex-wrap gap-2">
-                            {teacher.subjects?.map((item) => (
-                              <span
-                                key={item.id}
-                                className="badge bg-light text-dark"
-                              >
-                                {item.name}
-                              </span>
-                            ))}
+      <div className='table-responsive'>
+        <table className='table table-hover align-middle'>
+          <thead className='table-light'>
+            <tr>
+              <th scope='col' className='text-center' style={{ width: "60px" }}>
+                #
+              </th>
+              <th scope='col'>Nama Guru</th>
+              <th scope='col'>NIP/Username</th>
+              <th scope='col'>Wali Kelas</th>
+              <th scope='col'>Mata Pelajaran</th>
+              <th
+                scope='col'
+                className='text-center'
+                style={{ width: "120px" }}
+              >
+                Aksi
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {teachers?.length > 0 ? (
+              teachers?.map((teacher, index) => (
+                <tr key={teacher.id}>
+                  <td className='text-center text-muted'>
+                    {(page - 1) * limit + index + 1}
+                  </td>
+                  <td>
+                    <div className='d-flex align-items-center'>
+                      <div>
+                        <h6 className='mb-0 fw-semibold'>{teacher.name}</h6>
+                        <small className='text-muted'>
+                          {teacher.gender === "L" ? "Laki-laki" : "Perempuan"}
+                        </small>
+                        {teacher.email && (
+                          <div className='text-muted small'>
+                            <i className='bi bi-envelope me-1'></i>
+                            {teacher.email}
                           </div>
-                        </div>
+                        )}
+                        {teacher.phone && (
+                          <div className='text-muted small'>
+                            <i className='bi bi-telephone me-1'></i>
+                            {teacher.phone}
+                          </div>
+                        )}
                       </div>
                     </div>
+                  </td>
+                  <td>
+                    <span className='badge bg-light text-dark'>
+                      {teacher.username}
+                    </span>
+                  </td>
+
+                  <td>
+                    {teacher.homeroom ? (
+                      <span className='badge bg-success bg-opacity-10 text-success'>
+                        <i className='bi bi-check-circle me-1'></i>
+                        {teacher.class_name}
+                      </span>
+                    ) : (
+                      <span className='badge bg-secondary bg-opacity-10 text-secondary'>
+                        Bukan Wali Kelas
+                      </span>
+                    )}
+                  </td>
+                  <td>
+                    <div className='d-flex flex-wrap gap-1'>
+                      {teacher.subjects?.map((subject) => (
+                        <span
+                          key={subject.id}
+                          className='badge bg-primary bg-opacity-10 text-primary'
+                          style={{ fontSize: "0.75rem" }}
+                        >
+                          {subject.name}
+                        </span>
+                      ))}
+                    </div>
+                  </td>
+                  <td>
+                    <div className='d-flex gap-1 justify-content-center'>
+                      <button
+                        className='btn btn-sm btn-outline-primary'
+                        onClick={() => setDetail(teacher)}
+                        data-bs-toggle='modal'
+                        data-bs-target='#addteacher'
+                        title='Edit'
+                      >
+                        <i className='bi bi-pencil-square'></i>
+                      </button>
+                      <button
+                        className='btn btn-sm btn-outline-danger'
+                        disabled={isLoading}
+                        onClick={() => deleteHandler(teacher.id)}
+                        title='Hapus'
+                      >
+                        <i className='bi bi-trash'></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan='7' className='text-center py-4'>
+                  <div className='text-muted'>
+                    <i className='bi bi-inbox display-4 d-block mb-3'></i>
+                    <h5>Data Belum Tersedia</h5>
+                    <p className='mb-0'>Tidak ada data guru yang ditemukan</p>
                   </div>
-                </div>
-              </div>
-            </div>
-          ))
-        ) : (
-          <div className="col-12">
-            <div className="alert alert-info mb-0">Data Belum tersedia</div>
-          </div>
-        )}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </Table>
   );

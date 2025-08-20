@@ -40,49 +40,53 @@ router.post("/add-periode", authorize("admin"), async (req, res) => {
   }
 });
 
-router.get("/get-periode", authorize("admin", "teacher"), async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const { page, limit, search } = req.query;
-    const offset = (page - 1) * limit;
-    const homebase = req.user.homebase;
+router.get(
+  "/get-periode",
+  authorize("admin", "teacher", "parent"),
+  async (req, res) => {
+    const client = await pool.connect();
+    try {
+      const { page, limit, search } = req.query;
+      const offset = (page - 1) * limit;
+      const homebase = req.user.homebase;
 
-    if (!page && !limit) {
-      const data = await client.query(
-        `SELECT * FROM a_periode WHERE homebase = $1`,
-        [homebase]
-      );
+      if (!page && !limit) {
+        const data = await client.query(
+          `SELECT * FROM a_periode WHERE homebase = $1`,
+          [homebase]
+        );
 
-      return res.status(200).json(data.rows);
-    }
+        return res.status(200).json(data.rows);
+      }
 
-    const [count, data] = await Promise.all([
-      client.query(
-        `SELECT COUNT(*) FROM a_periode 
+      const [count, data] = await Promise.all([
+        client.query(
+          `SELECT COUNT(*) FROM a_periode 
 				WHERE homebase = $1 AND name ILIKE $2`,
-        [homebase, `%${search}%`]
-      ),
-      client.query(
-        `SELECT * FROM a_periode 
+          [homebase, `%${search}%`]
+        ),
+        client.query(
+          `SELECT * FROM a_periode 
 				WHERE homebase = $1 AND name ILIKE $2
 				ORDER BY name ASC
 				LIMIT $3 OFFSET $4`,
-        [homebase, `%${search}%`, limit, offset]
-      ),
-    ]);
+          [homebase, `%${search}%`, limit, offset]
+        ),
+      ]);
 
-    const totalData = parseInt(count.rows[0].count);
-    const totalPages = Math.ceil(totalData / limit);
-    const periodes = data.rows;
+      const totalData = parseInt(count.rows[0].count);
+      const totalPages = Math.ceil(totalData / limit);
+      const periodes = data.rows;
 
-    res.status(200).json({ totalData, totalPages, periodes });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: error.message });
-  } finally {
-    client.release();
+      res.status(200).json({ totalData, totalPages, periodes });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: error.message });
+    } finally {
+      client.release();
+    }
   }
-});
+);
 
 router.delete("/delete-periode", authorize("admin"), async (req, res) => {
   const client = await pool.connect();

@@ -12,7 +12,7 @@ import { useGetPeriodeQuery } from "../../../controller/api/database/ApiDatabase
 
 const TableData = ({ setDetail }) => {
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(12);
+  const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState("");
   const [selectedPeriode, setSelectedPeriode] = useState("");
 
@@ -30,8 +30,6 @@ const TableData = ({ setDetail }) => {
 
   const [deleteStudent, { isSuccess, isLoading, isError, reset }] =
     useDeleteStudentMutation();
-  const [changeStatus] = useChangeStatusMutation();
-  const [changePeriode, { isLoading: isChanging }] = useChangePeriodeMutation();
   const [downloadStudent, { isLoading: isDownloading }] =
     useDownloadStudentMutation();
 
@@ -50,43 +48,6 @@ const TableData = ({ setDetail }) => {
           error: (err) => err.data.message,
         }
       );
-    }
-  };
-
-  const changeHandler = (id) => {
-    toast.promise(
-      changeStatus(id)
-        .unwrap()
-        .then((res) => res.message),
-      {
-        loading: "Memproses...",
-        success: (message) => message,
-        error: (err) => err.data.message,
-      }
-    );
-  };
-
-  const updatePeriode = (e) => {
-    const periodeId = e.target.value;
-    setSelectedPeriode(periodeId);
-  };
-
-  const handleSavePeriode = async () => {
-    if (!selectedPeriode) {
-      toast.error("Pilih tahun ajaran terlebih dahulu");
-      return;
-    }
-    try {
-      const updatePromises = students.map((student) =>
-        changePeriode({ userid: student.id, periodeid: selectedPeriode })
-      );
-      await Promise.all(updatePromises);
-      toast.success("Berhasil mengganti tahun ajaran");
-      setSelectedPeriode("");
-      refetch();
-    } catch (err) {
-      console.error("Error updating periods:", err);
-      toast.error("Gagal mengganti tahun ajaran");
     }
   };
 
@@ -126,133 +87,147 @@ const TableData = ({ setDetail }) => {
         isLoading: isDownloading,
       }}
     >
-      <div className="row g-4">
-        {students.length > 0 ? (
-          students.map((student, i) => (
-            <div key={i} className="col-12 col-md-6 col-lg-4 col-xl-3">
-              <div className="card border shadow-sm hover-shadow h-100 p-0 overflow-hidden position-relative rounded-4">
-                <div className="card-body p-4 d-flex flex-column h-100">
-                  <div className="d-flex align-items-start justify-content-between mb-2">
-                    <div>
-                      <h5
-                        className="text-primary mb-1"
-                        style={{ fontSize: 20 }}
+      <div className='table-responsive'>
+        <table
+          className='table table-hover align-middle'
+          style={{ fontSize: "0.9rem" }}
+        >
+          <thead className='table-light'>
+            <tr>
+              <th className='text-center' style={{ width: "60px" }}>
+                No
+              </th>
+              <th className='text-start'>Nama Siswa</th>
+              <th className='text-center' style={{ width: "80px" }}>
+                Gender
+              </th>
+              <th className='text-center' style={{ width: "120px" }}>
+                NIS
+              </th>
+              <th className='text-center' style={{ width: "100px" }}>
+                Kelas
+              </th>
+              <th className='text-center' style={{ width: "100px" }}>
+                Status
+              </th>
+              <th className='text-center' style={{ width: "120px" }}>
+                Aksi
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {students?.length > 0 ? (
+              students.map((student, i) => (
+                <tr key={i} className='border-bottom'>
+                  <td className='text-center text-muted fw-medium'>
+                    {(page - 1) * limit + i + 1}
+                  </td>
+                  <td>
+                    <div className='d-flex flex-column'>
+                      <span
+                        className='fw-semibold text-dark'
+                        style={{ fontSize: "0.95rem" }}
                       >
                         {student.name}
-                      </h5>
-
-                      <span className="badge bg-secondary mb-2">
-                        NIS: {student.nis}
                       </span>
-
-                      <span
-                        className={`badge ms-2 ${
-                          student.isactive
-                            ? "bg-success bg-opacity-10 text-success"
-                            : "bg-danger bg-opacity-10 text-danger"
-                        } pointer`}
-                        style={{ cursor: "pointer" }}
-                        onClick={() => changeHandler(student.id)}
-                      >
-                        {student.isactive ? "Aktif" : "Nonaktif"}
-                      </span>
+                      <small className='text-muted'>
+                        {student.homebase} • {student.periode_name}
+                      </small>
                     </div>
-                    <div className="dropdown">
+                  </td>
+                  <td className='text-center'>
+                    <span
+                      className={`badge rounded-pill text-dark ${
+                        student.gender === "L"
+                          ? "bg-primary bg-opacity-10"
+                          : "bg-pink bg-opacity-10"
+                      }`}
+                      style={{ fontSize: "0.75rem" }}
+                    >
+                      {student.gender === "L" ? "L" : "P"}
+                    </span>
+                  </td>
+                  <td className='text-center'>
+                    <code
+                      className='bg-light px-2 py-1 rounded'
+                      style={{ fontSize: "0.8rem" }}
+                    >
+                      {student.nis}
+                    </code>
+                  </td>
+                  <td className='text-center'>
+                    <span className='badge bg-secondary bg-opacity-10 text-secondary rounded-pill'>
+                      {student.classname}
+                    </span>
+                  </td>
+                  <td className='text-center'>
+                    <span
+                      className={`badge rounded-pill ${
+                        student.isactive
+                          ? "bg-success bg-opacity-10 text-success"
+                          : "bg-danger bg-opacity-10 text-danger"
+                      }`}
+                      style={{ fontSize: "0.75rem" }}
+                    >
+                      {student.isactive ? "Aktif" : "Nonaktif"}
+                    </span>
+                  </td>
+                  <td className='text-center'>
+                    <div className='dropdown'>
                       <button
-                        className="btn btn-sm btn-outline-primary"
-                        type="button"
+                        className='btn btn-sm btn-outline-secondary border-0'
+                        type='button'
                         id={`dropdownMenuButton${student.id}`}
-                        data-bs-toggle="dropdown"
-                        aria-expanded="false"
+                        data-bs-toggle='dropdown'
+                        aria-expanded='false'
+                        style={{ fontSize: "0.8rem" }}
                       >
-                        <i className="bi bi-three-dots-vertical"></i>
+                        <i className='bi bi-three-dots-vertical'></i>
                       </button>
                       <ul
-                        className="dropdown-menu dropdown-menu-end shadow"
+                        className='dropdown-menu dropdown-menu-end shadow-sm border-0'
                         aria-labelledby={`dropdownMenuButton${student.id}`}
+                        style={{ fontSize: "0.85rem" }}
                       >
                         <li>
                           <button
-                            className="dropdown-item d-flex align-items-center gap-2"
-                            data-bs-target="#addstudent"
-                            data-bs-toggle="modal"
+                            className='dropdown-item d-flex align-items-center gap-2 py-2'
+                            data-bs-target='#addstudent'
+                            data-bs-toggle='modal'
                             onClick={() => setDetail(student)}
                           >
-                            <i className="bi bi-pencil-square"></i> Edit
+                            <i className='bi bi-pencil-square text-primary'></i>
+                            <span>Edit Data</span>
                           </button>
                         </li>
                         <li>
                           <button
-                            className="dropdown-item d-flex align-items-center gap-2 text-danger"
+                            className='dropdown-item d-flex align-items-center gap-2 py-2 text-danger'
                             disabled={isLoading}
                             onClick={() => deleteHandler(student.id)}
                           >
-                            <i className="bi bi-person-x-fill"></i> Hapus
+                            <i className='bi bi-trash3'></i>
+                            <span>Hapus</span>
                           </button>
                         </li>
                       </ul>
                     </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan='7' className='text-center py-5'>
+                  <div className='d-flex flex-column align-items-center text-muted'>
+                    <i className='bi bi-inbox fs-1 mb-3'></i>
+                    <span className='fw-medium'>Data siswa belum tersedia</span>
+                    <small>Silakan tambahkan data siswa baru</small>
                   </div>
-
-                  <div className="d-flex flex-column gap-2">
-                    <div className="d-flex align-items-center gap-2">
-                      <i className="bi bi-calendar-event text-primary"></i>
-                      <span className="small">
-                        Tahun Ajaran: <b>{student.periode_name}</b>
-                      </span>
-                    </div>
-                    <div className="d-flex align-items-center gap-2">
-                      <i className="bi bi-calendar-plus text-primary"></i>
-                      <span className="small">
-                        Tahun Masuk: <b>{student.entry}</b>
-                      </span>
-                    </div>
-
-                    <div className="d-flex align-items-center gap-2">
-                      <i className="bi bi-building text-primary"></i>
-                      <span className="small">
-                        Satuan: <b>{student.homebase}</b>
-                      </span>
-                    </div>
-                    <div className="d-flex align-items-center gap-2">
-                      <i className="bi bi-mortarboard-fill text-primary"></i>
-                      <span className="small">
-                        Kelas: <b>{student.classname}</b>
-                      </span>
-                    </div>
-
-                    <div className="d-flex align-items-center gap-2 mb-1">
-                      <i
-                        className={`bi ${
-                          student.gender === "L"
-                            ? "bi-gender-male"
-                            : "bi-gender-female"
-                        } text-primary`}
-                      ></i>
-                      <span className="small">
-                        Gender:{" "}
-                        <b>
-                          {student.gender === "L" ? "Laki-laki" : "Perempuan"}
-                        </b>
-                      </span>
-                    </div>
-                  </div>
-
-                  <p className="m-0 text-muted small text-end">
-                    #{(page - 1) * limit + i + 1}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))
-        ) : (
-          <div className="col-12">
-            <div className="d-flex flex-column align-items-center justify-content-center py-5 text-muted gap-2">
-              <i className="bi bi-inbox fs-1"></i>
-              <span className="fs-5">Data tidak tersedia</span>
-            </div>
-          </div>
-        )}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </Table>
   );

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import * as Md from "react-icons/md";
-import TableLoader from "../loader/TableLoader";
+import LoadingScreen from "../loader/LoadingScreen";
 
 const Table = ({
   children,
@@ -142,7 +142,7 @@ const Table = ({
 
         {/* Table */}
         <div className='rounded-lg'>
-          {isLoading ? <TableLoader /> : children}
+          {isLoading ? <LoadingScreen /> : children}
         </div>
 
         {/* Pagination and Info */}
