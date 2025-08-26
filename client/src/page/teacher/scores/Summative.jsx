@@ -165,10 +165,10 @@ const Summative = ({
         "NIS",
         "Nama Siswa",
         "Lisan",
-        "Tulisan",
+        "Tulis",
         "Proyek",
         "Keterampilan",
-        "rata-rata",
+        "Rerata",
       ],
     ];
 
@@ -279,28 +279,28 @@ const Summative = ({
         className='text-center align-middle'
         style={{ backgroundColor: "#fff3cd" }}
       >
-        <div>Oral</div>
+        <div>Lisan</div>
       </th>,
       <th
         key='written'
         className='text-center align-middle'
         style={{ backgroundColor: "#fff3cd" }}
       >
-        <div>Written</div>
+        <div>Tulis</div>
       </th>,
       <th
         key='project'
         className='text-center align-middle'
         style={{ backgroundColor: "#fff3cd" }}
       >
-        <div>Project</div>
+        <div>Proyek</div>
       </th>,
       <th
         key='performace'
         className='text-center align-middle'
         style={{ backgroundColor: "#fff3cd" }}
       >
-        <div>Performace</div>
+        <div>Keterampilan</div>
       </th>,
     ];
   };
