@@ -164,10 +164,10 @@ const Summative = ({
       [
         "NIS",
         "Nama Siswa",
-        "Oral",
-        "Written",
-        "Project",
-        "Performace",
+        "Lisan",
+        "Tulisan",
+        "Proyek",
+        "Keterampilan",
         "rata-rata",
       ],
     ];
@@ -275,29 +275,29 @@ const Summative = ({
   const renderSumatifColumns = () => {
     return [
       <th
-        key="oral"
-        className="text-center align-middle"
+        key='oral'
+        className='text-center align-middle'
         style={{ backgroundColor: "#fff3cd" }}
       >
         <div>Oral</div>
       </th>,
       <th
-        key="written"
-        className="text-center align-middle"
+        key='written'
+        className='text-center align-middle'
         style={{ backgroundColor: "#fff3cd" }}
       >
         <div>Written</div>
       </th>,
       <th
-        key="project"
-        className="text-center align-middle"
+        key='project'
+        className='text-center align-middle'
         style={{ backgroundColor: "#fff3cd" }}
       >
         <div>Project</div>
       </th>,
       <th
-        key="performace"
-        className="text-center align-middle"
+        key='performace'
+        className='text-center align-middle'
         style={{ backgroundColor: "#fff3cd" }}
       >
         <div>Performace</div>
@@ -308,56 +308,56 @@ const Summative = ({
   const renderSumatifInputs = (student) => {
     const studentScores = summativeScores[student.student] || {};
     return [
-      <td key="oral" className="text-center align-middle">
+      <td key='oral' className='text-center align-middle'>
         <input
-          type="number"
-          className="form-control form-control-sm text-center"
-          min="0"
-          max="100"
+          type='number'
+          className='form-control form-control-sm text-center'
+          min='0'
+          max='100'
           value={studentScores.oral ?? ""}
           onChange={(e) =>
             handleScoreChange(student.student, "oral", e.target.value)
           }
-          placeholder="0-100"
+          placeholder='0-100'
         />
       </td>,
-      <td key="written" className="text-center align-middle">
+      <td key='written' className='text-center align-middle'>
         <input
-          type="number"
-          className="form-control form-control-sm text-center"
-          min="0"
-          max="100"
+          type='number'
+          className='form-control form-control-sm text-center'
+          min='0'
+          max='100'
           value={studentScores.written ?? ""}
           onChange={(e) =>
             handleScoreChange(student.student, "written", e.target.value)
           }
-          placeholder="0-100"
+          placeholder='0-100'
         />
       </td>,
-      <td key="project" className="text-center align-middle">
+      <td key='project' className='text-center align-middle'>
         <input
-          type="number"
-          className="form-control form-control-sm text-center"
-          min="0"
-          max="100"
+          type='number'
+          className='form-control form-control-sm text-center'
+          min='0'
+          max='100'
           value={studentScores.project ?? ""}
           onChange={(e) =>
             handleScoreChange(student.student, "project", e.target.value)
           }
-          placeholder="0-100"
+          placeholder='0-100'
         />
       </td>,
-      <td key="performace" className="text-center align-middle">
+      <td key='performace' className='text-center align-middle'>
         <input
-          type="number"
-          className="form-control form-control-sm text-center"
-          min="0"
-          max="100"
+          type='number'
+          className='form-control form-control-sm text-center'
+          min='0'
+          max='100'
           value={studentScores.performace ?? ""}
           onChange={(e) =>
             handleScoreChange(student.student, "performace", e.target.value)
           }
-          placeholder="0-100"
+          placeholder='0-100'
         />
       </td>,
     ];
@@ -405,34 +405,34 @@ const Summative = ({
   return (
     <>
       <Upload
-        type="summative"
-        title="Upload Penilaian Sumatif"
+        type='summative'
+        title='Upload Penilaian Sumatif'
         onSubmit={onSubmit}
         inputRef={inputRef}
         setFile={setFile}
       />
-      <div className="card">
-        <div className="card-header d-flex justify-content-between align-items-center">
-          <h5 className="card-title mb-0">Penilaian Sumatif</h5>
+      <div className='card'>
+        <div className='card-header d-flex justify-content-between align-items-center'>
+          <h5 className='card-title mb-0'>Penilaian Sumatif</h5>
 
-          <div className="d-flex gap-2">
+          <div className='d-flex gap-2'>
             <button
-              className="btn btn-sm btn-outline-success"
-              data-bs-toggle="modal"
-              data-bs-target="#upload-score"
+              className='btn btn-sm btn-outline-success'
+              data-bs-toggle='modal'
+              data-bs-target='#upload-score'
             >
-              <i className="bi bi-upload"></i> Upload
+              <i className='bi bi-upload'></i> Upload
             </button>
             <button
-              className="btn btn-sm btn-outline-success"
+              className='btn btn-sm btn-outline-success'
               onClick={onDownload}
             >
-              <i className="bi bi-download"></i> Download
+              <i className='bi bi-download'></i> Download
             </button>
           </div>
         </div>
-        <div className="card-body">
-          <div className="table-responsive">
+        <div className='card-body'>
+          <div className='table-responsive'>
             <Table
               isLoading={isLoading}
               totalData={totalData}
@@ -443,40 +443,40 @@ const Summative = ({
               setLimit={setLimit}
               setSearch={setSearch}
             >
-              <table className="table table-bordered table-striped table-hover">
+              <table className='table table-bordered table-striped table-hover'>
                 <thead>
                   <tr>
-                    <th className="text-center align-middle">No</th>
-                    <th className="text-center align-middle">NIS</th>
-                    <th className="text-center align-middle">Nama Siswa</th>
+                    <th className='text-center align-middle'>No</th>
+                    <th className='text-center align-middle'>NIS</th>
+                    <th className='text-center align-middle'>Nama Siswa</th>
                     {renderSumatifColumns()}
-                    <th className="text-center align-middle">Rata2</th>
-                    <th className="text-center align-middle">Aksi</th>
+                    <th className='text-center align-middle'>Rata2</th>
+                    <th className='text-center align-middle'>Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data?.students?.map((student, index) => (
                     <tr key={student.id}>
-                      <td className="text-center align-middle">
+                      <td className='text-center align-middle'>
                         {(page - 1) * limit + index + 1}
                       </td>
-                      <td className="text-center align-middle">
+                      <td className='text-center align-middle'>
                         {student.nis}
                       </td>
-                      <td className="align-middle">{student.student_name}</td>
+                      <td className='align-middle'>{student.student_name}</td>
                       {renderSumatifInputs(student)}
-                      <td className="text-center align-middle">
-                        <span className="fw-bold text-primary">
+                      <td className='text-center align-middle'>
+                        <span className='fw-bold text-primary'>
                           {calculateAverage(student.student)}
                         </span>
                       </td>
-                      <td className="text-center align-middle">
+                      <td className='text-center align-middle'>
                         <button
-                          className="btn btn-sm btn-primary"
+                          className='btn btn-sm btn-primary'
                           onClick={() => handleSave(student)}
                           disabled={isSaving}
                         >
-                          <i className="bi bi-floppy"></i>
+                          <i className='bi bi-floppy'></i>
                         </button>
                       </td>
                     </tr>
