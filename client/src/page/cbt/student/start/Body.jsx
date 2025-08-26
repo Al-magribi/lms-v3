@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   useAddAnswerMutation,
   useGetStudentAnswerQuery,
@@ -28,8 +28,10 @@ const Body = ({
 }) => {
   const { examid } = useParams();
 
-  // Get the current question based on currentPage
-  const currentQuestion = questionsData[currentPage - 1] || {};
+  // Memoize the current question to prevent unnecessary re-renders
+  const currentQuestion = useMemo(() => {
+    return questionsData[currentPage - 1] || {};
+  }, [questionsData, currentPage]);
 
   // ANSWER
   const [essay, setEssay] = useState("");
@@ -46,7 +48,7 @@ const Body = ({
   const [addAnswer, { isLoading, isSuccess, isError, reset }] =
     useAddAnswerMutation();
 
-  // Load saved answers when component mounts
+  // Load saved answers when component mounts or when answer data changes
   useEffect(() => {
     if (answer) {
       const savedAnswers = {};
@@ -62,16 +64,12 @@ const Body = ({
         }
       });
       setAnswers(savedAnswers);
-      // Set initial key if there's an answer for current question
-      if (currentQuestion && savedAnswers[currentQuestion.id]?.mc) {
-        setKey(savedAnswers[currentQuestion.id].mc);
-      }
     }
-  }, [answer, currentQuestion]);
+  }, [answer]);
 
-  // Update key when changing questions
+  // Update key and essay when changing questions
   useEffect(() => {
-    if (currentQuestion && answers[currentQuestion.id]) {
+    if (currentQuestion && currentQuestion.id && answers[currentQuestion.id]) {
       if (currentQuestion.qtype === 2) {
         setEssay(answers[currentQuestion.id].essay || "");
       } else {
@@ -81,7 +79,7 @@ const Body = ({
       setKey("");
       setEssay("");
     }
-  }, [currentQuestion, answers]);
+  }, [currentQuestion?.id, currentQuestion?.qtype, answers]);
 
   const handleSubmit = async (selectedKey = null) => {
     if (!currentQuestion) return;
@@ -143,18 +141,21 @@ const Body = ({
     onPrevious();
   };
 
+  // Handle success and error states
   useEffect(() => {
     if (isError) {
       reset();
     }
+  }, [isError, reset]);
 
+  useEffect(() => {
     if (isSuccess) {
       reset();
     }
-  }, [isError, reset, isSuccess]);
+  }, [isSuccess, reset]);
 
   return (
-    <div className="container-fluid mt-2">
+    <div className='container-fluid mt-2'>
       <Navigation
         currentPage={currentPage}
         questionsLength={questionsData.length}
@@ -167,14 +168,14 @@ const Body = ({
         answers={answers}
       />
 
-      <div className="row g-2">
+      <div className='row g-2'>
         {/* Question Column */}
-        <div className="col-lg-5 col-12">
+        <div className='col-lg-5 col-12'>
           <QuestionCard question={currentQuestion.question} />
         </div>
 
         {/* Answer Column */}
-        <div className="col-lg-5 col-12">
+        <div className='col-lg-5 col-12'>
           <AnswerCard
             currentQuestion={currentQuestion}
             answers={answers}
@@ -187,7 +188,7 @@ const Body = ({
         </div>
 
         {/* Question Numbers Column */}
-        <div className="col-lg-2 col-12">
+        <div className='col-lg-2 col-12'>
           <QuestionNumbers
             questionsData={questionsData}
             currentPage={currentPage}

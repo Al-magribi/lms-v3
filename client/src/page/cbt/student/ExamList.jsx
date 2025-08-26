@@ -52,7 +52,8 @@ const ExamList = ({ classid }) => {
           <select
             className='form-select'
             value={limit}
-            onChange={handleLimitChange}>
+            onChange={handleLimitChange}
+          >
             <option value='5'>5 per halaman</option>
             <option value='10'>10 per halaman</option>
             <option value='25'>25 per halaman</option>
@@ -70,83 +71,130 @@ const ExamList = ({ classid }) => {
         </div>
       ) : (
         <>
-          {/* Exam Cards */}
-          <div className='row g-3 mb-4'>
-            {exams?.length > 0 ? (
-              exams?.map((item, index) => (
-                <div key={item.id} className='col-12 col-md-6 col-lg-4'>
-                  <div className='card h-100 shadow-sm border hover-shadow'>
-                    <div className='card-body'>
-                      <div className='d-flex justify-content-between align-items-start mb-3'>
-                        <h5 className='card-title text-primary mb-0 fw-bold'>
-                          {item.name}
-                        </h5>
+          {/* Responsive Table */}
+          <div className='table-responsive'>
+            <table className='table table-hover table-striped align-middle'>
+              <thead className='table-light'>
+                <tr>
+                  <th scope='col' className='fw-bold'>
+                    Nama Ujian
+                  </th>
+                  <th scope='col' className='fw-bold d-none d-md-table-cell'>
+                    Guru
+                  </th>
+                  <th scope='col' className='fw-bold d-none d-lg-table-cell'>
+                    Durasi
+                  </th>
+                  <th scope='col' className='fw-bold text-center'>
+                    Status
+                  </th>
+                  <th scope='col' className='fw-bold text-center'>
+                    Aksi
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {exams?.length > 0 ? (
+                  exams?.map((item, index) => (
+                    <tr key={item.id} className='align-middle'>
+                      <td>
+                        <div className='d-flex flex-column'>
+                          <span
+                            className={`${
+                              item.isactive ? "text-primary" : "text-danger"
+                            }`}
+                          >
+                            {item.name}
+                          </span>
+                          {/* Show teacher and duration on mobile */}
+                          <div className='d-md-none'>
+                            <small className='text-muted'>
+                              <i className='bi bi-person-circle me-1'></i>
+                              {item.teacher_name}
+                            </small>
+                            <br />
+                            <small className='text-muted'>
+                              <i className='bi bi-clock me-1'></i>
+                              {item.duration} Menit
+                            </small>
+                          </div>
+                        </div>
+                      </td>
+                      <td className='d-none d-md-table-cell'>
+                        <div className='d-flex align-items-center'>
+                          <i className='bi bi-person-circle me-2 text-muted'></i>
+                          <span>{item.teacher_name}</span>
+                        </div>
+                      </td>
+                      <td className='d-none d-lg-table-cell'>
+                        <div className='d-flex align-items-center'>
+                          <i className='bi bi-clock me-2 text-muted'></i>
+                          <span>{item.duration} Menit</span>
+                        </div>
+                      </td>
+                      <td className='text-center'>
                         {item.isactive ? (
                           <span className='badge rounded-pill bg-success px-3 py-2'>
                             <i className='bi bi-check-circle me-1'></i>
-                            Aktif
+                            <span className='d-none d-sm-inline'>Aktif</span>
                           </span>
                         ) : (
                           <span className='badge rounded-pill bg-danger px-3 py-2'>
                             <i className='bi bi-x-circle me-1'></i>
-                            Nonaktif
+                            <span className='d-none d-sm-inline'>Nonaktif</span>
                           </span>
                         )}
-                      </div>
-
-                      <div className='mb-3'>
-                        <div className='d-flex align-items-center text-muted mb-2'>
-                          <i className='bi bi-person-circle me-2'></i>
-                          <span>{item.teacher_name}</span>
-                        </div>
-                        <div className='d-flex align-items-center text-muted'>
-                          <i className='bi bi-clock me-2'></i>
-                          <span>{item.duration} Menit</span>
-                        </div>
-                      </div>
-
-                      <div className='d-grid'>
+                      </td>
+                      <td className='text-center'>
                         <button
                           className='btn btn-sm btn-primary rounded-pill'
                           data-bs-toggle='modal'
                           data-bs-target='#token'
                           disabled={!item.isactive}
-                          onClick={() => setExam(item)}>
-                          <i className='bi bi-reception-4 me-2'></i>
-                          Ikuti Ujian
+                          onClick={() => setExam(item)}
+                        >
+                          <i className='bi bi-reception-4 me-1'></i>
+                          <span className='d-none d-sm-inline'>
+                            Ikuti Ujian
+                          </span>
+                          <span className='d-sm-none'>Mulai</span>
                         </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan='5' className='text-center py-5'>
+                      <div className='text-muted'>
+                        <i className='bi bi-inbox fs-1 d-block mb-3'></i>
+                        <h5>Data Belum Tersedia</h5>
+                        <p className='text-muted mb-0'>
+                          {search
+                            ? "Tidak ada ujian yang sesuai dengan pencarian Anda"
+                            : "Belum ada ujian yang tersedia saat ini"}
+                        </p>
                       </div>
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className='col-12'>
-                <div className='text-center py-5 text-muted'>
-                  <i className='bi bi-inbox fs-1 d-block mb-3'></i>
-                  <h5>Data Belum Tersedia</h5>
-                  <p className='text-muted mb-0'>
-                    {search
-                      ? "Tidak ada ujian yang sesuai dengan pencarian Anda"
-                      : "Belum ada ujian yang tersedia saat ini"}
-                  </p>
-                </div>
-              </div>
-            )}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
 
           {/* Pagination */}
           {totalPages > 0 && (
             <nav
               aria-label='Page navigation'
-              className='d-flex justify-content-between align-items-center'>
+              className='d-flex justify-content-between align-items-center mt-4'
+            >
               <div className='text-muted'>{totalData} Ujian Tersedia</div>
               <ul className='pagination pagination-sm mb-0'>
                 <li className={`page-item ${page === 1 ? "disabled" : ""}`}>
                   <button
                     className='page-link'
                     onClick={() => handlePageChange(page - 1)}
-                    disabled={page === 1}>
+                    disabled={page === 1}
+                  >
                     <i className='bi bi-chevron-left'></i>
                   </button>
                 </li>
@@ -155,10 +203,12 @@ const ExamList = ({ classid }) => {
                     key={index + 1}
                     className={`page-item ${
                       page === index + 1 ? "active" : ""
-                    }`}>
+                    }`}
+                  >
                     <button
                       className='page-link'
-                      onClick={() => handlePageChange(index + 1)}>
+                      onClick={() => handlePageChange(index + 1)}
+                    >
                       {index + 1}
                     </button>
                   </li>
@@ -166,11 +216,13 @@ const ExamList = ({ classid }) => {
                 <li
                   className={`page-item ${
                     page === totalPages ? "disabled" : ""
-                  }`}>
+                  }`}
+                >
                   <button
                     className='page-link'
                     onClick={() => handlePageChange(page + 1)}
-                    disabled={page === totalPages}>
+                    disabled={page === totalPages}
+                  >
                     <i className='bi bi-chevron-right'></i>
                   </button>
                 </li>
@@ -189,12 +241,29 @@ export default ExamList;
 
 // Add this CSS to your stylesheet
 /*
-.hover-shadow {
-  transition: all 0.3s ease;
+.table-responsive {
+  border-radius: 0.5rem;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
 }
-.hover-shadow:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+
+.table {
+  margin-bottom: 0;
+}
+
+.table th {
+  border-top: none;
+  font-weight: 600;
+  color: #495057;
+  background-color: #f8f9fa;
+}
+
+.table td {
+  vertical-align: middle;
+  border-color: #dee2e6;
+}
+
+.table-hover tbody tr:hover {
+  background-color: rgba(0, 123, 255, 0.05);
 }
 
 .page-link {
@@ -219,5 +288,16 @@ export default ExamList;
   background-color: transparent;
   color: #6c757d;
   opacity: 0.5;
+}
+
+@media (max-width: 768px) {
+  .table-responsive {
+    font-size: 0.875rem;
+  }
+  
+  .btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+  }
 }
 */
