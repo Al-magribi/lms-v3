@@ -107,114 +107,160 @@ const ChapterCard = ({ item, index, moveCard, id, setDetail }) => {
 
   return (
     <div
-      className='col-12'
+      className="col-12 mb-3"
       ref={ref}
       style={{ opacity }}
       data-handler-id={handlerId}
     >
-      <div className={`card ${isDragging ? "shadow-lg" : "shadow"}`}>
-        <div className='card-header d-flex justify-content-between'>
-          <ul className='nav nav-tabs card-header-tabs'>
-            <li className='nav-item'>
-              <p
-                className={`nav-link ${
-                  activeTab === "chapter" ? "active" : ""
-                }`}
-                onClick={() => setActiveTab("chapter")}
-                style={{ cursor: "pointer" }}
-              >
-                Bab {index + 1}
-              </p>
-            </li>
-            <li className='nav-item'>
-              <p
-                className={`nav-link ${
-                  activeTab === "content" ? "active" : ""
-                }`}
-                onClick={() => setActiveTab("content")}
-                style={{ cursor: "pointer" }}
-              >
-                Materi
-              </p>
-            </li>
-          </ul>
+      <div
+        className={`card border-0 shadow-sm ${isDragging ? "shadow-lg" : ""}`}
+      >
+        <div className="card-header bg-gradient-primary text-white border-0">
+          <div className="d-flex justify-content-between align-items-center">
+            <div className="d-flex align-items-center">
+              <div className="me-3">
+                <span className="badge bg-light text-primary fs-6 fw-bold px-3 py-2">
+                  Bab {index + 1}
+                </span>
+              </div>
+              <div className="nav nav-pills">
+                <button
+                  className={`nav-link btn-sm me-2 ${
+                    activeTab === "chapter"
+                      ? "active bg-white text-primary"
+                      : "text-white"
+                  }`}
+                  onClick={() => setActiveTab("chapter")}
+                >
+                  <i className="bi bi-book me-1"></i>
+                  Detail
+                </button>
+                <button
+                  className={`nav-link btn-sm ${
+                    activeTab === "content"
+                      ? "active bg-white text-primary"
+                      : "text-white"
+                  }`}
+                  onClick={() => setActiveTab("content")}
+                >
+                  <i className="bi bi-collection me-1"></i>
+                  Materi ({item.content || 0})
+                </button>
+              </div>
+            </div>
 
-          <div className='d-flex gap-2'>
-            <button
-              className='btn btn-sm btn-danger'
-              disabled={isLoading}
-              onClick={() => deleteHandler(item.chapter_id)}
-            >
-              <i className='bi bi-folder-x'></i>
-            </button>
-            <button
-              className='btn btn-sm btn-warning'
-              onClick={() => setDetail(item)}
-            >
-              <i className='bi bi-pencil-square'></i>
-            </button>
-            <button
-              className='btn btn-sm btn-primary'
-              data-bs-toggle='modal'
-              data-bs-target={`#content-${item.chapter_id}`}
-            >
-              <i className='bi bi-folder-plus'></i>
-            </button>
-
-            <button className='btn btn-sm btn-secondary'>
-              <i className='bi bi-arrows-move'></i>
-            </button>
+            <div className="d-flex gap-2">
+              <button
+                className="btn btn-sm btn-light text-primary"
+                title="Lihat Detail"
+                onClick={() => setDetail(item)}
+              >
+                <i className="bi bi-eye"></i>
+              </button>
+              <button
+                className="btn btn-sm btn-warning"
+                title="Edit Bab"
+                onClick={() => setDetail(item)}
+              >
+                <i className="bi bi-pencil-square"></i>
+              </button>
+              <button
+                className="btn btn-sm btn-info text-white"
+                title="Tambah Materi"
+                data-bs-toggle="modal"
+                data-bs-target={`#add-content-${item.chapter_id}`}
+              >
+                <i className="bi bi-plus-circle"></i>
+              </button>
+              <button
+                className="btn btn-sm btn-danger"
+                title="Hapus Bab"
+                disabled={isLoading}
+                onClick={() => deleteHandler(item.chapter_id)}
+              >
+                {isLoading ? (
+                  <span
+                    className="spinner-border spinner-border-sm"
+                    role="status"
+                    aria-hidden="true"
+                  ></span>
+                ) : (
+                  <i className="bi bi-trash"></i>
+                )}
+              </button>
+              <button
+                className="btn btn-sm btn-secondary"
+                title="Pindahkan"
+                style={{ cursor: "grab" }}
+              >
+                <i className="bi bi-grip-vertical"></i>
+              </button>
+            </div>
           </div>
         </div>
-        <div className='card-body'>
+
+        <div className="card-body p-0">
           {activeTab === "chapter" ? (
-            <Chapter item={item} />
+            <div className="p-4">
+              <Chapter item={item} />
+            </div>
           ) : (
             <ContentList contents={item.contents} chapterId={item.chapter_id} />
           )}
         </div>
-        <div className='card-footer text-body-secondary'>
-          <div className='d-flex flex-column flex-wrap gap-2'>
-            <div className='d-flex gap-2 flex-wrap align-items-center'>
-              <p className='m-0 mb-1'>
-                <i className='bi bi-person-workspace me-1'></i>
-                Guru Pengampu: <strong>{item.teacher_name}</strong>
-              </p>
 
-              <p className='m-0'>
-                <i className='bi bi-book me-1'></i>
-                Materi <span className='badge bg-primary'>{item.content}</span>
-              </p>
-              <p className='m-0'>
-                <i className='bi bi-file-earmark me-1'></i>
-                File <span className='badge bg-info'>{item.file}</span>
-              </p>
-              <p className='m-0'>
-                <i className='bi bi-camera-video me-1'></i>
-                Video <span className='badge bg-success'>{item.video}</span>
-              </p>
+        <div className="card-footer bg-light border-0">
+          <div className="row g-3">
+            <div className="col-md-6">
+              <div className="d-flex align-items-center text-muted mb-2">
+                <i className="bi bi-person-workspace me-2 text-primary"></i>
+                <span className="small">
+                  <strong>Guru:</strong> {item.teacher_name}
+                </span>
+              </div>
+
+              <div className="d-flex gap-3">
+                <span className="badge bg-primary">
+                  <i className="bi bi-book me-1"></i>
+                  Materi: {item.content || 0}
+                </span>
+                <span className="badge bg-info">
+                  <i className="bi bi-file-earmark me-1"></i>
+                  File: {item.file || 0}
+                </span>
+                <span className="badge bg-success">
+                  <i className="bi bi-camera-video me-1"></i>
+                  Video: {item.video || 0}
+                </span>
+              </div>
             </div>
 
-            {Object.entries(groupedClasses).map(([grade, classes]) => (
-              <div key={grade} className='mb-1 d-flex gap-4'>
-                <p className='m-0'>
-                  <i className='bi bi-mortarboard me-1'></i>
-                  Tingkat: <strong>{grade}</strong>
-                </p>
-
-                <p className='m-0'>
-                  <i className='bi bi-people me-1'></i>
-                  Kelas:
-                  <strong className='ms-2'>
-                    {classes.map((cls) => cls.name).join(", ")}
-                  </strong>
-                </p>
-              </div>
-            ))}
+            <div className="col-md-6">
+              {Object.entries(groupedClasses).map(([grade, classes]) => (
+                <div key={grade} className="mb-2">
+                  <div className="d-flex align-items-center text-muted mb-1">
+                    <i className="bi bi-mortarboard me-2 text-primary"></i>
+                    <span className="small">
+                      <strong>Tingkat {grade}</strong>
+                    </span>
+                  </div>
+                  <div className="d-flex flex-wrap gap-1">
+                    {classes.map((cls) => (
+                      <span key={cls.id} className="badge bg-secondary">
+                        {cls.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
-      <ModalAddContent chapter={item} modalId={`content-${item.chapter_id}`} />
+      <ModalAddContent
+        modalId={`add-content-${item.chapter_id}`}
+        chapter={item}
+      />
     </div>
   );
 };

@@ -1,23 +1,27 @@
 import React, { useState, useEffect } from "react";
-import Modal from "./Modal";
 import { toast } from "react-hot-toast";
 import {
   useDeleteFileMutation,
   useDeleteContentMutation,
 } from "../../../controller/api/lms/ApiChapter";
-import ModalAddContent from "../chapter/ModalAddContent";
 import Swal from "sweetalert2";
 import { useDrag, useDrop } from "react-dnd";
+import EditContent from "./EditContent";
+import FileUpload from "./FileUpload";
+import YouTubeUpload from "./YouTubeUpload";
+import EditFile from "./EditFile";
+import EditVideo from "./EditVideo";
 
 const createMarkup = (html) => {
   return { __html: html };
 };
 
 const ContentCard = ({ content, chapterId, index, moveContent, id }) => {
-  const [modalTitle, setModalTitle] = useState("");
-  const [selectedContent, setSelectedContent] = useState(null);
-  const modalId = `file-${content.content_id}`;
-  const editModalId = `edit-content-${content.content_id}`;
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [showFileUpload, setShowFileUpload] = useState(false);
+  const [showYouTubeUpload, setShowYouTubeUpload] = useState(false);
+  const [editingFile, setEditingFile] = useState(null);
+  const [editingVideo, setEditingVideo] = useState(null);
   const [deleteFile] = useDeleteFileMutation();
   const [deleteContent] = useDeleteContentMutation();
   const ref = React.useRef(null);
@@ -79,36 +83,21 @@ const ContentCard = ({ content, chapterId, index, moveContent, id }) => {
     window.open(link, "_blank");
   };
 
-  const handleModalOpen = (type) => {
-    const contentData = {
-      id: content.content_id,
-      title: content.content_title,
-      target: content.content_target,
-      files: Array.isArray(content.files) ? content.files : [],
-      video: Array.isArray(content.videos) ? content.video : [],
-      chapterId,
-    };
-
-    setSelectedContent(contentData);
-
-    if (type === "file") {
-      setModalTitle(`File: ${content.content_title}`);
-    } else if (type === "youtube") {
-      setModalTitle(`Youtube URL: ${content.content_title}`);
-    }
-  };
-
-  const handleModalClose = () => {
-    setModalTitle("");
-    setSelectedContent(null);
+  const handleSuccess = () => {
+    setShowEditForm(false);
+    setShowFileUpload(false);
+    setShowYouTubeUpload(false);
+    setEditingFile(null);
+    setEditingVideo(null);
   };
 
   const handleDeleteFile = async (id, type) => {
-    toast.promise(deleteFile(id).unwrap(), {
-      loading: "Menghapus...",
-      success: `${type} berhasil dihapus`,
-      error: (err) => `Error: ${err.data?.message || "Terjadi kesalahan"}`,
-    });
+    try {
+      await deleteFile(id).unwrap();
+      toast.success(`${type} berhasil dihapus`);
+    } catch (error) {
+      toast.error(error.data?.message || "Terjadi kesalahan");
+    }
   };
 
   const handleDeleteContent = () => {
@@ -130,137 +119,273 @@ const ContentCard = ({ content, chapterId, index, moveContent, id }) => {
           {
             loading: "Menghapus materi...",
             success: (message) => message,
-            error: (err) => err.data.message,
+            error: (err) => err.data?.message || "Terjadi kesalahan",
           }
         );
       }
     });
   };
 
-  useEffect(() => {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-      modal.addEventListener("hidden.bs.modal", handleModalClose);
-      return () => {
-        modal.removeEventListener("hidden.bs.modal", handleModalClose);
-      };
-    }
-  }, [modalId]);
-
   return (
-    <div
-      className='container'
-      ref={ref}
-      style={{ opacity }}
-      data-handler-id={handlerId}
-    >
-      <div className='row'>
-        <div className='col-12'>
-          <div className={`card ${isDragging ? "shadow-lg" : ""}`}>
-            <div className='card-body'>
-              <div className='card-title d-flex align-items-center justify-content-between'>
-                <h6 className='m-0'>Materi: {content.content_title}</h6>
-                <div className='d-flex gap-2'>
-                  <button
-                    className='btn btn-sm btn-danger'
-                    data-bs-toggle='modal'
-                    data-bs-target={`#${modalId}`}
-                    onClick={() => handleModalOpen("youtube")}
-                  >
-                    <i className='bi bi-youtube'></i>
-                  </button>
+    <>
+      {" "}
+      <div
+        className="container mb-3"
+        ref={ref}
+        style={{ opacity }}
+        data-handler-id={handlerId}
+      >
+        <div className="row">
+          <div className="col-12">
+            <div
+              className={`card border-0 shadow-sm ${
+                isDragging ? "shadow-lg" : ""
+              }`}
+            >
+              <div className="card-header bg-light border-0">
+                <div className="d-flex justify-content-between align-items-center">
+                  <div className="d-flex align-items-center">
+                    <span className="badge bg-primary me-2">
+                      <i className="bi bi-collection me-1"></i>
+                      Materi {index + 1}
+                    </span>
+                    <h6 className="m-0 fw-bold text-primary">
+                      {content.content_title}
+                    </h6>
+                  </div>
 
-                  <button
-                    className='btn btn-sm btn-primary'
-                    data-bs-toggle='modal'
-                    data-bs-target={`#${modalId}`}
-                    onClick={() => handleModalOpen("file")}
-                  >
-                    <i className='bi bi-files'></i>
-                  </button>
+                  <div className="d-flex gap-2">
+                    <button
+                      className="btn btn-sm btn-outline-danger"
+                      title="Tambah Video Youtube"
+                      onClick={() => setShowYouTubeUpload(true)}
+                    >
+                      <i className="bi bi-youtube"></i>
+                    </button>
 
-                  <button
-                    className='btn btn-sm btn-warning'
-                    data-bs-toggle='modal'
-                    data-bs-target={`#${editModalId}`}
-                  >
-                    <i className='bi bi-pencil-square'></i>
-                  </button>
+                    <button
+                      className="btn btn-sm btn-outline-primary"
+                      title="Tambah File"
+                      onClick={() => setShowFileUpload(true)}
+                    >
+                      <i className="bi bi-file-earmark-plus"></i>
+                    </button>
 
-                  <button
-                    className='btn btn-sm btn-danger'
-                    onClick={handleDeleteContent}
-                  >
-                    <i className='bi bi-trash'></i>
-                  </button>
+                    <button
+                      className="btn btn-sm btn-outline-warning"
+                      title="Edit Materi"
+                      onClick={() => setShowEditForm(true)}
+                    >
+                      <i className="bi bi-pencil-square"></i>
+                    </button>
 
-                  <button className='btn btn-sm btn-secondary'>
-                    <i className='bi bi-arrows-move'></i>
-                  </button>
+                    <button
+                      className="btn btn-sm btn-outline-danger"
+                      title="Hapus Materi"
+                      onClick={handleDeleteContent}
+                    >
+                      <i className="bi bi-trash"></i>
+                    </button>
+
+                    <button
+                      className="btn btn-sm btn-outline-secondary"
+                      title="Pindahkan"
+                      style={{ cursor: "grab" }}
+                    >
+                      <i className="bi bi-grip-vertical"></i>
+                    </button>
+                  </div>
                 </div>
               </div>
-              <div
-                className='card-text'
-                dangerouslySetInnerHTML={createMarkup(content.content_target)}
-              />
-            </div>
-            <div className='card-footer d-flex gap-2 flex-wrap'>
-              {content.files?.map((file, i) => (
-                <div key={i} className='btn-group'>
-                  <button
-                    className='btn btn-sm btn-secondary'
-                    onClick={() => openLink(file.file)}
-                  >
-                    <i className='bi bi-file-earmark-arrow-down me-2'></i>
-                    {file.title}
-                  </button>
-                  <button
-                    className='btn btn-sm btn-danger'
-                    onClick={() => handleDeleteFile(file.id, "File")}
-                  >
-                    <i className='bi bi-x'></i>
-                  </button>
+
+              <div className="card-body">
+                <div
+                  className="content-description"
+                  dangerouslySetInnerHTML={createMarkup(content.content_target)}
+                />
+              </div>
+
+              <div className="card-footer bg-light border-0">
+                <div className="row g-3">
+                  {/* Files Section */}
+                  {content.files?.length > 0 ? (
+                    <div className="col-12">
+                      <h6 className="text-muted mb-2">
+                        <i className="bi bi-file-earmark me-2"></i>
+                        File Materi ({content.files.length})
+                      </h6>
+                      <div className="row g-2">
+                        {content.files?.map((file, i) => (
+                          <div key={i} className="col-12 col-md-6 col-lg-4">
+                            <div className="card border-0 bg-light file-video-card">
+                              <div className="card-body p-3">
+                                <div className="d-flex align-items-center mb-2">
+                                  <i className="bi bi-file-earmark text-primary me-2"></i>
+                                  <span
+                                    className="fw-medium text-truncate"
+                                    title={file.title}
+                                  >
+                                    {file.title}
+                                  </span>
+                                </div>
+                                <div className="d-flex gap-1">
+                                  <button
+                                    className="btn btn-sm btn-primary"
+                                    onClick={() => openLink(file.file)}
+                                    title="Download file"
+                                  >
+                                    <i className="bi bi-download"></i>
+                                  </button>
+                                  <button
+                                    className="btn btn-sm btn-warning"
+                                    onClick={() => setEditingFile(file)}
+                                    title="Edit file"
+                                  >
+                                    <i className="bi bi-pencil"></i>
+                                  </button>
+                                  <button
+                                    className="btn btn-sm btn-danger"
+                                    onClick={() =>
+                                      handleDeleteFile(file.id, "File")
+                                    }
+                                    title="Hapus file"
+                                  >
+                                    <i className="bi bi-trash"></i>
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="col-12">
+                      <div className="text-center text-muted py-3">
+                        <i className="bi bi-file-earmark fs-4 mb-2"></i>
+                        <p className="mb-0">Belum ada file materi</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Videos Section */}
+                  {content.videos?.length > 0 ? (
+                    <div className="col-12">
+                      <h6 className="text-muted mb-2">
+                        <i className="bi bi-youtube me-2"></i>
+                        Video YouTube ({content.videos.length})
+                      </h6>
+                      <div className="row g-2">
+                        {content.videos?.map((video, i) => (
+                          <div key={i} className="col-12 col-md-6 col-lg-4">
+                            <div className="card border-0 bg-light file-video-card">
+                              <div className="card-body p-3">
+                                <div className="d-flex align-items-center mb-2">
+                                  <i className="bi bi-youtube text-danger me-2"></i>
+                                  <span
+                                    className="fw-medium text-truncate"
+                                    title={video.title}
+                                  >
+                                    {video.title}
+                                  </span>
+                                </div>
+                                <div className="d-flex gap-1">
+                                  <button
+                                    className="btn btn-sm btn-danger"
+                                    onClick={() => openYoutube(video.video)}
+                                    title="Tonton video"
+                                  >
+                                    <i className="bi bi-play-circle"></i>
+                                  </button>
+                                  <button
+                                    className="btn btn-sm btn-warning"
+                                    onClick={() => setEditingVideo(video)}
+                                    title="Edit video"
+                                  >
+                                    <i className="bi bi-pencil"></i>
+                                  </button>
+                                  <button
+                                    className="btn btn-sm btn-danger"
+                                    onClick={() =>
+                                      handleDeleteFile(video.id, "Video")
+                                    }
+                                    title="Hapus video"
+                                  >
+                                    <i className="bi bi-trash"></i>
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="col-12">
+                      <div className="text-center text-muted py-3">
+                        <i className="bi bi-youtube fs-4 mb-2"></i>
+                        <p className="mb-0">Belum ada video YouTube</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              ))}
-
-              {content.videos?.map((video, i) => (
-                <div key={i} className='btn-group'>
-                  <button
-                    className='btn btn-sm btn-secondary'
-                    onClick={() => openYoutube(video.video)}
-                  >
-                    <i className='bi bi-youtube me-2'></i>
-                    {video.title}
-                  </button>
-                  <button
-                    className='btn btn-sm btn-danger'
-                    onClick={() => handleDeleteFile(video.id, "Video")}
-                  >
-                    <i className='bi bi-x'></i>
-                  </button>
-                </div>
-              ))}
+              </div>
             </div>
-
-            <Modal
-              title={modalTitle}
-              content={selectedContent}
-              onClose={handleModalClose}
-              modalId={modalId}
-            />
-
-            <ModalAddContent
-              chapter={{
-                chapter_id: chapterId,
-                chapter_name: content.content_title,
-              }}
-              modalId={editModalId}
-              selectedContent={content}
-            />
           </div>
         </div>
       </div>
-    </div>
+      {/* Edit Content Form */}
+      {showEditForm && (
+        <div className="container mb-3">
+          <EditContent
+            content={content}
+            chapterId={chapterId}
+            onCancel={() => setShowEditForm(false)}
+            onSuccess={handleSuccess}
+          />
+        </div>
+      )}
+      {/* File Upload Form */}
+      {showFileUpload && (
+        <div className="container mb-3">
+          <FileUpload
+            content={{ id: content.content_id }}
+            onCancel={() => setShowFileUpload(false)}
+            onSuccess={handleSuccess}
+          />
+        </div>
+      )}
+      {/* YouTube Upload Form */}
+      {showYouTubeUpload && (
+        <div className="container mb-3">
+          <YouTubeUpload
+            content={{ id: content.content_id }}
+            onCancel={() => setShowYouTubeUpload(false)}
+            onSuccess={handleSuccess}
+          />
+        </div>
+      )}
+      {/* Edit File Form */}
+      {editingFile && (
+        <div className="container mb-3">
+          <EditFile
+            file={editingFile}
+            onCancel={() => setEditingFile(null)}
+            onSuccess={handleSuccess}
+          />
+        </div>
+      )}
+      {/* Edit Video Form */}
+      {editingVideo && (
+        <div className="container mb-3">
+          <EditVideo
+            video={editingVideo}
+            onCancel={() => setEditingVideo(null)}
+            onSuccess={handleSuccess}
+          />
+        </div>
+      )}
+    </>
   );
 };
 

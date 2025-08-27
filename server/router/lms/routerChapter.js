@@ -571,4 +571,74 @@ router.post("/update-content-order", authorize("teacher"), async (req, res) => {
   }
 });
 
+// Update file title
+router.put("/update-file", authorize("teacher"), async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { id, title } = req.body;
+    const teacher = req.user.id;
+
+    // Verify that the file belongs to the teacher
+    const fileResult = await client.query(
+      `SELECT f.id 
+       FROM l_file f
+       JOIN l_content c ON f.content = c.id
+       JOIN l_chapter ch ON c.chapter = ch.id
+       WHERE f.id = $1 AND ch.teacher = $2`,
+      [id, teacher]
+    );
+
+    if (fileResult.rows.length === 0) {
+      return res.status(404).json({ message: "File tidak ditemukan" });
+    }
+
+    await client.query(`UPDATE l_file SET title = $1 WHERE id = $2`, [
+      title,
+      id,
+    ]);
+
+    res.status(200).json({ message: update });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+// Update video title and URL
+router.put("/update-video", authorize("teacher"), async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { id, title, video } = req.body;
+    const teacher = req.user.id;
+
+    // Verify that the video belongs to the teacher
+    const videoResult = await client.query(
+      `SELECT f.id 
+       FROM l_file f
+       JOIN l_content c ON f.content = c.id
+       JOIN l_chapter ch ON c.chapter = ch.id
+       WHERE f.id = $1 AND ch.teacher = $2 AND f.video IS NOT NULL`,
+      [id, teacher]
+    );
+
+    if (videoResult.rows.length === 0) {
+      return res.status(404).json({ message: "Video tidak ditemukan" });
+    }
+
+    await client.query(
+      `UPDATE l_file SET title = $1, video = $2 WHERE id = $3`,
+      [title, video, id]
+    );
+
+    res.status(200).json({ message: update });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
+  }
+});
+
 export default router;
