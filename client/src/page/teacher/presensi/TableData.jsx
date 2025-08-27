@@ -5,6 +5,9 @@ import {
   useGetPresensiQuery,
   useAddPresensiMutation,
   useGetAttendanceDatesQuery,
+  useBulkPresensiMutation,
+  useDeletePresensiMutation,
+  useBulkDeletePresensiMutation,
 } from "../../../controller/api/lms/ApiPresensi";
 import { toast } from "react-hot-toast";
 
@@ -15,6 +18,7 @@ const TableData = ({ classid, subjectid }) => {
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split("T")[0]
   );
+  const [selectedStudents, setSelectedStudents] = useState([]);
 
   const { data, isLoading } = useGetStudentsInClassQuery(
     {
@@ -37,8 +41,16 @@ const TableData = ({ classid, subjectid }) => {
   );
 
   const [addPresensi] = useAddPresensiMutation();
+  const [bulkPresensi] = useBulkPresensiMutation();
+  const [deletePresensi] = useDeletePresensiMutation();
+  const [bulkDeletePresensi] = useBulkDeletePresensiMutation();
 
   const { students, totalData, totalPages } = data || {};
+
+  // Reset selected students when date changes
+  useEffect(() => {
+    setSelectedStudents([]);
+  }, [selectedDate]);
 
   const handleCheck = async ({ studentid, note, checked }) => {
     if (!checked) {
@@ -58,6 +70,108 @@ const TableData = ({ classid, subjectid }) => {
         error: (error) => error.data?.message || "Terjadi kesalahan",
       }
     );
+  };
+
+  const handleBulkOperation = async (note) => {
+    if (selectedStudents.length === 0) {
+      toast.error("Pilih siswa terlebih dahulu");
+      return;
+    }
+
+    const data = {
+      classid,
+      subjectid,
+      studentids: selectedStudents,
+      note,
+      date: selectedDate,
+    };
+
+    toast.promise(
+      bulkPresensi(data)
+        .unwrap()
+        .then((res) => {
+          setSelectedStudents([]);
+          return res.message;
+        }),
+      {
+        loading: "Memproses bulk operation...",
+        success: (message) => message,
+        error: (error) => error.data?.message || "Terjadi kesalahan",
+      }
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedStudents.length === 0) {
+      toast.error("Pilih siswa terlebih dahulu");
+      return;
+    }
+
+    // Show confirmation dialog
+    if (
+      !window.confirm(
+        `Apakah Anda yakin ingin menghapus presensi untuk ${selectedStudents.length} siswa yang dipilih?`
+      )
+    ) {
+      return;
+    }
+
+    const data = {
+      classid,
+      subjectid,
+      studentids: selectedStudents,
+      date: selectedDate,
+    };
+
+    toast.promise(
+      bulkDeletePresensi(data)
+        .unwrap()
+        .then((res) => {
+          setSelectedStudents([]);
+          return res.message;
+        }),
+      {
+        loading: "Menghapus presensi...",
+        success: (message) => message,
+        error: (error) => error.data?.message || "Terjadi kesalahan",
+      }
+    );
+  };
+
+  const handleDeleteStudent = async (studentid) => {
+    const data = {
+      classid,
+      subjectid,
+      studentid,
+      date: selectedDate,
+    };
+
+    toast.promise(
+      deletePresensi(data)
+        .unwrap()
+        .then((res) => res.message),
+      {
+        loading: "Menghapus presensi...",
+        success: (message) => message,
+        error: (error) => error.data?.message || "Terjadi kesalahan",
+      }
+    );
+  };
+
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      setSelectedStudents(students.map((student) => student.student));
+    } else {
+      setSelectedStudents([]);
+    }
+  };
+
+  const handleSelectStudent = (studentid, checked) => {
+    if (checked) {
+      setSelectedStudents([...selectedStudents, studentid]);
+    } else {
+      setSelectedStudents(selectedStudents.filter((id) => id !== studentid));
+    }
   };
 
   const formatDate = (dateString) => {
@@ -111,6 +225,58 @@ const TableData = ({ classid, subjectid }) => {
                     max={new Date().toISOString().split("T")[0]}
                   />
                 </div>
+                <div className="col-md-6">
+                  <div className="d-flex gap-2 flex-wrap">
+                    <button
+                      className="btn btn-success btn-sm"
+                      onClick={() => handleBulkOperation("Hadir")}
+                      disabled={selectedStudents.length === 0}
+                    >
+                      <i className="bi bi-check-circle me-1"></i>
+                      Hadir ({selectedStudents.length})
+                    </button>
+                    <button
+                      className="btn btn-warning btn-sm"
+                      onClick={() => handleBulkOperation("Telat")}
+                      disabled={selectedStudents.length === 0}
+                    >
+                      <i className="bi bi-clock-history me-1"></i>
+                      Telat ({selectedStudents.length})
+                    </button>
+                    <button
+                      className="btn btn-primary btn-sm"
+                      onClick={() => handleBulkOperation("Sakit")}
+                      disabled={selectedStudents.length === 0}
+                    >
+                      <i className="bi bi-heart-pulse me-1"></i>
+                      Sakit ({selectedStudents.length})
+                    </button>
+                    <button
+                      className="btn btn-info btn-sm"
+                      onClick={() => handleBulkOperation("Izin")}
+                      disabled={selectedStudents.length === 0}
+                    >
+                      <i className="bi bi-envelope-paper me-1"></i>
+                      Izin ({selectedStudents.length})
+                    </button>
+                    <button
+                      className="btn btn-danger btn-sm"
+                      onClick={() => handleBulkOperation("Alpa")}
+                      disabled={selectedStudents.length === 0}
+                    >
+                      <i className="bi bi-x-circle me-1"></i>
+                      Alpa ({selectedStudents.length})
+                    </button>
+                    <button
+                      className="btn btn-dark btn-sm"
+                      onClick={handleBulkDelete}
+                      disabled={selectedStudents.length === 0}
+                    >
+                      <i className="bi bi-trash me-1"></i>
+                      Hapus ({selectedStudents.length})
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -139,7 +305,7 @@ const TableData = ({ classid, subjectid }) => {
                     </th>
                     <th
                       className="align-middle fw-semibold border-0"
-                      style={{ width: "25%" }}
+                      style={{ width: "20%" }}
                     >
                       <div className="d-flex align-items-center">
                         <span>Siswa</span>
@@ -147,59 +313,75 @@ const TableData = ({ classid, subjectid }) => {
                     </th>
                     <th
                       className="align-middle text-center fw-semibold border-0"
-                      style={{ width: "10%" }}
+                      style={{ width: "8%" }}
                     >
-                      <div className="d-flex flex-column align-items-center">
-                        <i className="bi bi-check-circle-fill text-success mb-1"></i>
+                      <div className="d-flex flex-column align-items-center gap-2">
+                        <i className="bi bi-check-circle-fill text-success"></i>
                         <span>Hadir</span>
                       </div>
                     </th>
 
                     <th
                       className="align-middle text-center fw-semibold border-0"
-                      style={{ width: "10%" }}
+                      style={{ width: "8%" }}
                     >
-                      <div className="d-flex flex-column align-items-center">
-                        <i className="bi bi-clock-history text-warning mb-1"></i>
+                      <div className="d-flex flex-column align-items-center gap-2">
+                        <i className="bi bi-clock-history text-warning"></i>
                         <span>Telat</span>
                       </div>
                     </th>
 
                     <th
                       className="align-middle text-center fw-semibold border-0"
-                      style={{ width: "10%" }}
+                      style={{ width: "8%" }}
                     >
-                      <div className="d-flex flex-column align-items-center">
-                        <i className="bi bi-heart-pulse-fill text-primary mb-1"></i>
+                      <div className="d-flex flex-column align-items-center gap-2">
+                        <i className="bi bi-heart-pulse-fill text-primary"></i>
                         <span>Sakit</span>
                       </div>
                     </th>
                     <th
                       className="align-middle text-center fw-semibold border-0"
-                      style={{ width: "10%" }}
+                      style={{ width: "8%" }}
                     >
-                      <div className="d-flex flex-column align-items-center">
-                        <i className="bi bi-envelope-paper-fill text-info mb-1"></i>
+                      <div className="d-flex flex-column align-items-center gap-2">
+                        <i className="bi bi-envelope-paper-fill text-info"></i>
                         <span>Izin</span>
                       </div>
                     </th>
                     <th
                       className="align-middle text-center fw-semibold border-0"
-                      style={{ width: "10%" }}
+                      style={{ width: "8%" }}
                     >
-                      <div className="d-flex flex-column align-items-center">
-                        <i className="bi bi-x-circle-fill text-danger mb-1"></i>
+                      <div className="d-flex flex-column align-items-center gap-2">
+                        <i className="bi bi-x-circle-fill text-danger"></i>
                         <span>Alpa</span>
                       </div>
                     </th>
 
                     <th
                       className="align-middle text-center fw-semibold border-0"
-                      style={{ width: "10%" }}
+                      style={{ width: "8%" }}
                     >
-                      <div className="d-flex flex-column align-items-center">
-                        <i className="bi bi-trash text-danger mb-1"></i>
+                      <div className="d-flex flex-column align-items-center gap-2">
+                        <i className="bi bi-trash text-danger"></i>
                         <span>Hapus</span>
+                      </div>
+                    </th>
+                    <th
+                      className="align-middle text-center fw-semibold border-0"
+                      style={{ width: "7%" }}
+                    >
+                      <div className="d-flex flex-column align-items-center gap-2">
+                        <span>Pilih</span>
+                        <input
+                          type="checkbox"
+                          checked={
+                            selectedStudents.length === students.length &&
+                            students.length > 0
+                          }
+                          onChange={(e) => handleSelectAll(e.target.checked)}
+                        />
                       </div>
                     </th>
                   </tr>
@@ -209,11 +391,16 @@ const TableData = ({ classid, subjectid }) => {
                     const studentAttendance = presensiData?.find(
                       (item) => item.studentid === student.student
                     );
+                    const isSelected = selectedStudents.includes(
+                      student.student
+                    );
 
                     return (
                       <tr
                         key={student.id}
-                        className="attendance-change border-bottom"
+                        className={`attendance-change border-bottom ${
+                          isSelected ? "table-warning" : ""
+                        }`}
                       >
                         <td className="text-center align-middle">
                           <span className="fw-bold text-primary">
@@ -264,7 +451,7 @@ const TableData = ({ classid, subjectid }) => {
                             type="radio"
                             name={`attendance-${student.student}`}
                             style={{ width: "1.5em", height: "1.5em" }}
-                            checked={studentAttendance?.note === "Hadir"}
+                            checked={studentAttendance?.note === "Telat"}
                             onChange={(e) => {
                               handleCheck({
                                 studentid: student.student,
@@ -326,9 +513,28 @@ const TableData = ({ classid, subjectid }) => {
                         </td>
 
                         <td className="text-center align-middle">
-                          <button className="btn btn-sm btn-danger">
+                          <button
+                            className="btn btn-sm btn-danger"
+                            onClick={() => handleDeleteStudent(student.student)}
+                            title="Hapus presensi siswa ini"
+                          >
                             <i className="bi bi-trash"></i>
                           </button>
+                        </td>
+
+                        <td className="text-center align-middle">
+                          <input
+                            type="checkbox"
+                            className="form-check-input"
+                            checked={isSelected}
+                            onChange={(e) =>
+                              handleSelectStudent(
+                                student.student,
+                                e.target.checked
+                              )
+                            }
+                            style={{ width: "1.2em", height: "1.2em" }}
+                          />
                         </td>
                       </tr>
                     );

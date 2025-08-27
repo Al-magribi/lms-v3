@@ -37,6 +37,30 @@ export const ApiPresensi = createApi({
       }),
       invalidatesTags: ["Presensi"],
     }),
+    bulkPresensi: builder.mutation({
+      query: (body) => ({
+        url: "/bulk-presensi",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Presensi"],
+    }),
+    deletePresensi: builder.mutation({
+      query: ({ classid, subjectid, studentid, date }) => ({
+        url: "/delete-presensi",
+        method: "DELETE",
+        params: { classid, subjectid, studentid, date },
+      }),
+      invalidatesTags: ["Presensi"],
+    }),
+    bulkDeletePresensi: builder.mutation({
+      query: (body) => ({
+        url: "/bulk-delete-presensi",
+        method: "DELETE",
+        body,
+      }),
+      invalidatesTags: ["Presensi"],
+    }),
   }),
 });
 
@@ -45,4 +69,7 @@ export const {
   useGetPresensiSummaryQuery,
   useGetAttendanceDatesQuery,
   useAddPresensiMutation,
+  useBulkPresensiMutation,
+  useDeletePresensiMutation,
+  useBulkDeletePresensiMutation,
 } = ApiPresensi;

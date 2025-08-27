@@ -73,6 +73,23 @@ const AttendanceSummary = ({ classid, subjectid }) => {
               ))}
             </select>
           </div>
+          <div className="col-md-6">
+            <label className="form-label fw-bold">Tahun:</label>
+            <select
+              className="form-select"
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+            >
+              {Array.from(
+                { length: 5 },
+                (_, i) => new Date().getFullYear() - 2 + i
+              ).map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {summaryData && summaryData.length > 0 ? (
@@ -80,28 +97,32 @@ const AttendanceSummary = ({ classid, subjectid }) => {
             <table className="table table-hover table-striped">
               <thead className="table-dark">
                 <tr>
-                  <th className="text-center" style={{ width: "5%" }}>
+                  <th className="text-center" style={{ width: "4%" }}>
                     No
                   </th>
-                  <th style={{ width: "10%" }}>NIS</th>
-                  <th style={{ width: "35%" }}>Nama Siswa</th>
-                  <th className="text-center" style={{ width: "12%" }}>
+                  <th style={{ width: "8%" }}>NIS</th>
+                  <th style={{ width: "25%" }}>Nama Siswa</th>
+                  <th className="text-center" style={{ width: "10%" }}>
                     <i className="bi bi-check-circle text-success me-1"></i>
                     Hadir
                   </th>
-                  <th className="text-center" style={{ width: "12%" }}>
+                  <th className="text-center" style={{ width: "10%" }}>
+                    <i className="bi bi-clock-history text-warning me-1"></i>
+                    Telat
+                  </th>
+                  <th className="text-center" style={{ width: "10%" }}>
                     <i className="bi bi-heart-pulse text-primary me-1"></i>
                     Sakit
                   </th>
-                  <th className="text-center" style={{ width: "12%" }}>
+                  <th className="text-center" style={{ width: "10%" }}>
                     <i className="bi bi-envelope-paper text-info me-1"></i>
                     Izin
                   </th>
-                  <th className="text-center" style={{ width: "12%" }}>
+                  <th className="text-center" style={{ width: "10%" }}>
                     <i className="bi bi-x-circle text-danger me-1"></i>
                     Alpa
                   </th>
-                  <th className="text-center" style={{ width: "12%" }}>
+                  <th className="text-center" style={{ width: "13%" }}>
                     <i className="bi bi-percent text-warning me-1"></i>
                     Kehadiran
                   </th>
@@ -110,10 +131,18 @@ const AttendanceSummary = ({ classid, subjectid }) => {
               <tbody>
                 {summaryData.map((student, index) => {
                   const totalDays =
-                    student.hadir + student.sakit + student.izin + student.alpa;
+                    student.hadir +
+                    student.telat +
+                    student.sakit +
+                    student.izin +
+                    student.alpa;
+                  // Calculate attendance rate including late as partial attendance
                   const attendanceRate =
                     totalDays > 0
-                      ? ((student.hadir / totalDays) * 100).toFixed(1)
+                      ? (
+                          ((student.hadir + student.telat * 0.5) / totalDays) *
+                          100
+                        ).toFixed(1)
                       : 0;
 
                   return (
@@ -126,6 +155,11 @@ const AttendanceSummary = ({ classid, subjectid }) => {
                       <td className="text-center align-middle">
                         <span className="badge bg-success fs-6">
                           {student.hadir}
+                        </span>
+                      </td>
+                      <td className="text-center align-middle">
+                        <span className="badge bg-warning fs-6">
+                          {student.telat}
                         </span>
                       </td>
                       <td className="text-center align-middle">

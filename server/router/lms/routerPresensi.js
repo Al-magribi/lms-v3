@@ -53,6 +53,126 @@ router.post("/add-presensi", authorize("teacher"), async (req, res) => {
   }
 });
 
+// Bulk attendance operation
+router.post("/bulk-presensi", authorize("teacher"), async (req, res) => {
+  const client = await pool.connect();
+  const { classid, subjectid, studentids, note, date } = req.body;
+
+  try {
+    await client.query("BEGIN");
+
+    const homebase = req.user.homebase;
+
+    const periode = await client.query(
+      `SELECT id FROM a_periode WHERE homebase = $1 AND isactive = true`,
+      [homebase]
+    );
+
+    const activePeriode = periode.rows[0].id;
+    const attendanceDate = date || new Date().toISOString().split("T")[0];
+
+    for (const studentid of studentids) {
+      const check = await client.query(
+        `SELECT * FROM l_attendance WHERE classid = $1 
+        AND subjectid = $2 AND studentid = $3 AND day_date = $4`,
+        [classid, subjectid, studentid, attendanceDate]
+      );
+
+      if (check.rows.length > 0) {
+        await client.query(
+          `UPDATE l_attendance SET note = $1 WHERE classid = $2 
+          AND subjectid = $3 AND studentid = $4 AND day_date = $5`,
+          [note, classid, subjectid, studentid, attendanceDate]
+        );
+      } else {
+        await client.query(
+          `INSERT INTO l_attendance (periode, classid, subjectid, studentid, note, day_date) 
+          VALUES ($1, $2, $3, $4, $5, $6)`,
+          [activePeriode, classid, subjectid, studentid, note, attendanceDate]
+        );
+      }
+    }
+
+    await client.query("COMMIT");
+
+    return res.status(200).json({
+      message: `Presensi ${note} berhasil disimpan untuk ${studentids.length} siswa`,
+    });
+  } catch (error) {
+    console.log(error);
+    await client.query("ROLLBACK");
+    return res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+// Delete individual student attendance
+router.delete("/delete-presensi", authorize("teacher"), async (req, res) => {
+  const client = await pool.connect();
+  const { classid, subjectid, studentid, date } = req.query;
+
+  try {
+    await client.query("BEGIN");
+
+    const result = await client.query(
+      `DELETE FROM l_attendance WHERE classid = $1 
+      AND subjectid = $2 AND studentid = $3 AND day_date = $4`,
+      [classid, subjectid, studentid, date]
+    );
+
+    await client.query("COMMIT");
+
+    if (result.rowCount > 0) {
+      return res.status(200).json({ message: "Presensi berhasil dihapus" });
+    } else {
+      return res.status(404).json({ message: "Data presensi tidak ditemukan" });
+    }
+  } catch (error) {
+    console.log(error);
+    await client.query("ROLLBACK");
+    return res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+// Bulk delete attendance records
+router.delete(
+  "/bulk-delete-presensi",
+  authorize("teacher"),
+  async (req, res) => {
+    const client = await pool.connect();
+    const { classid, subjectid, studentids, date } = req.body;
+
+    try {
+      await client.query("BEGIN");
+
+      let deletedCount = 0;
+      for (const studentid of studentids) {
+        const result = await client.query(
+          `DELETE FROM l_attendance WHERE classid = $1 
+        AND subjectid = $2 AND studentid = $3 AND day_date = $4`,
+          [classid, subjectid, studentid, date]
+        );
+        deletedCount += result.rowCount;
+      }
+
+      await client.query("COMMIT");
+
+      return res.status(200).json({
+        message: `Berhasil menghapus presensi untuk ${deletedCount} siswa`,
+      });
+    } catch (error) {
+      console.log(error);
+      await client.query("ROLLBACK");
+      return res.status(500).json({ message: error.message });
+    } finally {
+      client.release();
+    }
+  }
+);
+
 router.get("/get-presensi", authorize("teacher", "admin"), async (req, res) => {
   const client = await pool.connect();
   const { classid, subjectid, date } = req.query;
@@ -116,6 +236,7 @@ router.get(
       cs.classid,
       c.name,
       COUNT(CASE WHEN la.note = 'Hadir' THEN 1 END) as hadir,
+      COUNT(CASE WHEN la.note = 'Telat' THEN 1 END) as telat,
       COUNT(CASE WHEN la.note = 'Sakit' THEN 1 END) as sakit,
       COUNT(CASE WHEN la.note = 'Izin' THEN 1 END) as izin,
       COUNT(CASE WHEN la.note = 'Alpa' THEN 1 END) as alpa,
