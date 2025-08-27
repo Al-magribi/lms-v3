@@ -391,7 +391,7 @@ router.get(
 						SELECT * FROM student_data
 						LEFT JOIN class_data ON true`,
           transform: (row) => ({
-            user_id: row.id,
+            id: row.id,
             name: row.name,
             nis: row.nis,
             level: row.level,

@@ -9,7 +9,7 @@ import {
   ParentMenus,
 } from "../menu/Menus";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import { setLogout } from "../../controller/slice/AuthSlice";
 import { useDispatch, useSelector } from "react-redux";
@@ -163,7 +163,7 @@ const Layout = ({ children, title, desc, levels }) => {
       : StudentMenus;
 
   return (
-    <div className='d-flex bg-light' style={{ minHeight: "100vh" }}>
+    <div className="d-flex bg-light" style={{ minHeight: "100vh" }}>
       <style>{`
         @media (max-width: 991px) {
           .desktop-sidebar {
@@ -182,7 +182,7 @@ const Layout = ({ children, title, desc, levels }) => {
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <div
-          className='position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50'
+          className="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50"
           style={{ zIndex: 1040 }}
           onClick={() => setIsMobileMenuOpen(false)}
         ></div>
@@ -207,37 +207,37 @@ const Layout = ({ children, title, desc, levels }) => {
         }}
       >
         {/* Sidebar Header */}
-        <div className='p-3 border-bottom border-light border-opacity-25'>
-          {!isSidebarOpen && <i className='bi bi-person-circle fs-4 ms-3'></i>}
+        <div className="p-3 border-bottom border-light border-opacity-25">
+          {!isSidebarOpen && <i className="bi bi-person-circle fs-4 ms-3"></i>}
 
-          <div className='d-flex align-items-center justify-content-between'>
-            <div className='d-flex align-items-center flex-grow-1'>
+          <div className="d-flex align-items-center justify-content-between">
+            <div className="d-flex align-items-center flex-grow-1">
               {isSidebarOpen && (
-                <div className='flex-grow-1'>
-                  <h6 className='mb-0 fw-bold text-truncate'>
+                <div className="flex-grow-1">
+                  <h6 className="mb-0 fw-bold text-truncate">
                     {truncateName(user?.name)}
                   </h6>
-                  <small className='text-light opacity-75'>{user?.level}</small>
+                  <small className="text-light opacity-75">{user?.level}</small>
                 </div>
               )}
             </div>
             {isSidebarOpen && (
               <button
-                className='btn btn-sm btn-outline-light'
+                className="btn btn-sm btn-outline-light"
                 onClick={toggleSidebar}
                 style={{ minWidth: "32px", height: "32px" }}
               >
-                <i className='bi bi-chevron-left'></i>
+                <i className="bi bi-chevron-left"></i>
               </button>
             )}
           </div>
         </div>
 
         {/* Sidebar Navigation */}
-        <nav className='flex-grow-1 p-3'>
-          <ul className='nav nav-pills flex-column gap-1'>
+        <nav className="flex-grow-1 p-3">
+          <ul className="nav nav-pills flex-column gap-1">
             {currentMenus.map((menu, i) => (
-              <li key={i} className='nav-item'>
+              <li key={i} className="nav-item">
                 <button
                   className={`nav-link w-100 text-start d-flex align-items-center gap-2 ${
                     isActiveMenu(menu.link)
@@ -257,16 +257,16 @@ const Layout = ({ children, title, desc, levels }) => {
                     {menu.icon}
                   </span>
                   {isSidebarOpen && (
-                    <span className='flex-grow-1'>{menu.label}</span>
+                    <span className="flex-grow-1">{menu.label}</span>
                   )}
                 </button>
               </li>
             ))}
 
             {user?.homeroom && (
-              <li className='nav-item'>
+              <li className="nav-item">
                 <button
-                  className='nav-link w-100 text-start d-flex align-items-center gap-3 text-white'
+                  className="nav-link w-100 text-start d-flex align-items-center gap-3 text-white"
                   onClick={goToHomeroom}
                   style={{
                     borderRadius: "8px",
@@ -277,39 +277,41 @@ const Layout = ({ children, title, desc, levels }) => {
                   }}
                 >
                   <i
-                    className='bi bi-database fs-5'
+                    className="bi bi-database fs-5"
                     style={{ minWidth: "20px", textAlign: "center" }}
                   ></i>
                   {isSidebarOpen && (
-                    <span className='fw-medium flex-grow-1'>Database</span>
+                    <span className="fw-medium flex-grow-1">Database</span>
                   )}
                 </button>
               </li>
             )}
+
+            <li className="nav-item">
+              <button
+                className="btn btn-danger w-100 d-flex align-items-center gap-3"
+                disabled={isLoading}
+                onClick={logoutHandler}
+                style={{
+                  borderRadius: "8px",
+                  padding: "12px 16px",
+                  border: "none",
+                  transition: "all 0.2s ease",
+                  minHeight: "44px",
+                }}
+              >
+                <i
+                  className="bi bi-box-arrow-right fs-5"
+                  style={{ minWidth: "20px", textAlign: "center" }}
+                ></i>
+
+                {isSidebarOpen && (
+                  <span className="flex-grow-1 text-start">Logout</span>
+                )}
+              </button>
+            </li>
           </ul>
         </nav>
-
-        {/* Sidebar Footer */}
-        <div className='p-3 border-top border-light border-opacity-25'>
-          <button
-            className='btn btn-outline-light w-100 d-flex align-items-center gap-3'
-            disabled={isLoading}
-            onClick={logoutHandler}
-            style={{
-              borderRadius: "8px",
-              padding: "12px 16px",
-              minHeight: "44px",
-            }}
-          >
-            <i
-              className='bi bi-box-arrow-right fs-5'
-              style={{ minWidth: "20px", textAlign: "center" }}
-            ></i>
-            {isSidebarOpen && (
-              <span className='flex-grow-1 text-start'>Logout</span>
-            )}
-          </button>
-        </div>
       </div>
 
       {/* Main Content */}
@@ -327,7 +329,7 @@ const Layout = ({ children, title, desc, levels }) => {
       >
         {/* Top Header */}
         <header
-          className='bg-white border-bottom px-4 py-3'
+          className="bg-white border-bottom px-4 py-3"
           style={{
             position: "sticky",
             top: 0,
@@ -336,26 +338,26 @@ const Layout = ({ children, title, desc, levels }) => {
             paddingRight: windowWidth < 768 ? "1rem" : "1.5rem",
           }}
         >
-          <div className='d-flex align-items-center justify-content-between'>
-            <div className='d-flex align-items-center  gap-3'>
+          <div className="d-flex align-items-center justify-content-between">
+            <div className="d-flex align-items-center  gap-3">
               <button
-                className='btn btn-outline-primary d-lg-none'
+                className="btn btn-outline-primary d-lg-none"
                 onClick={toggleMobileMenu}
                 style={{ width: 40 }}
               >
-                <i className='bi bi-list'></i>
+                <i className="bi bi-list"></i>
               </button>
               {!isSidebarOpen && windowWidth >= 992 && (
                 <button
-                  className='btn btn-outline-primary d-none d-lg-block'
+                  className="btn btn-outline-primary d-none d-lg-block"
                   onClick={toggleSidebar}
                 >
-                  <i className='bi bi-chevron-right'></i>
+                  <i className="bi bi-chevron-right"></i>
                 </button>
               )}
 
               <h5
-                className='mb-0  text-dark'
+                className="mb-0  text-dark"
                 style={{
                   fontSize: windowWidth < 768 ? "1rem" : "1.25rem",
                 }}
@@ -366,7 +368,7 @@ const Layout = ({ children, title, desc, levels }) => {
 
             {/* Action Buttons */}
             <div
-              className='d-flex gap-2'
+              className="d-flex gap-2"
               style={{
                 display: windowWidth < 768 ? "none" : "flex",
               }}
@@ -374,20 +376,20 @@ const Layout = ({ children, title, desc, levels }) => {
               {title === "Management Kelas" && (
                 <>
                   <button
-                    className='btn btn-sm btn-outline-success'
-                    data-bs-toggle='modal'
-                    data-bs-target='#addclass'
+                    className="btn btn-sm btn-outline-success"
+                    data-bs-toggle="modal"
+                    data-bs-target="#addclass"
                   >
-                    <i className='bi bi-plus-lg'></i>
-                    <span className='ms-2 d-none d-md-inline'>Kelas</span>
+                    <i className="bi bi-plus-lg"></i>
+                    <span className="ms-2 d-none d-md-inline">Kelas</span>
                   </button>
                   <button
-                    className='btn btn-sm btn-outline-success'
-                    data-bs-toggle='modal'
-                    data-bs-target='#uploadstudents'
+                    className="btn btn-sm btn-outline-success"
+                    data-bs-toggle="modal"
+                    data-bs-target="#uploadstudents"
                   >
-                    <i className='bi bi-file-earmark-arrow-up-fill'></i>
-                    <span className='ms-2 d-none d-md-inline'>
+                    <i className="bi bi-file-earmark-arrow-up-fill"></i>
+                    <span className="ms-2 d-none d-md-inline">
                       Upload Siswa
                     </span>
                   </button>
@@ -397,38 +399,38 @@ const Layout = ({ children, title, desc, levels }) => {
               {title === "Management Siswa" && (
                 <>
                   <button
-                    className='btn btn-sm btn-outline-primary'
+                    className="btn btn-sm btn-outline-primary"
                     onClick={goToDatabase}
                   >
-                    <i className='bi bi-database'></i>
-                    <span className='ms-2 d-none d-md-inline'>Database</span>
+                    <i className="bi bi-database"></i>
+                    <span className="ms-2 d-none d-md-inline">Database</span>
                   </button>
                   <button
-                    className='btn btn-sm btn-outline-success'
+                    className="btn btn-sm btn-outline-success"
                     onClick={goToGraduation}
                   >
-                    <i className='bi bi-mortarboard-fill'></i>
-                    <span className='ms-2 d-none d-md-inline'>Lulusan</span>
+                    <i className="bi bi-mortarboard-fill"></i>
+                    <span className="ms-2 d-none d-md-inline">Lulusan</span>
                   </button>
                   <button
-                    className='btn btn-sm btn-outline-success'
-                    data-bs-toggle='modal'
-                    data-bs-target='#addstudent'
+                    className="btn btn-sm btn-outline-success"
+                    data-bs-toggle="modal"
+                    data-bs-target="#addstudent"
                   >
-                    <i className='bi bi-plus-lg'></i>
-                    <span className='ms-2 d-none d-md-inline'>Siswa</span>
+                    <i className="bi bi-plus-lg"></i>
+                    <span className="ms-2 d-none d-md-inline">Siswa</span>
                   </button>
                 </>
               )}
 
               {title === "Mata Pelajaran" && (
                 <button
-                  className='btn btn-sm btn-outline-success'
-                  data-bs-toggle='modal'
-                  data-bs-target='#addsubject'
+                  className="btn btn-sm btn-outline-success"
+                  data-bs-toggle="modal"
+                  data-bs-target="#addsubject"
                 >
-                  <i className='bi bi-plus-lg'></i>
-                  <span className='ms-2 d-none d-md-inline'>
+                  <i className="bi bi-plus-lg"></i>
+                  <span className="ms-2 d-none d-md-inline">
                     Mata Pelajaran
                   </span>
                 </button>
@@ -436,30 +438,30 @@ const Layout = ({ children, title, desc, levels }) => {
 
               {title === "Database" && (
                 <button
-                  className='btn btn-sm btn-outline-info'
+                  className="btn btn-sm btn-outline-info"
                   onClick={goToStudent}
                 >
                   <Pi.PiStudentFill />
-                  <span className='ms-2 d-none d-md-inline'>Siswa</span>
+                  <span className="ms-2 d-none d-md-inline">Siswa</span>
                 </button>
               )}
 
               {title === "Lulusan" && (
                 <>
                   <button
-                    className='btn btn-sm btn-outline-info'
+                    className="btn btn-sm btn-outline-info"
                     onClick={goToStudent}
                   >
                     <Pi.PiStudentFill />
-                    <span className='ms-2 d-none d-md-inline'>Siswa</span>
+                    <span className="ms-2 d-none d-md-inline">Siswa</span>
                   </button>
                   <button
-                    className='btn btn-sm btn-outline-success'
-                    data-bs-toggle='modal'
-                    data-bs-target='#addgraduation'
+                    className="btn btn-sm btn-outline-success"
+                    data-bs-toggle="modal"
+                    data-bs-target="#addgraduation"
                   >
-                    <i className='bi bi-plus-lg'></i>
-                    <span className='ms-2 d-none d-md-inline'>Lulusan</span>
+                    <i className="bi bi-plus-lg"></i>
+                    <span className="ms-2 d-none d-md-inline">Lulusan</span>
                   </button>
                 </>
               )}
@@ -467,53 +469,53 @@ const Layout = ({ children, title, desc, levels }) => {
               {title === "Guru" && (
                 <>
                   <button
-                    className='btn btn-sm btn-outline-success'
-                    data-bs-toggle='modal'
-                    data-bs-target='#addteacher'
+                    className="btn btn-sm btn-outline-success"
+                    data-bs-toggle="modal"
+                    data-bs-target="#addteacher"
                   >
-                    <i className='bi bi-plus-lg'></i>
-                    <span className='ms-2 d-none d-md-inline'>Guru</span>
+                    <i className="bi bi-plus-lg"></i>
+                    <span className="ms-2 d-none d-md-inline">Guru</span>
                   </button>
                   <button
-                    className='btn btn-sm btn-outline-success'
-                    data-bs-toggle='modal'
-                    data-bs-target='#uploadteacher'
+                    className="btn btn-sm btn-outline-success"
+                    data-bs-toggle="modal"
+                    data-bs-target="#uploadteacher"
                   >
-                    <i className='bi bi-file-earmark-arrow-up-fill'></i>
-                    <span className='ms-2 d-none d-md-inline'>Upload</span>
+                    <i className="bi bi-file-earmark-arrow-up-fill"></i>
+                    <span className="ms-2 d-none d-md-inline">Upload</span>
                   </button>
                 </>
               )}
 
               {title === "Daftar Bank Soal" && (
                 <button
-                  className='btn btn-sm btn-outline-success'
-                  data-bs-toggle='modal'
-                  data-bs-target='#addbank'
+                  className="btn btn-sm btn-outline-success"
+                  data-bs-toggle="modal"
+                  data-bs-target="#addbank"
                 >
-                  <i className='bi bi-plus-lg'></i>
-                  <span className='ms-2 d-none d-md-inline'>Bank Soal</span>
+                  <i className="bi bi-plus-lg"></i>
+                  <span className="ms-2 d-none d-md-inline">Bank Soal</span>
                 </button>
               )}
 
               {title === "Daftar Ujian" && (
                 <button
-                  className='btn btn-sm btn-outline-success'
-                  data-bs-toggle='modal'
-                  data-bs-target='#addexam'
+                  className="btn btn-sm btn-outline-success"
+                  data-bs-toggle="modal"
+                  data-bs-target="#addexam"
                 >
-                  <i className='bi bi-plus-lg me-2'></i>
-                  <span className='d-none d-md-inline'>Tambah Ujian</span>
+                  <i className="bi bi-plus-lg me-2"></i>
+                  <span className="d-none d-md-inline">Tambah Ujian</span>
                 </button>
               )}
 
               {title === "Penilaian" && (
                 <button
-                  className='btn btn-sm btn-outline-secondary'
+                  className="btn btn-sm btn-outline-secondary"
                   onClick={goToScores}
                 >
-                  <i className='bi bi-arrow-left-right me-2'></i>
-                  <span className='d-none d-md-inline'>Reset</span>
+                  <i className="bi bi-arrow-left-right me-2"></i>
+                  <span className="d-none d-md-inline">Reset</span>
                 </button>
               )}
             </div>
@@ -522,21 +524,21 @@ const Layout = ({ children, title, desc, levels }) => {
 
         {/* Page Content */}
         <main
-          className='flex-grow-1 p-4'
+          className="flex-grow-1 p-4"
           style={{
             padding: windowWidth < 768 ? "0.5rem" : "1.5rem",
           }}
         >
           <Meta title={title} desc={desc} />
-          <div className='content-wrapper'>{children}</div>
+          <div className="content-wrapper">{children}</div>
         </main>
 
         {/* Footer */}
-        <footer className='bg-white border-top py-3 px-4'>
-          <div className='text-center'>
-            <div className='d-flex align-items-center justify-content-center gap-2'>
-              <i className='bi bi-c-circle text-primary'></i>
-              <small className='text-muted'>
+        <footer className="bg-white border-top py-3 px-4">
+          <div className="text-center">
+            <div className="d-flex align-items-center justify-content-center gap-2">
+              <i className="bi bi-c-circle text-primary"></i>
+              <small className="text-muted">
                 ALMADEV {new Date().getFullYear()} | {appData?.app_name}
               </small>
             </div>
@@ -558,30 +560,30 @@ const Layout = ({ children, title, desc, levels }) => {
         }}
       >
         {/* Mobile Sidebar Header */}
-        <div className='p-3 border-bottom border-light border-opacity-25'>
-          <div className='d-flex align-items-center justify-content-between'>
-            <div className='flex-grow-1'>
-              <h6 className='mb-0 fw-bold text-truncate'>
+        <div className="p-3 border-bottom border-light border-opacity-25">
+          <div className="d-flex align-items-center justify-content-between">
+            <div className="flex-grow-1">
+              <h6 className="mb-0 fw-bold text-truncate">
                 {truncateName(user?.name)}
               </h6>
-              <small className='text-light opacity-75'>{user?.level}</small>
+              <small className="text-light opacity-75">{user?.level}</small>
             </div>
 
             <button
-              className='btn btn-sm btn-outline-light ms-2'
+              className="btn btn-sm btn-outline-light ms-2"
               onClick={() => setIsMobileMenuOpen(false)}
               style={{ width: "32px", height: "32px" }}
             >
-              <i className='bi bi-x-lg'></i>
+              <i className="bi bi-x-lg"></i>
             </button>
           </div>
         </div>
 
         {/* Mobile Sidebar Navigation */}
-        <nav className='flex-grow-1 p-3'>
-          <ul className='nav nav-pills flex-column gap-2'>
+        <nav className="flex-grow-1 p-3">
+          <ul className="nav nav-pills flex-column gap-2">
             {currentMenus.map((menu, i) => (
-              <li key={i} className='nav-item'>
+              <li key={i} className="nav-item">
                 <button
                   className={`nav-link w-100 text-start d-flex align-items-center gap-3 ${
                     isActiveMenu(menu.link)
@@ -598,20 +600,20 @@ const Layout = ({ children, title, desc, levels }) => {
                   }}
                 >
                   <span
-                    className='fs-5'
+                    className="fs-5"
                     style={{ minWidth: "20px", textAlign: "center" }}
                   >
                     {menu.icon}
                   </span>
-                  <span className='fw-medium flex-grow-1'>{menu.label}</span>
+                  <span className="fw-medium flex-grow-1">{menu.label}</span>
                 </button>
               </li>
             ))}
 
             {user?.homeroom && (
-              <li className='nav-item'>
+              <li className="nav-item">
                 <button
-                  className='nav-link w-100 text-start d-flex align-items-center gap-3 text-white'
+                  className="nav-link w-100 text-start d-flex align-items-center gap-3 text-white"
                   onClick={goToHomeroom}
                   style={{
                     borderRadius: "8px",
@@ -622,35 +624,15 @@ const Layout = ({ children, title, desc, levels }) => {
                   }}
                 >
                   <i
-                    className='bi bi-database fs-5'
+                    className="bi bi-database fs-5"
                     style={{ minWidth: "20px", textAlign: "center" }}
                   ></i>
-                  <span className='fw-medium flex-grow-1'>Database</span>
+                  <span className="fw-medium flex-grow-1">Database</span>
                 </button>
               </li>
             )}
           </ul>
         </nav>
-
-        {/* Mobile Sidebar Footer */}
-        <div className='p-3 border-top border-light border-opacity-25'>
-          <button
-            className='btn btn-outline-light w-100 d-flex align-items-center gap-3'
-            disabled={isLoading}
-            onClick={logoutHandler}
-            style={{
-              borderRadius: "8px",
-              padding: "12px 16px",
-              minHeight: "48px",
-            }}
-          >
-            <i
-              className='bi bi-box-arrow-right fs-5'
-              style={{ minWidth: "20px", textAlign: "center" }}
-            ></i>
-            <span className='flex-grow-1 text-start'>Logout</span>
-          </button>
-        </div>
       </div>
     </div>
   );
