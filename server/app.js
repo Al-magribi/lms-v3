@@ -4,11 +4,20 @@ import bodyParser from "body-parser";
 import useragent from "express-useragent";
 import path from "path";
 import { fileURLToPath } from "url";
+import cors from "cors";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+
+// CORS middleware
+app.use(
+  cors({
+    origin: ["http://localhost:5173", "http://localhost:3000"],
+    credentials: true,
+  })
+);
 
 // Otentikasi
 import routerAuth from "./router/auth/routerAuth.js";

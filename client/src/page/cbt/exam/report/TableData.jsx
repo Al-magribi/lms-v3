@@ -88,8 +88,6 @@ const TableData = forwardRef(({ classid, examid }, ref) => {
     }
   };
 
-  console.log(result);
-
   return (
     <>
       <Table
@@ -105,39 +103,39 @@ const TableData = forwardRef(({ classid, examid }, ref) => {
         <div style={{ overflowX: "auto" }}>
           <table
             ref={tableRef}
-            className='table table-striped table-hover table-bordered'
+            className="table table-striped table-hover table-bordered"
             style={{ minWidth: 800 }}
           >
-            <thead className='table-light'>
+            <thead className="table-light">
               <tr>
-                <th scope='col' className='text-center'>
+                <th scope="col" className="text-center">
                   No
                 </th>
-                <th scope='col' className='text-center'>
+                <th scope="col" className="text-center">
                   NIS
                 </th>
-                <th scope='col' className='text-center'>
+                <th scope="col" className="text-center">
                   Nama Siswa
                 </th>
-                <th scope='col' className='text-center'>
+                <th scope="col" className="text-center">
                   Kelas
                 </th>
-                <th scope='col' className='text-center'>
+                <th scope="col" className="text-center">
                   Tingkat
                 </th>
-                <th scope='col' className='text-center'>
+                <th scope="col" className="text-center">
                   IP Address
                 </th>
-                <th scope='col' className='text-center'>
+                <th scope="col" className="text-center">
                   Browser
                 </th>
-                <th scope='col' className='text-center'>
+                <th scope="col" className="text-center">
                   Waktu Mulai
                 </th>
-                <th scope='col' className='text-center'>
+                <th scope="col" className="text-center">
                   Status
                 </th>
-                <th scope='col' className='text-center'>
+                <th scope="col" className="text-center">
                   Aksi
                 </th>
               </tr>
@@ -146,103 +144,103 @@ const TableData = forwardRef(({ classid, examid }, ref) => {
               {result.length > 0 ? (
                 result.map((item, index) => (
                   <tr key={item.student_id || index}>
-                    <td className='text-center align-middle'>
+                    <td className="text-center align-middle">
                       {(page - 1) * limit + index + 1}
                     </td>
-                    <td className='text-center align-middle'>{item.nis}</td>
-                    <td className='align-middle'>{item.student_name}</td>
-                    <td className='text-center align-middle'>
+                    <td className="text-center align-middle">{item.nis}</td>
+                    <td className="align-middle">{item.student_name}</td>
+                    <td className="text-center align-middle">
                       {item.class_name}
                     </td>
-                    <td className='text-center align-middle'>
+                    <td className="text-center align-middle">
                       {item.grade_name}
                     </td>
-                    <td className='text-center align-middle'>
+                    <td className="text-center align-middle">
                       {item.ip || "-"}
                     </td>
-                    <td className='text-center align-middle'>
+                    <td className="text-center align-middle">
                       {item.browser || "-"}
                     </td>
-                    <td className='text-center align-middle'>
+                    <td className="text-center align-middle">
                       {item.createdat ? (
-                        <span className='badge bg-success'>
+                        <span className="badge bg-success">
                           {new Date(item.createdat).toLocaleString()}
                         </span>
                       ) : (
                         "-"
                       )}
                     </td>
-                    <td className='text-center align-middle'>
+                    <td className="text-center align-middle">
                       {item.ispenalty ? (
-                        <span className='badge bg-danger'>Melanggar</span>
+                        <span className="badge bg-danger">Melanggar</span>
                       ) : item.isactive ? (
-                        <span className='badge bg-warning'>Mengerjakan</span>
+                        <span className="badge bg-warning">Mengerjakan</span>
                       ) : item.isdone ? (
-                        <span className='badge bg-success'>Selesai</span>
+                        <span className="badge bg-success">Selesai</span>
                       ) : (
-                        <span className='badge bg-secondary'>Belum Masuk</span>
+                        <span className="badge bg-secondary">Belum Masuk</span>
                       )}
                     </td>
-                    <td className='text-center align-middle'>
-                      <div className='dropdown'>
+                    <td className="text-center align-middle">
+                      <div className="dropdown">
                         <button
-                          className='btn btn-primary btn-sm'
-                          type='button'
+                          className="btn btn-primary btn-sm"
+                          type="button"
                           id={`dropdownMenuButton-${index}`}
-                          data-bs-toggle='dropdown'
-                          aria-expanded='false'
+                          data-bs-toggle="dropdown"
+                          aria-expanded="false"
                         >
-                          Pilihan Aksi
+                          Aksi
                         </button>
                         <ul
-                          className='dropdown-menu'
+                          className="dropdown-menu"
                           aria-labelledby={`dropdownMenuButton-${index}`}
                         >
                           <li>
                             <button
-                              className='dropdown-item d-flex align-items-center'
-                              title='Lihat Detail'
-                              data-bs-toggle='modal'
-                              data-bs-target='#answerSheet'
+                              className="dropdown-item d-flex align-items-center"
+                              title="Lihat Detail"
+                              data-bs-toggle="modal"
+                              data-bs-target="#answerSheet"
                               onClick={() => setDetail(item)}
                             >
-                              <i className='bi bi-eye me-2'></i> Lihat
+                              <i className="bi bi-eye me-2"></i> Lihat
                             </button>
                           </li>
                           <li>
                             <button
-                              className='dropdown-item d-flex align-items-center'
-                              title='Izinkan Masuk'
+                              className="dropdown-item d-flex align-items-center"
+                              title="Izinkan Masuk"
                               onClick={() => handleRejoin(item.log_id)}
                               disabled={rejoinLoad || !item.isactive}
                             >
-                              <i className='bi bi-arrow-repeat me-2'></i>{" "}
+                              <i className="bi bi-arrow-repeat me-2"></i>{" "}
                               Izinkan
                             </button>
                           </li>
                           <li>
                             <button
-                              className='dropdown-item d-flex align-items-center'
-                              title='Selesaikan'
+                              className="dropdown-item d-flex align-items-center"
+                              title="Selesaikan"
                               onClick={() => hanldeFinish(item.log_id)}
                               disabled={
                                 finishLoad || item.isdone || !item.isactive
                               }
                             >
-                              <i className='bi bi-check-circle me-2'></i>{" "}
+                              <i className="bi bi-check-circle me-2"></i>{" "}
                               Selesaikan
                             </button>
                           </li>
                           <li>
                             <button
-                              className='dropdown-item d-flex align-items-center text-danger'
-                              title='Ulangi Ujian'
+                              className="dropdown-item d-flex align-items-center text-danger"
+                              title="Ulangi Ujian"
                               onClick={() =>
                                 handleRetake(item.log_id, item.student_id)
                               }
                               disabled={retakeLoad || !item.isdone}
                             >
-                              <i className='bi bi-recycle me-2'></i> Ulangi
+                              <i className="bi bi-recycle me-2"></i> Ulangi
                             </button>
                           </li>
                         </ul>
@@ -252,7 +250,7 @@ const TableData = forwardRef(({ classid, examid }, ref) => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan='10' className='text-center'>
+                  <td colSpan="10" className="text-center">
                     {isLoading
                       ? "Memuat data..."
                       : "Tidak ada data yang ditemukan"}

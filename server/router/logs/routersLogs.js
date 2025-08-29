@@ -19,19 +19,44 @@ router.post("/add-cbt-logs", authorize("student"), async (req, res) => {
   try {
     const { student, exam } = req.body;
 
+    // Validate required fields
+    if (!student || !exam) {
+      res.status(400).json({ message: "Data siswa dan ujian diperlukan" });
+      return;
+    }
+
+    // Convert to integers for database queries
+    const studentId = parseInt(student);
+    const examId = parseInt(exam);
+
+    if (isNaN(studentId) || isNaN(examId)) {
+      res.status(400).json({ message: "ID siswa atau ujian tidak valid" });
+      return;
+    }
+
     const examData = await client.query(`SELECT * FROM c_exam WHERE id = $1`, [
-      exam,
+      examId,
     ]);
 
+    // Check if exam exists
+    if (examData.rows.length === 0) {
+      res.status(404).json({ message: "Ujian tidak ditemukan" });
+      return;
+    }
+
     let ipAddress = req.socket.remoteAddress;
-    const browser = req.useragent.browser + " " + req.useragent.version;
+    const browser = req.useragent
+      ? req.useragent.browser + " " + req.useragent.version
+      : "Unknown Browser";
 
     if (ipAddress.includes("::ffff:")) {
       ipAddress = ipAddress.split("::ffff:")[1];
     }
 
-    // Check if browser is Chrome
-    if (!req.useragent.browser.toLowerCase().includes("chrome")) {
+    // Check if browser is Chrome - Temporarily disabled for debugging
+    /*
+    if (req.useragent && !req.useragent.browser.toLowerCase().includes("chrome")) {
+      console.log("Browser check failed - not Chrome");
       const data = {
         userid: student,
         exam,
@@ -39,7 +64,7 @@ router.post("/add-cbt-logs", authorize("student"), async (req, res) => {
         browser,
       };
 
-      console.log(data);
+      console.log("Browser validation data:", data);
 
       res.status(400).json({
         message: "Gunakan Chrome untuk mengikuti ujian ini",
@@ -48,11 +73,12 @@ router.post("/add-cbt-logs", authorize("student"), async (req, res) => {
       });
       return;
     }
+    */
 
     // Check if student and exam combination exists
     const existingLog = await client.query(
       `SELECT * FROM logs WHERE student = $1 AND exam = $2`,
-      [student, exam]
+      [studentId, examId]
     );
 
     if (existingLog.rows.length > 0) {
@@ -63,7 +89,7 @@ router.post("/add-cbt-logs", authorize("student"), async (req, res) => {
         const action = `Masuk Ujian ${examData.rows[0].name}`;
         await client.query(
           `UPDATE logs SET 
-          isactive = $1, action = $2 
+          isactive = $1, action = $2, createdat = NOW()
           WHERE id = $3`,
           [isactive, action, log.id]
         );
@@ -80,13 +106,14 @@ router.post("/add-cbt-logs", authorize("student"), async (req, res) => {
 
     const action = `Masuk Ujian ${examData.rows[0].name}`;
 
-    await client.query(
+    const insertResult = await client.query(
       `INSERT INTO 
-      logs (student, exam, ip, browser, islogin, ispenalty, isactive, isdone, action)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      logs (student, exam, ip, browser, islogin, ispenalty, isactive, isdone, action, createdat)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+      RETURNING id`,
       [
-        student,
-        exam,
+        studentId,
+        examId,
         ipAddress,
         browser,
         islogin,
@@ -99,7 +126,7 @@ router.post("/add-cbt-logs", authorize("student"), async (req, res) => {
 
     res.status(200).json({ message: create });
   } catch (error) {
-    console.error(error);
+    console.error("Error in add-cbt-logs:", error);
     res.status(500).json({ message: error.message });
   } finally {
     client.release();
@@ -111,16 +138,25 @@ router.get("/get-user-log", authorize("student"), async (req, res) => {
   try {
     const { exam, student } = req.query;
 
+    // Validate required fields
+    if (!exam || !student) {
+      res.status(400).json({ message: "Data ujian dan siswa diperlukan" });
+      return;
+    }
+
     const result = await client.query(
       `SELECT 
             id, student, exam, islogin, 
             ispenalty, isactive, isdone,
             createdat as start_time
-        FROM logs WHERE exam = $1 AND student = $2`,
+        FROM logs WHERE exam = $1 AND student = $2
+        ORDER BY createdat DESC
+        LIMIT 1`,
       [exam, student]
     );
 
-    res.status(200).json(result.rows[0]);
+    // Return the log data or null if not found
+    res.status(200).json(result.rows[0] || null);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: error.message });

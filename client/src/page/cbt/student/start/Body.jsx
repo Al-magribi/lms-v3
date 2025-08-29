@@ -41,7 +41,7 @@ const Body = ({
   const { user } = useSelector((state) => state.auth);
   const { data: answer, isLoading: isLoadingAnswer } = useGetStudentAnswerQuery(
     {
-      student: user.user_id,
+      student: user.id,
       exam: examid,
     }
   );
@@ -93,7 +93,7 @@ const Body = ({
 
     const data = {
       id: answers[currentQuestion.id]?.id || null,
-      student: user.user_id,
+      student: user.id,
       exam: examid,
       question: currentQuestion.id,
       mc: currentQuestion.qtype === 2 ? null : answerValue,
@@ -155,7 +155,7 @@ const Body = ({
   }, [isSuccess, reset]);
 
   return (
-    <div className='container-fluid mt-2'>
+    <div className="container-fluid mt-2">
       <Navigation
         currentPage={currentPage}
         questionsLength={questionsData.length}
@@ -168,14 +168,14 @@ const Body = ({
         answers={answers}
       />
 
-      <div className='row g-2'>
+      <div className="row g-2">
         {/* Question Column */}
-        <div className='col-lg-5 col-12'>
+        <div className="col-lg-5 col-12">
           <QuestionCard question={currentQuestion.question} />
         </div>
 
         {/* Answer Column */}
-        <div className='col-lg-5 col-12'>
+        <div className="col-lg-5 col-12">
           <AnswerCard
             currentQuestion={currentQuestion}
             answers={answers}
@@ -188,7 +188,7 @@ const Body = ({
         </div>
 
         {/* Question Numbers Column */}
-        <div className='col-lg-2 col-12'>
+        <div className="col-lg-2 col-12">
           <QuestionNumbers
             questionsData={questionsData}
             currentPage={currentPage}

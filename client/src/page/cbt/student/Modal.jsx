@@ -10,68 +10,74 @@ const Modal = ({ exam, setExam }) => {
   const [token, setToken] = useState("");
   const modalRef = useRef(null);
 
+  const examData = JSON.parse(localStorage.getItem("exam"));
+
   const { user } = useSelector((state) => state.auth);
+
   const { data: log, isLoading } = useGetUserLogQuery(
     {
       exam: exam.id,
-      student: user.user_id,
+      student: user?.id,
     },
-    { skip: !exam.id || !user.user_id }
+    { skip: !exam.id || !user?.id }
   );
   const [addCbtLogs, { isLoading: logLoading }] = useAddCbtLogsMutation();
 
   const confirm = () => {
     // 1. Check if exam exists
-    if (!exam.id) {
+    if (!exam || !exam.id) {
       toast.error("Ujian tidak ditemukan");
       return;
     }
 
-    // 2. Check token
+    // 2. Check if user exists
+    if (!user || !user?.id) {
+      toast.error("Data pengguna tidak valid");
+      return;
+    }
+
+    // 3. Check token
     if (token !== exam.token) {
       toast.error("Token Salah");
       setToken("");
       return;
     }
 
-    // 3. Check penalty
+    // 4. Check penalty
     if (log && log.ispenalty) {
       toast.error("Anda melanggar ketentuan");
       setToken("");
       return;
     }
 
-    // 4. Check if already active
+    // 5. Check if already active
     if (log && log.isactive) {
       toast.error("Anda sedang mengikuti ujian");
       setToken("");
       return;
     }
 
-    // 5. Check if already done
+    // 6. Check if already done
     if (log && log.isdone) {
       toast.error("Anda sudah mengikuti ujian");
       setToken("");
       return;
     }
 
-    console.log(log);
-
     const data = {
-      exam: exam.id,
-      student: user.user_id,
-      action: "start",
-      start_time: new Date().toISOString(),
+      exam: exam.id.toString(),
+      student: user?.id.toString(),
     };
 
     toast.promise(addCbtLogs(data).unwrap(), {
-      loading: "Memuat...",
+      loading: "Memulai ujian...",
       success: (data) => {
-        // Only redirect on success
+        // Clear states
         setExam({});
         setToken("");
+        localStorage.removeItem("exam");
 
-        // Close modal
+        // Close modal using Bootstrap's built-in method
         const modalElement = document.getElementById("token");
         if (modalElement) {
           const closeButton = modalElement.querySelector(
@@ -82,14 +88,16 @@ const Modal = ({ exam, setExam }) => {
           }
         }
 
+        // Clear any existing questions from localStorage
         localStorage.removeItem("questions");
 
-        const name = exam.name.replace(/\s+/g, "-");
-        window.location.href = `/siswa-cbt/${name}/${exam.id}/${exam.token}`;
+        // Redirect to exam page
+        const name = exam?.name?.replace(/\s+/g, "-") || "ujian";
+        const examId = exam?.id || "";
+        const examToken = exam?.token || "";
+        window.location.href = `/siswa-cbt/${name}/${examId}/${examToken}`;
       },
       error: (error) => {
-        console.log("Error starting exam:", error);
-        // Don't redirect on error, just show error message
         return error.data?.message || "Gagal memulai ujian";
       },
     });
@@ -100,11 +108,22 @@ const Modal = ({ exam, setExam }) => {
       modalRef.current.addEventListener("shown.bs.modal", () => {
         // Remove aria-hidden when modal is shown
         modalRef.current.removeAttribute("aria-hidden");
+        // Focus on token input when modal opens
+        const tokenInput = modalRef.current.querySelector(
+          'input[name="token"]'
+        );
+        if (tokenInput) {
+          tokenInput.focus();
+        }
       });
 
       modalRef.current.addEventListener("hidden.bs.modal", () => {
         // Add aria-hidden when modal is hidden
         modalRef.current.setAttribute("aria-hidden", "true");
+        // Clear token when modal closes
+        setToken("");
+        setExam({});
+        localStorage.removeItem("exam");
       });
     }
   }, []);
@@ -112,6 +131,7 @@ const Modal = ({ exam, setExam }) => {
   const cancel = () => {
     setExam({});
     setToken("");
+    localStorage.removeItem("exam");
   };
 
   return (
@@ -128,7 +148,7 @@ const Modal = ({ exam, setExam }) => {
         <div className="modal-content">
           <div className="modal-header">
             <h5 className="modal-title" id="token-label">
-              Token {exam.name}
+              Token {exam?.name || "Ujian"}
             </h5>
             <button
               type="button"

@@ -6,7 +6,7 @@ export const authorize = (...allowedRoles) => {
     const { token } = req.cookies;
 
     if (!token) {
-      return null;
+      return res.status(401).json({ message: "Token tidak ditemukan" });
     }
 
     const client = await pool.connect();
@@ -44,7 +44,8 @@ export const authorize = (...allowedRoles) => {
 
       next();
     } catch (error) {
-      res.status(401).json({ message: error.message });
+      console.error("Auth error:", error);
+      res.status(401).json({ message: "Token tidak valid" });
     } finally {
       client.release();
     }
