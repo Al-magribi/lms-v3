@@ -29,7 +29,7 @@ router.post("/signup", async (req, res) => {
       return res.status(400).json({ message: "NIS sudah terdaftar" });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 12);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     await client.query(
       `INSERT INTO u_parents (student, email, name, password) VALUES ($1, $2, $3, $4)`,

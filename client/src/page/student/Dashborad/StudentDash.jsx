@@ -13,7 +13,7 @@ const StudentDash = () => {
 
   const goToReport = () => {
     const formattedName = user?.name.replace(/\s+/g, "-");
-    navigate(`/tahfiz-laporan-siswa/${user?.user_id}/${formattedName}`);
+    navigate(`/tahfiz-laporan-siswa/${user?.id}/${formattedName}`);
   };
 
   if (isLoading) {

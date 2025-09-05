@@ -15,7 +15,7 @@ import {
   FaGraduationCap,
   FaTrophy,
 } from "react-icons/fa";
-import "./tahfiz.css";
+// import "./tahfiz.css";
 
 const ParentTahfiz = () => {
   const { user } = useSelector((state) => state.auth);
@@ -83,10 +83,10 @@ const ParentTahfiz = () => {
                         <FaQuran className="text-primary fs-2" />
                       </div>
                       <div>
-                        <h3 className="mb-1 text-white fw-bold">
+                        <h3 className="mb-1 fw-bold">
                           Laporan Tahfiz Al-Qur'an
                         </h3>
-                        <p className="mb-0 text-white-50">
+                        <p className="mb-0">
                           <FaGraduationCap className="me-2" />
                           {user?.student || "Student Name"}
                         </p>
@@ -95,7 +95,7 @@ const ParentTahfiz = () => {
                   </div>
                   <div className="col-md-4 text-md-end">
                     <div className="d-flex flex-column gap-2">
-                      <span className="badge bg-white bg-opacity-25 text-white border-0 px-3 py-2">
+                      <span className="badge bg-primary  px-3 py-2">
                         <FaChartLine className="me-2" />
                         Progress Monitoring
                       </span>

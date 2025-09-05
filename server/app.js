@@ -37,14 +37,14 @@ import routerCenterData from "./router/center/routerCenterData.js";
 import routerApp from "./router/center/routerApp.js";
 
 // Admin Satuan
-import routerPeriode from "./router/admin/routerPeriode.js";
-import routerGrade from "./router/admin/routerGrade.js";
-import routerStudent from "./router/admin/routerStudent.js";
-import routerMajor from "./router/admin/routerMajor.js";
-import routerClass from "./router/admin/routerClass.js";
-import routerTeacher from "./router/admin/routerTeacher.js";
-import routerSubject from "./router/admin/routerSubject.js";
-import routerGraduation from "./router/admin/routerGraduation.js";
+import routerPeriode from "./router/data/routerPeriode.js";
+import routerGrade from "./router/data/routerGrade.js";
+import routerStudent from "./router/data/routerStudent.js";
+import routerMajor from "./router/data/routerMajor.js";
+import routerClass from "./router/data/routerClass.js";
+import routerTeacher from "./router/data/routerTeacher.js";
+import routerSubject from "./router/data/routerSubject.js";
+import routerGraduation from "./router/data/routerGraduation.js";
 
 // CBT
 import routerBank from "./router/cbt/routerBank.js";

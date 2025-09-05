@@ -870,8 +870,6 @@ router.get("/get-student-report", async (req, res) => {
   try {
     const { userid } = req.query;
 
-    console.log("Getting report for userid:", userid);
-
     // 1. Find student data with userid
     const studentQuery = `
       SELECT 
@@ -884,6 +882,8 @@ router.get("/get-student-report", async (req, res) => {
     `;
 
     const studentInfo = await fetchQueryResults(studentQuery, [userid]);
+
+    console.log(studentInfo);
 
     if (studentInfo.length === 0) {
       return res.status(404).json({ message: "Student not found" });
@@ -1188,6 +1188,7 @@ router.get("/get-student-report", async (req, res) => {
     );
 
     const result = {
+      student,
       memorization,
       exceed,
       targets_by_grade: Object.values(targetsByGrade),

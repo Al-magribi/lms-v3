@@ -25,6 +25,10 @@ const StudentReport = () => {
     );
   }
 
+  const student = data?.student;
+
+  console.log(student);
+
   return (
     <Layout title={`Laporan Hafalan`} levels={["tahfiz", "student", "parent"]}>
       <div className="print-section container">
@@ -34,12 +38,8 @@ const StudentReport = () => {
             Informasi Siswa
           </h6>
           <div className="ps-4">
-            <p className="mb-1">Nama: {data?.student_name}</p>
-            <p className="mb-1">NIS: {data?.student_nis}</p>
-            <p className="mb-1">
-              Kelas: {data?.grade} - {data?.class}
-            </p>
-            <p className="mb-1">Sekolah: {data?.homebase}</p>
+            <p className="mb-1">Nama: {student?.student_name}</p>
+            <p className="mb-1">NIS: {student?.student_nis}</p>
           </div>
         </div>
 
