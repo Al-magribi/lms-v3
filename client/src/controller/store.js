@@ -21,6 +21,7 @@ import { ApiApp } from "./api/center/ApiApp";
 import { ApiPeriode } from "./api/admin/ApiPeriode";
 import { ApiGrade } from "./api/admin/ApiGrade";
 import { ApiStudent } from "./api/admin/ApiStudent";
+import { ApiParent } from "./api/admin/ApiParent";
 import { ApiTeacher } from "./api/admin/ApiTeacher";
 import { ApiMajor } from "./api/admin/ApiMajor";
 import { ApiClass } from "./api/admin/ApiClass";
@@ -77,6 +78,7 @@ const store = configureStore({
     [ApiPeriode.reducerPath]: ApiPeriode.reducer,
     [ApiGrade.reducerPath]: ApiGrade.reducer,
     [ApiStudent.reducerPath]: ApiStudent.reducer,
+    [ApiParent.reducerPath]: ApiParent.reducer,
     [ApiTeacher.reducerPath]: ApiTeacher.reducer,
     [ApiMajor.reducerPath]: ApiMajor.reducer,
     [ApiClass.reducerPath]: ApiClass.reducer,
@@ -124,6 +126,7 @@ const store = configureStore({
       ApiPeriode.middleware,
       ApiGrade.middleware,
       ApiStudent.middleware,
+      ApiParent.middleware,
       ApiTeacher.middleware,
       ApiMajor.middleware,
       ApiClass.middleware,

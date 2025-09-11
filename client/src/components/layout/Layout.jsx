@@ -190,7 +190,7 @@ const Layout = ({ children, title, desc, levels }) => {
 
       {/* Sidebar */}
       <div
-        className={`bg-primary text-white d-flex flex-column flex-shrink-0 desktop-sidebar ${
+        className={`bg-primary text-white d-flex flex-column flex-shrink-0 desktop-sidebar h-100 ${
           isSidebarOpen ? "sidebar-open" : "sidebar-closed"
         }`}
         style={{
@@ -234,7 +234,13 @@ const Layout = ({ children, title, desc, levels }) => {
         </div>
 
         {/* Sidebar Navigation */}
-        <nav className="flex-grow-1 p-3">
+        <nav
+          className="flex-grow-1 p-3 overflow-auto"
+          style={{
+            msOverflowStyle: "none", // IE dan Edge lama
+            scrollbarWidth: "none", // Firefox
+          }}
+        >
           <ul className="nav nav-pills flex-column gap-1">
             {currentMenus.map((menu, i) => (
               <li key={i} className="nav-item">

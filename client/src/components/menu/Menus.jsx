@@ -39,6 +39,7 @@ export const AdminMenus = [
   { label: "Tingkat", link: "/admin-tingkat", icon: <Fa.FaSchool /> },
   { label: "Kelas", link: "/admin-kelas", icon: <Fa6.FaFolderTree /> },
   { label: "Siswa", link: "/admin-siswa", icon: <Pi.PiStudentFill /> },
+  { label: "Orang Tua", link: "/admin-wali", icon: <Fa.FaUserFriends /> },
   { label: "Mata Pelajaran", link: "/admin-mapel", icon: <Gi.GiOpenFolder /> },
   { label: "Guru", link: "/admin-guru", icon: <Fa.FaChalkboardTeacher /> },
   {
