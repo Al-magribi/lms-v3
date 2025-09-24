@@ -637,6 +637,28 @@ const Layout = ({ children, title, desc, levels }) => {
                 </button>
               </li>
             )}
+
+            <li className="nav-item">
+              <button
+                className="btn btn-danger w-100 d-flex align-items-center gap-3"
+                disabled={isLoading}
+                onClick={logoutHandler}
+                style={{
+                  borderRadius: "8px",
+                  padding: "12px 16px",
+                  border: "none",
+                  transition: "all 0.2s ease",
+                  minHeight: "44px",
+                }}
+              >
+                <i
+                  className="bi bi-box-arrow-right fs-5"
+                  style={{ minWidth: "20px", textAlign: "center" }}
+                ></i>
+
+                <span className="flex-grow-1 text-start">Logout</span>
+              </button>
+            </li>
           </ul>
         </nav>
       </div>

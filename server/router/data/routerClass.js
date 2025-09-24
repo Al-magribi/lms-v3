@@ -446,7 +446,7 @@ router.delete("/delete-student", authorize("admin"), async (req, res) => {
 
     await client.query("BEGIN");
     await client.query(
-      `DELETE FROM cl_students WHERE id = $1 AND homebase = $2`,
+      `DELETE FROM cl_students WHERE student = $1 AND homebase = $2`,
       [id, homebase]
     );
     await client.query("COMMIT");

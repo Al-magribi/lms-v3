@@ -1146,6 +1146,129 @@ router.get("/center-homebase-stats", authorize("center"), async (req, res) => {
   }
 });
 
+router.get(
+  "/homebase-stats",
+  authorize("center", "admin"),
+  async (req, res) => {
+    try {
+      const homebase = req.user.homebase;
+
+      const result = await pool.query(
+        `
+      WITH active_periode AS (
+        SELECT id, homebase
+        FROM a_periode
+        WHERE isactive = true
+      ),
+      homebase_stats AS (
+        SELECT 
+          h.id as homebase_id,
+          h.name as homebase_name,
+          COUNT(DISTINCT cs.id) as total_students,
+          COUNT(DISTINCT t.id) as total_teachers,
+          COUNT(DISTINCT c.id) as total_classes,
+          COUNT(DISTINCT s.id) as total_subjects
+        FROM a_homebase h
+        LEFT JOIN cl_students cs ON cs.homebase = h.id 
+          AND cs.periode = (SELECT id FROM active_periode ap WHERE ap.homebase = h.id LIMIT 1)
+        LEFT JOIN u_teachers t ON t.homebase = h.id
+        LEFT JOIN a_class c ON c.homebase = h.id
+        LEFT JOIN a_subject s ON s.homebase = h.id
+        ${homebase ? "WHERE h.id = $1" : ""}
+        GROUP BY h.id, h.name
+      ),
+      teacher_stats AS (
+        SELECT 
+          homebase,
+          COUNT(*) as total_teachers,
+          COUNT(CASE WHEN gender = 'L' THEN 1 END) as male_count,
+          COUNT(CASE WHEN gender = 'P' THEN 1 END) as female_count
+        FROM u_teachers
+        ${homebase ? "WHERE homebase = $1" : ""}
+        GROUP BY homebase
+      ),
+      grade_stats AS (
+        SELECT 
+          g.homebase,
+          g.id as grade_id,
+          g.name as grade_name,
+          COUNT(DISTINCT cs.id) as students_count,
+          COUNT(DISTINCT CASE WHEN us.gender = 'L' THEN cs.id END) as male_count,
+          COUNT(DISTINCT CASE WHEN us.gender = 'P' THEN cs.id END) as female_count
+        FROM a_grade g
+        LEFT JOIN a_class c ON c.grade = g.id
+        LEFT JOIN cl_students cs ON cs.classid = c.id
+          AND cs.periode = (SELECT id FROM active_periode ap WHERE ap.homebase = g.homebase LIMIT 1)
+        LEFT JOIN u_students us ON us.id = cs.student
+        ${homebase ? "WHERE g.homebase = $1" : ""}
+        GROUP BY g.homebase, g.id, g.name
+      ),
+      class_stats AS (
+        SELECT 
+          c.grade,
+          c.id as class_id,
+          c.name as class_name,
+          COUNT(DISTINCT cs.id) as students_count,
+          COUNT(DISTINCT CASE WHEN us.gender = 'L' THEN cs.id END) as male_count,
+          COUNT(DISTINCT CASE WHEN us.gender = 'P' THEN cs.id END) as female_count
+        FROM a_class c
+        LEFT JOIN cl_students cs ON cs.classid = c.id
+          AND cs.periode = (SELECT id FROM active_periode ap WHERE ap.homebase = c.homebase LIMIT 1)
+        LEFT JOIN u_students us ON us.id = cs.student
+        ${homebase ? "WHERE c.homebase = $1" : ""}
+        GROUP BY c.grade, c.id, c.name
+        HAVING COUNT(cs.id) > 0 -- hanya kelas yang punya siswa
+      )
+      SELECT 
+        h.homebase_id,
+        h.homebase_name,
+        h.total_students,
+        h.total_teachers,
+        h.total_classes,
+        h.total_subjects,
+        json_build_object(
+          'male_count', COALESCE(t.male_count,0),
+          'female_count', COALESCE(t.female_count,0)
+        ) as teacher_stats,
+        (
+          SELECT json_agg(
+            json_build_object(
+              'grade_name', g.grade_name,
+              'students_count', g.students_count,
+              'male_count', g.male_count,
+              'female_count', g.female_count,
+              'class_stats', (
+                SELECT json_agg(
+                  json_build_object(
+                    'class_name', c.class_name,
+                    'students_count', c.students_count,
+                    'male_count', c.male_count,
+                    'female_count', c.female_count
+                  )
+                )
+                FROM class_stats c
+                WHERE c.grade = g.grade_id
+              )
+            )
+          )
+          FROM grade_stats g
+          WHERE g.homebase = h.homebase_id
+        ) as students_stats
+      FROM homebase_stats h
+      LEFT JOIN teacher_stats t ON t.homebase = h.homebase_id
+      ORDER BY h.homebase_name
+      `,
+        homebase ? [homebase] : []
+      );
+
+      res.status(200).json(result.rows);
+    } catch (error) {
+      console.error("Error fetching grades-teachers-homebase stats:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  }
+);
+
 const result = [
   {
     homebase_name: "Nama homebasenya",

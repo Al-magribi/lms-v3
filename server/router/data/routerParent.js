@@ -58,7 +58,8 @@ router.get("/get-parents", authorize("admin"), async (req, res) => {
         g.name AS grade,
         c.name AS class,
         p.name AS parent_name,
-        p.email AS parent_email
+        p.email AS parent_email,
+        p.id AS parent_id
       FROM u_parents p
       JOIN u_students s ON p.studentid = s.id
       JOIN cl_students cs ON cs.student = s.id

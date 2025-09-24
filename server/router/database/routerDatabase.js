@@ -39,7 +39,7 @@ router.get(
 
 router.post(
   "/add-student-data",
-  authorize("admin", "teacher", "student"),
+  authorize("admin", "teacher", "student", "parent"),
   withDbConnection(async (req, res, client) => {
     const {
       userid,
@@ -201,7 +201,7 @@ router.post(
 // ============================
 router.post(
   "/add-parents-data",
-  authorize("admin", "teacher", "student"),
+  authorize("admin", "teacher", "student", "parent"),
   withDbConnection(async (req, res, client) => {
     const {
       userid,
@@ -273,7 +273,7 @@ router.post(
 
 router.post(
   "/add-family-data",
-  authorize("admin", "teacher", "student"),
+  authorize("admin", "teacher", "student", "parent"),
   withDbConnection(async (req, res, client) => {
     const { userid, name, gender, birth_date } = req.body;
 
@@ -337,7 +337,7 @@ router.post(
 
 router.get(
   "/get-family",
-  authorize("admin", "teacher", "student"),
+  authorize("admin", "teacher", "student", "parent"),
   withDbConnection(async (req, res, client) => {
     const { userid } = req.query;
 
@@ -360,7 +360,7 @@ router.get(
 
 router.delete(
   "/delete-family-data",
-  authorize("admin", "teacher", "student"),
+  authorize("admin", "teacher", "student", "parent"),
   withDbConnection(async (req, res, client) => {
     const { id } = req.query;
 

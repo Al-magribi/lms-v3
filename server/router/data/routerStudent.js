@@ -87,46 +87,57 @@ router.get("/get-students", authorize("admin"), async (req, res) => {
     const offset = (page - 1) * limit;
     const homebase = req.user.homebase;
 
-    const periode = await client.query(
-      `SELECT * FROM a_periode 
-      WHERE isactive = true AND homebase = $1`,
+    // 1. Dapatkan periode yang aktif saat ini
+    const periodeResult = await client.query(
+      `SELECT id FROM a_periode WHERE isactive = true AND homebase = $1`,
       [homebase]
     );
 
-    const activePeriode = periode.rows[0].id;
+    if (periodeResult.rows.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "Periode aktif tidak ditemukan." });
+    }
+    const activePeriode = periodeResult.rows[0].id;
+
+    // klausa WHERE yang akan digunakan di kedua query
+    const whereClause = `
+      WHERE u_students.homebase = $1 
+      AND (u_students.name ILIKE $2 OR u_students.nis ILIKE $2)
+      AND cl_students.periode = $3
+      AND u_students.isactive = true
+    `;
 
     const [count, data] = await Promise.all([
+      // 2. Query untuk menghitung total siswa yang HANYA ada di periode aktif
       client.query(
-        `SELECT COUNT(*) FROM u_students
-        INNER JOIN cl_students ON u_students.id = cl_students.student
-				WHERE u_students.homebase = $1 
-        AND (u_students.name ILIKE $2 OR u_students.nis ILIKE $2)
-        AND cl_students.periode = $3
-        AND u_students.isactive = true`,
+        `SELECT COUNT(*) 
+         FROM u_students
+         INNER JOIN cl_students ON u_students.id = cl_students.student
+         ${whereClause}`,
         [homebase, `%${search}%`, activePeriode]
       ),
 
+      // 3. Query untuk mengambil data siswa yang HANYA ada di periode aktif
       client.query(
-        `SELECT u_students.*,
-				entry_periode.id AS entry_id,
-        entry_periode.name AS entry,
-				periode_periode.id AS periode_id,
-        periode_periode.name AS periode_name,
-        cl_students.classid AS classid,
-        a_class.name AS classname,
-				a_homebase.name AS homebase
-				FROM u_students
-				INNER JOIN cl_students ON u_students.id = cl_students.student
-				LEFT JOIN a_periode AS entry_periode ON u_students.entry = entry_periode.id
-				LEFT JOIN a_periode AS periode_periode ON cl_students.periode = periode_periode.id
-				LEFT JOIN a_homebase ON u_students.homebase = a_homebase.id
-				LEFT JOIN a_class ON cl_students.classid = a_class.id
-				WHERE u_students.homebase = $1
-				AND (u_students.name ILIKE $2 OR u_students.nis ILIKE $2) 
-				AND cl_students.periode = $3
-        AND u_students.isactive = true
-				ORDER BY entry_periode.name DESC, u_students.name ASC
-				LIMIT $4 OFFSET $5`,
+        `SELECT 
+           u_students.*,
+           entry_periode.id AS entry_id,
+           entry_periode.name AS entry,
+           periode_periode.id AS periode_id,
+           periode_periode.name AS periode_name,
+           cl_students.classid AS classid,
+           a_class.name AS classname,
+           a_homebase.name AS homebase
+         FROM u_students
+         INNER JOIN cl_students ON u_students.id = cl_students.student
+         LEFT JOIN a_periode AS entry_periode ON u_students.entry = entry_periode.id
+         LEFT JOIN a_periode AS periode_periode ON cl_students.periode = periode_periode.id
+         LEFT JOIN a_homebase ON u_students.homebase = a_homebase.id
+         LEFT JOIN a_class ON cl_students.classid = a_class.id
+         ${whereClause}
+         ORDER BY entry_periode.name DESC, u_students.name ASC
+         LIMIT $4 OFFSET $5`,
         [homebase, `%${search}%`, activePeriode, limit, offset]
       ),
     ]);

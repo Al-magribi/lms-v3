@@ -1124,6 +1124,126 @@ router.get("/recap", authorize("teacher", "admin"), async (req, res) => {
 });
 
 // ==========================
+// Teacher Completion Report
+// ==========================
+
+router.get(
+  "/teacher-completion-status",
+  authorize("admin"),
+  async (req, res) => {
+    const client = await pool.connect();
+    try {
+      let { month, page = 1, limit = 10, search = "", categoryId } = req.query;
+
+      // Sanitasi input untuk mencegah error
+      if (categoryId === "null" || categoryId === "undefined" || !categoryId) {
+        categoryId = null;
+      }
+      if (!month) {
+        return res.status(400).json({ message: "Month parameter is required" });
+      }
+
+      const homebase = req.user.homebase;
+      const periodeid = await getActivePeriode(client, homebase);
+      if (!periodeid) {
+        return res.status(400).json({ message: "No active periode found" });
+      }
+
+      const monthNumber = getMonthNumber(month);
+      const offset = (page - 1) * limit;
+
+      // 1. PASTIKAN QUERY INI DIGUNAKAN
+      // Query ini menghitung total data terlebih dahulu di dalam CTE 'total_count'
+      const query = `
+        WITH filtered_teachers AS (
+          SELECT DISTINCT ut.id, ut.name
+          FROM u_teachers ut
+          JOIN at_subject ats ON ut.id = ats.teacher
+          JOIN a_subject s ON ats.subject = s.id
+          WHERE s.homebase = $1
+            AND ut.name ILIKE $5
+            AND ($6::INTEGER IS NULL OR s.categoryid = $6::INTEGER)
+        ),
+        total_count AS (
+            -- Menghitung jumlah total guru yang telah difilter
+            SELECT COUNT(*) as total FROM filtered_teachers
+        )
+        SELECT
+          t.name as teacher,
+          EXISTS (
+            SELECT 1 FROM l_formative lf
+            WHERE lf.teacher_id = t.id AND lf.month = $2 AND lf.periode_id = $3
+          ) as formative,
+          EXISTS (
+            SELECT 1 FROM l_summative ls
+            WHERE ls.teacher_id = t.id AND ls.month = $2 AND ls.periode_id = $3
+          ) as summative,
+          EXISTS (
+            SELECT 1 FROM l_attendance la
+            WHERE la.subjectid IN (SELECT subject FROM at_subject WHERE teacher = t.id)
+              AND EXTRACT(MONTH FROM la.day_date) = $4 AND la.periode = $3
+          ) as present,
+          -- Mengambil nilai total untuk dikirim ke frontend
+          (SELECT total FROM total_count) as total_records
+        FROM filtered_teachers t
+        ORDER BY t.name
+        LIMIT $7 OFFSET $8;
+      `;
+
+      const params = [
+        homebase,
+        month,
+        periodeid,
+        monthNumber,
+        `%${search}%`,
+        categoryId,
+        limit,
+        offset,
+      ];
+      const result = await client.query(query, params);
+      const statistics = result.rows;
+
+      // 2. PASTIKAN TOTAL DATA DIAMBIL DENGAN BENAR
+      // Ambil total_records dari baris pertama. Jika tidak ada data, totalnya 0.
+      const totalRecords =
+        result.rows.length > 0 ? result.rows[0].total_records : 0;
+
+      // Hapus properti total_records dari setiap item agar tidak mengganggu data tabel
+      statistics.forEach((s) => delete s.total_records);
+
+      const totalTasks = statistics.length * 3;
+      let completedTasks = 0;
+      statistics.forEach((teacher) => {
+        if (teacher.present) completedTasks++;
+        if (teacher.summative) completedTasks++;
+        if (teacher.formative) completedTasks++;
+      });
+
+      const completenessPercentage =
+        totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+      const completeness = `${completenessPercentage.toFixed(2)}%`;
+
+      // 3. PASTIKAN STRUKTUR RESPON JSON SEPERTI INI
+      // Kirim 'statistics' dan 'pagination' sebagai objek terpisah
+      res.status(200).json({
+        statistics: statistics,
+        completeness: completeness,
+        pagination: {
+          total: parseInt(totalRecords),
+          page: parseInt(page),
+          limit: parseInt(limit),
+        },
+      });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: error.message });
+    } finally {
+      client.release();
+    }
+  }
+);
+
+// ==========================
 // Parent Monthly Reports
 // ==========================
 
