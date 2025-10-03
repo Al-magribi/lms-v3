@@ -485,6 +485,7 @@ router.get(
     const client = await pool.connect();
     try {
       const { exam, classid, page = 1, limit = 10, search = "" } = req.query;
+
       const offset = (page - 1) * limit;
 
       const homebase = req.user.homebase;
@@ -608,75 +609,3 @@ router.get(
 );
 
 export default router;
-
-// const result = [
-//   {
-//     exam_name: "Nama ujian diambil dari c_exam",
-//     exam_token: "Token ujian diambil dari c_exam",
-//     teacher_name: "Nama guru diambil dari teacher di c_exam",
-//     homebase_name: "Nama sekolah diambil dari homebase di c_exam",
-//     mc_score: "presentase PG diambil dari c_exam.mc_score",
-//     essay_score: "presentase Essay diambil dari c_exam.essay_score",
-//     students: [
-//       {
-//         student_id: "Id siswa diambil dari u_students",
-//         student_nis: "NIS siswa diambil dari u_students",
-//         student_name: "Nama siswa diambil dari u_students",
-//         student_grade:
-//           "Tingkat kelas siswa diambil dari a_grade berdasarkan cl_students.grade",
-//         student_class:
-//           "Kelas siswa diambil dari a_class berdasarkan cl_students.classid",
-//         log_exam:
-//           "Tanggal ujian diambil dari log dengan kombinasi exam dan student",
-//         correct:
-//           "jumlah Jawaban benar diambil dari c_answer.point > 0 dan c_answer.essay null",
-//         incorrect:
-//           " jumlah Jawaban salah diambil dari c_answer.point = 0 dan c_answer.essay null",
-//         mc_score:
-//           "Jumlah PG benar diambil dari c_answer.point yang c_answer.mc tidak null",
-//         essay_score:
-//           "Nilai Essay diambil dari c_answer.point yang c_answer.essay tidak null",
-//         score:
-//           "pg_score dikali c_exam.mc_score ditambah essay_score dikali c_exam.essay_score, 2 angka dibelakang koma",
-//       },
-//     ],
-//   },
-// ];
-
-const result = [
-  {
-    exam_name: "Nama ujian diambil dari c_exam",
-    exam_token: "Token ujian diambil dari c_exam",
-    teacher_name: "Nama guru diambil dari teacher di c_exam",
-    questions: [
-      {
-        id: "id pertanyaan diambil dari c_question yang qtype = 1",
-        poin: "poin pertanyaan diambil dari c_question",
-        qkey: "jawaban benar diambil dari c_question",
-      },
-    ],
-    students: [
-      {
-        id: "id siswa diambil dari u_students",
-        nis: "nis siswa diambil dari u_students",
-        name: "nama siswa diambil dari u_students",
-        grade:
-          "tingkat kelas siswa diambil dari a_grade berdasarkan cl_students.grade",
-        class:
-          "kelas siswa diambil dari a_class berdasarkan cl_students.classid",
-        correct:
-          "jumlah jawaban benar diambil dari c_answer.point > 0 dan c_answer.essay null",
-        incorrect:
-          "jumlah jawaban salah diambil dari c_answer.point = 0 dan c_answer.essay null",
-        mc_score:
-          "jumlah PG benar diambil dari c_answer.point yang c_answer.mc tidak null",
-        answer: [
-          {
-            id: "id question dari c_answer yang essay = null",
-            mc: "jawaban siswa diambil dari c_answer.mc",
-          },
-        ],
-      },
-    ],
-  },
-];

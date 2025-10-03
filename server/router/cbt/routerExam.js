@@ -209,7 +209,7 @@ router.get("/get-exam", authorize("admin", "teacher"), async (req, res) => {
 				WHERE c_exam.homebase = $1 
 				AND (c_exam.name ILIKE $2 OR u_teachers.name ILIKE $2)
 				GROUP BY c_exam.id, u_teachers.name
-				ORDER BY c_exam.name ASC
+				ORDER BY c_exam.createdat DESC
 				LIMIT $3 OFFSET $4`,
         values: [homebase, `%${search}%`, limit, offset],
       };

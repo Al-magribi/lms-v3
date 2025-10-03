@@ -392,19 +392,23 @@ router.post(
     const client = await pool.connect();
     try {
       const { contentId, title, video } = req.body;
+
       const files = req.files;
       const { name } = req.user;
       const teacherName = name.toLowerCase().replace(/\s+/g, "_");
 
       // Get chapter title dari content
       const chapterResult = await client.query(
-        `SELECT c.title 
+        `SELECT c.title, lc.title AS content_name 
 			FROM l_chapter c 
 			JOIN l_content lc ON c.id = lc.chapter 
 			WHERE lc.id = $1`,
         [contentId]
       );
       const chapterTitle = chapterResult.rows[0].title
+        .toLowerCase()
+        .replace(/\s+/g, "_");
+      const contentTitle = chapterResult.rows[0].content_name
         .toLowerCase()
         .replace(/\s+/g, "_");
 
@@ -414,7 +418,10 @@ router.post(
       if (files && files.length > 0) {
         for (const file of files) {
           // Rename file dengan proper format
-          const newFileName = `${chapterTitle}-${file.filename}`;
+          const newFileName = `${chapterTitle}-${contentTitle}-${title.replace(
+            /\s+/g,
+            "-"
+          )}-${file.filename}`;
           const oldPath = path.join(
             "./server/assets/lms",
             teacherName,
