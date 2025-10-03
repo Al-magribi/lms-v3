@@ -607,7 +607,7 @@ router.post(
       const insertQuery = `
         INSERT INTO l_summative (
           student_id, subject_id, class_id, periode_id, chapter_id, teacher_id,
-          semester, month, oral, written, project, performace
+          semester, month, oral, written, project, performance
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING *
       `;
@@ -625,7 +625,7 @@ router.post(
           continue;
         }
 
-        const [nis, namaSiswa, oral, written, project, performace, rataRata] =
+        const [nis, namaSiswa, oral, written, project, performance, rataRata] =
           row;
 
         // Skip header row or empty rows
@@ -655,7 +655,7 @@ router.post(
             oral && oral !== "" ? Number(oral) : null,
             written && written !== "" ? Number(written) : null,
             project && project !== "" ? Number(project) : null,
-            performace && performace !== "" ? Number(performace) : null,
+            performance && performance !== "" ? Number(performance) : null,
           ];
 
           // First delete any existing record for this combination
@@ -909,7 +909,7 @@ router.post("/summative", authorize("teacher", "admin"), async (req, res) => {
       oral,
       written,
       project,
-      performace,
+      performance,
     } = req.body;
 
     if (
@@ -935,14 +935,14 @@ router.post("/summative", authorize("teacher", "admin"), async (req, res) => {
     const query = `
         INSERT INTO l_summative (
           student_id, subject_id, class_id, periode_id, chapter_id, teacher_id,
-          semester, month, oral, written, project, performace
+          semester, month, oral, written, project, performance
         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
         ON CONFLICT (student_id, subject_id, class_id, chapter_id, month, semester)
         DO UPDATE SET
           oral = EXCLUDED.oral,
           written = EXCLUDED.written,
           project = EXCLUDED.project,
-          performace = EXCLUDED.performace,
+          performance = EXCLUDED.performance,
           updatedat = CURRENT_TIMESTAMP
         RETURNING *
       `;
@@ -959,12 +959,13 @@ router.post("/summative", authorize("teacher", "admin"), async (req, res) => {
       oral ?? null,
       written ?? null,
       project ?? null,
-      performace ?? null,
+      performance ?? null,
     ];
 
     const result = await client.query(query, params);
     res.status(200).json({ message: saved, data: result.rows[0] });
   } catch (error) {
+    console.log(error);
     res.status(500).json({ message: error.message });
   } finally {
     client.release();
@@ -1446,7 +1447,7 @@ router.get("/parent-monthly-report", authorize("parent"), async (req, res) => {
           oral,
           written,
           project,
-          performace,
+          performance,
           rata_rata
         FROM l_summative
         WHERE student_id = $1 
@@ -1514,7 +1515,7 @@ router.get("/parent-monthly-report", authorize("parent"), async (req, res) => {
         (summative.oral !== null ||
           summative.written !== null ||
           summative.project !== null ||
-          summative.performace !== null);
+          summative.performance !== null);
 
       // Only add subject if it has at least one type of score
       if (hasAttitudeScore || hasFormativeScore || hasSummativeScore) {
@@ -1632,5 +1633,104 @@ router.get(
     }
   }
 );
+
+// Pembobotan
+router.get("/get-weighting", authorize("teacher"), async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { subjectid } = req.query;
+    const teacherid = req.user.id; // Diambil dari pengguna yang terautentikasi
+
+    if (!subjectid) {
+      return res.status(400).json({ message: "subjectid diperlukan" });
+    }
+
+    const query = `
+      SELECT presensi, attitude, formative, summative 
+      FROM l_weighting 
+      WHERE teacherid = $1 AND subjectid = $2
+    `;
+
+    const result = await client.query(query, [teacherid, Number(subjectid)]);
+
+    // Jika tidak ada data, kembalikan nilai default atau null
+    const data = result.rows[0] || {
+      presensi: null,
+      attitude: null,
+      formative: null,
+      summative: null,
+    };
+
+    res.status(200).json(data);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+router.post("/add-weighting", authorize("teacher"), async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { subjectid, presensi, attitude, formative, summative } = req.body;
+    const teacherid = req.user.id; // Diambil dari pengguna yang terautentikasi
+
+    // Validasi input
+    if (
+      subjectid === undefined ||
+      presensi === undefined ||
+      attitude === undefined ||
+      formative === undefined ||
+      summative === undefined
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Semua field pembobotan diperlukan" });
+    }
+
+    // Validasi agar total bobot adalah 100
+    const totalWeight =
+      Number(presensi) +
+      Number(attitude) +
+      Number(formative) +
+      Number(summative);
+    if (totalWeight !== 100) {
+      return res.status(400).json({ message: "Total pembobotan harus 100%" });
+    }
+
+    const query = `
+      INSERT INTO l_weighting (teacherid, subjectid, presensi, attitude, formative, summative)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      ON CONFLICT (teacherid, subjectid) 
+      DO UPDATE SET
+        presensi = EXCLUDED.presensi,
+        attitude = EXCLUDED.attitude,
+        formative = EXCLUDED.formative,
+        summative = EXCLUDED.summative,
+      RETURNING *
+    `;
+
+    const params = [
+      teacherid,
+      subjectid,
+      presensi,
+      attitude,
+      formative,
+      summative,
+    ];
+    const result = await client.query(query, params);
+
+    res.status(200).json({
+      message: "Pembobotan berhasil disimpan",
+      data: result.rows[0],
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
+  }
+});
 
 export default router;
