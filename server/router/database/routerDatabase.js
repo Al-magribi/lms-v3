@@ -387,20 +387,29 @@ router.delete(
 // ============================
 router.get(
   "/get-database",
-  authorize("admin", "center"),
+  // 1. Allow 'teacher' role to access this endpoint
+  authorize("admin", "center", "teacher"),
   withDbConnection(async (req, res, client) => {
     const { search = "", page = 1, limit = 10 } = req.query;
     const homebaseid = req.user.homebase;
+    const userLevel = req.user.level;
+    const userClassId = req.user.class; // Get classid from user token
 
     const periode = await executeQuery(
       client,
       `SELECT * FROM a_periode WHERE homebase = $1 AND isactive = true`,
       [homebaseid]
     );
+
+    // Handle case where no active period is found
+    if (periode.rows.length === 0) {
+      return res.status(404).json({ message: "No active period found." });
+    }
     const activePeriode = periode.rows[0].id;
 
     const offset = (page - 1) * limit;
 
+    // Base queries remain the same
     let query = `
     WITH student_data AS (
       SELECT 
@@ -412,6 +421,7 @@ router.get(
         ds.entry_name as student_entry,
         g.name as student_grade,
         c.name as student_class,
+        cs.classid as student_class_id,
         CASE 
           WHEN ds.id IS NOT NULL THEN
             ROUND(
@@ -446,7 +456,7 @@ router.get(
       LEFT JOIN a_grade g ON c.grade = g.id
       WHERE s.homebase = $1
       AND cs.periode = $2 
-  `;
+    `;
 
     let countQuery = `
     SELECT COUNT(*) as total
@@ -454,11 +464,26 @@ router.get(
     LEFT JOIN cl_students cs ON s.id = cs.student AND cs.periode = $2
     WHERE s.homebase = $1
     AND cs.periode = $2
-  `;
+    `;
 
+    // Initialize parameters and counter
     const params = [homebaseid, activePeriode];
     let paramCount = 2;
 
+    // 2. Add conditional logic for teachers
+    if (userLevel === "teacher") {
+      if (!userClassId) {
+        return res
+          .status(403)
+          .json({ message: "Teacher is not assigned to a class." });
+      }
+      paramCount++;
+      query += ` AND cs.classid = $${paramCount}`;
+      countQuery += ` AND cs.classid = $${paramCount}`;
+      params.push(userClassId);
+    }
+
+    // This search logic remains the same and works with the above addition
     if (search) {
       paramCount++;
       query += ` AND (LOWER(s.name) LIKE LOWER($${paramCount}) OR LOWER(s.nis) LIKE LOWER($${paramCount}))`;
@@ -466,6 +491,7 @@ router.get(
       params.push(`%${search}%`);
     }
 
+    // This also remains the same, correctly using the final paramCount
     query += `) SELECT * FROM student_data ORDER BY CAST(student_grade AS INT), student_class, student_name LIMIT $${
       paramCount + 1
     } OFFSET $${paramCount + 2}`;
@@ -473,6 +499,7 @@ router.get(
 
     const [result, countResult] = await Promise.all([
       executeQuery(client, query, params),
+      // The slice remains correct as limit & offset are not part of the count query
       executeQuery(client, countQuery, params.slice(0, -2)),
     ]);
 

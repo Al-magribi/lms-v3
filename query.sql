@@ -792,7 +792,7 @@ CREATE TABLE l_summative(
     oral INTEGER CHECK (oral >= 0 AND oral <= 100),
     written INTEGER CHECK (written >= 0 AND written <= 100),
     project INTEGER CHECK (project >= 0 AND project <= 100),
-    performace INTEGER CHECK (performace >= 0 AND performace <= 100),
+    performance INTEGER CHECK (performance >= 0 AND performance <= 100),
     rata_rata NUMERIC(5,2),
     createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updatedat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -915,7 +915,7 @@ BEGIN
     IF NEW.oral IS NOT NULL THEN total_score := total_score + NEW.oral; score_count := score_count + 1; END IF;
     IF NEW.written IS NOT NULL THEN total_score := total_score + NEW.written; score_count := score_count + 1; END IF;
     IF NEW.project IS NOT NULL THEN total_score := total_score + NEW.project; score_count := score_count + 1; END IF;
-    IF NEW.performace IS NOT NULL THEN total_score := total_score + NEW.performace; score_count := score_count + 1; END IF;
+    IF NEW.performance IS NOT NULL THEN total_score := total_score + NEW.performance; score_count := score_count + 1; END IF;
     
     IF score_count > 0 THEN
         NEW.rata_rata := total_score::NUMERIC / score_count;
@@ -1010,3 +1010,79 @@ ANALYZE l_chapter;
 ANALYZE db_student;
 ANALYZE logs;
 ANALYZE cl_students;
+
+
+CREATE TABLE a_category(
+    id SERIAL NOT NULL PRIMARY KEY,
+    name TEXT,
+    createdat timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE a_branch(
+    id SERIAL NOT NULL PRIMARY KEY,
+    name TEXT,
+    createdat timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE a_subject
+ADD COLUMN categoryid INTEGER REFERENCES a_category(id) ON DELETE CASCADE;
+
+
+ALTER TABLE a_subject
+ADD COLUMN branchid INTEGER REFERENCES a_branch(id) ON DELETE CASCADE;
+
+ALTER TABLE a_category
+ADD COLUMN homebase INTEGER REFERENCES a_homebase(id) ON DELETE CASCADE;
+
+ALTER TABLE a_branch
+ADD COLUMN homebase INTEGER REFERENCES a_homebase(id) ON DELETE CASCADE;
+
+
+CREATE TABLE l_weighting(
+    id SERIAL PRIMARY KEY,
+    teacherid INTEGER NOT NULL,
+    subjectid INTEGER NOT NULL,
+    
+    presensi SMALLINT NOT NULL CHECK (presensi >= 0 AND presensi <= 100),
+    attitude SMALLINT NOT NULL CHECK (attitude >= 0 AND attitude <= 100),
+    formative SMALLINT NOT NULL CHECK (formative >= 0 AND formative <= 100),
+    summative SMALLINT NOT NULL CHECK (summative >= 0 AND summative <= 100),
+
+    CONSTRAINT fk_teacher
+        FOREIGN KEY(teacherid) 
+        REFERENCES u_teachers(id) 
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_subject
+        FOREIGN KEY(subjectid) 
+        REFERENCES a_subject(id) 
+        ON DELETE CASCADE,
+        
+    CONSTRAINT unique_teacher_subject
+        UNIQUE (teacherid, subjectid),
+        
+    CONSTRAINT total_weight_must_be_100
+        CHECK (presensi + attitude + formative + summative = 100)
+);
+
+-- (Opsional tapi sangat direkomendasikan) Tambahkan indeks untuk performa query
+CREATE INDEX idx_l_weighting_teacherid ON l_weighting(teacherid);
+CREATE INDEX idx_l_weighting_subjectid ON l_weighting(subjectid);
+
+
+
+-- Langkah 1: Hapus constraint total bobot yang lama karena kolomnya akan dihapus.
+ALTER TABLE l_weighting
+DROP CONSTRAINT total_weight_must_be_100;
+
+-- Langkah 2: Hapus kolom formative dan summative, lalu tambahkan kolom daily.
+-- Ini bisa digabungkan dalam satu perintah ALTER TABLE.
+ALTER TABLE l_weighting
+DROP COLUMN formative,
+DROP COLUMN summative,
+ADD COLUMN daily SMALLINT NOT NULL CHECK (daily >= 0 AND daily <= 100);
+
+-- Langkah 3: Tambahkan kembali constraint total bobot dengan kolom yang baru.
+ALTER TABLE l_weighting
+ADD CONSTRAINT total_weight_must_be_100
+CHECK (presensi + attitude + daily = 100);

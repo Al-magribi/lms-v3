@@ -25,6 +25,97 @@ const getActivePeriode = async (client, homebase) => {
   return periode.rows[0]?.id;
 };
 
+// =======================
+// Pembobotan
+// =======================
+
+router.get("/get-weighting", authorize("teacher"), async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { subjectid } = req.query;
+    const teacherid = req.user.id; // Diambil dari pengguna yang terautentikasi
+
+    if (!subjectid) {
+      return res.status(400).json({ message: "subjectid diperlukan" });
+    }
+
+    // Query disesuaikan dengan kolom baru
+    const query = `
+      SELECT id, presensi, attitude, daily 
+      FROM l_weighting 
+      WHERE teacherid = $1 AND subjectid = $2
+    `;
+
+    const result = await client.query(query, [teacherid, Number(subjectid)]);
+
+    // Jika tidak ada data, kembalikan nilai default yang sesuai
+    const data = result.rows[0] || {
+      presensi: null,
+      attitude: null,
+      daily: null, // Diubah dari formative & summative
+    };
+
+    res.status(200).json(data);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+router.post("/save-weighting", authorize("teacher"), async (req, res) => {
+  const client = await pool.connect();
+  try {
+    // Variabel 'id' dihapus karena tidak digunakan dalam logika UPSERT
+    const { subjectid, presensi, attitude, daily } = req.body;
+    const teacherid = req.user.id;
+
+    // Validasi input tetap sama
+    if (
+      subjectid === undefined ||
+      presensi === undefined ||
+      attitude === undefined ||
+      daily === undefined
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Semua field pembobotan diperlukan" });
+    }
+
+    const totalWeight = Number(presensi) + Number(attitude) + Number(daily);
+    if (totalWeight !== 100) {
+      return res.status(400).json({ message: "Total pembobotan harus 100%" });
+    }
+
+    // Query ini secara efisien menangani INSERT dan UPDATE dalam satu perintah
+    // ON CONFLICT (teacherid, subjectid) akan aktif jika data dengan kombinasi tersebut sudah ada
+    const query = `
+      INSERT INTO l_weighting (teacherid, subjectid, presensi, attitude, daily)
+      VALUES ($1, $2, $3, $4, $5)
+      ON CONFLICT (teacherid, subjectid) 
+      DO UPDATE SET
+        presensi = EXCLUDED.presensi,
+        attitude = EXCLUDED.attitude,
+        daily = EXCLUDED.daily
+      RETURNING *
+    `;
+
+    const params = [teacherid, subjectid, presensi, attitude, daily];
+    const result = await client.query(query, params);
+
+    res.status(200).json({
+      message: "Pembobotan berhasil disimpan",
+      data: result.rows[0],
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
+  }
+});
+
 // ==========================
 // Attitude (Sikap)
 // ==========================
@@ -549,161 +640,6 @@ router.post("/formative", authorize("teacher", "admin"), async (req, res) => {
   }
 });
 
-// Bulk upload summative scores from Excel file
-router.post(
-  "/summative/upload-score",
-  authorize("teacher", "admin"),
-  async (req, res) => {
-    const client = await pool.connect();
-    try {
-      const { classid, subjectid, chapterid, month, semester } = req.query;
-      const data = req.body; // Array of arrays from Excel
-
-      if (!classid || !subjectid || !chapterid || !month || !semester) {
-        return res.status(400).json({ message: "Missing required parameters" });
-      }
-
-      if (!Array.isArray(data) || data.length === 0) {
-        return res.status(400).json({ message: "No data provided for upload" });
-      }
-
-      const homebase = req.user.homebase;
-      const teacher_id = req.user.id;
-      const periode_id = await getActivePeriode(client, homebase);
-      if (!periode_id) {
-        return res.status(400).json({ message: "No active periode found" });
-      }
-
-      // Get all students in the class to map NIS to student_id
-      const studentsQuery = `
-        SELECT us.id as student_id, us.nis, us.name as student_name
-        FROM cl_students cs
-        JOIN u_students us ON cs.student = us.id
-        WHERE cs.classid = $1 AND cs.periode = $2
-      `;
-      const studentsResult = await client.query(studentsQuery, [
-        classid,
-        periode_id,
-      ]);
-      const studentsMap = {};
-      studentsResult.rows.forEach((student) => {
-        studentsMap[student.nis] = student.student_id;
-      });
-
-      // Begin transaction
-      await client.query("BEGIN");
-
-      // Use a more robust approach with DELETE and INSERT to avoid constraint issues
-      const deleteQuery = `
-        DELETE FROM l_summative 
-        WHERE student_id = $1 
-          AND subject_id = $2 
-          AND class_id = $3 
-          AND chapter_id = $4 
-          AND month = $5 
-          AND semester = $6
-      `;
-
-      const insertQuery = `
-        INSERT INTO l_summative (
-          student_id, subject_id, class_id, periode_id, chapter_id, teacher_id,
-          semester, month, oral, written, project, performance
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-        RETURNING *
-      `;
-
-      let successCount = 0;
-      let errorCount = 0;
-      const errors = [];
-
-      // Process each row from Excel
-      for (let i = 0; i < data.length; i++) {
-        const row = data[i];
-        if (!Array.isArray(row) || row.length < 7) {
-          errorCount++;
-          errors.push(`Row ${i + 1}: Invalid data format`);
-          continue;
-        }
-
-        const [nis, namaSiswa, oral, written, project, performance, rataRata] =
-          row;
-
-        // Skip header row or empty rows
-        if (!nis || nis === "NIS" || nis === "") {
-          continue;
-        }
-
-        const student_id = studentsMap[nis];
-        if (!student_id) {
-          errorCount++;
-          errors.push(
-            `Row ${i + 1}: Student with NIS ${nis} not found in class`
-          );
-          continue;
-        }
-
-        try {
-          const params = [
-            student_id,
-            Number(subjectid),
-            Number(classid),
-            periode_id,
-            Number(chapterid),
-            teacher_id,
-            Number(semester),
-            month,
-            oral && oral !== "" ? Number(oral) : null,
-            written && written !== "" ? Number(written) : null,
-            project && project !== "" ? Number(project) : null,
-            performance && performance !== "" ? Number(performance) : null,
-          ];
-
-          // First delete any existing record for this combination
-          await client.query(deleteQuery, [
-            student_id,
-            Number(subjectid),
-            Number(classid),
-            Number(chapterid),
-            month,
-            Number(semester),
-          ]);
-
-          // Then insert the new record
-          const result = await client.query(insertQuery, params);
-          successCount++;
-        } catch (error) {
-          errorCount++;
-          console.error(
-            `Row ${i + 1}: Error processing student ${nis}:`,
-            error
-          );
-          errors.push(`Row ${i + 1}: ${error.message}`);
-        }
-      }
-
-      // Commit transaction
-      await client.query("COMMIT");
-
-      const message = `Berhasil mengupload ${successCount} data${
-        errorCount > 0 ? `, ${errorCount} error` : ""
-      }`;
-      res.status(200).json({
-        message,
-        successCount,
-        errorCount,
-        errors: errors.length > 0 ? errors : undefined,
-      });
-    } catch (error) {
-      // Rollback transaction on error
-      await client.query("ROLLBACK");
-      console.log(error);
-      res.status(500).json({ message: error.message });
-    } finally {
-      client.release();
-    }
-  }
-);
-
 // Bulk upload formative scores from Excel file
 router.post(
   "/formative/upload-score",
@@ -971,6 +907,161 @@ router.post("/summative", authorize("teacher", "admin"), async (req, res) => {
     client.release();
   }
 });
+
+// Bulk upload summative scores from Excel file
+router.post(
+  "/summative/upload-score",
+  authorize("teacher", "admin"),
+  async (req, res) => {
+    const client = await pool.connect();
+    try {
+      const { classid, subjectid, chapterid, month, semester } = req.query;
+      const data = req.body; // Array of arrays from Excel
+
+      if (!classid || !subjectid || !chapterid || !month || !semester) {
+        return res.status(400).json({ message: "Missing required parameters" });
+      }
+
+      if (!Array.isArray(data) || data.length === 0) {
+        return res.status(400).json({ message: "No data provided for upload" });
+      }
+
+      const homebase = req.user.homebase;
+      const teacher_id = req.user.id;
+      const periode_id = await getActivePeriode(client, homebase);
+      if (!periode_id) {
+        return res.status(400).json({ message: "No active periode found" });
+      }
+
+      // Get all students in the class to map NIS to student_id
+      const studentsQuery = `
+        SELECT us.id as student_id, us.nis, us.name as student_name
+        FROM cl_students cs
+        JOIN u_students us ON cs.student = us.id
+        WHERE cs.classid = $1 AND cs.periode = $2
+      `;
+      const studentsResult = await client.query(studentsQuery, [
+        classid,
+        periode_id,
+      ]);
+      const studentsMap = {};
+      studentsResult.rows.forEach((student) => {
+        studentsMap[student.nis] = student.student_id;
+      });
+
+      // Begin transaction
+      await client.query("BEGIN");
+
+      // Use a more robust approach with DELETE and INSERT to avoid constraint issues
+      const deleteQuery = `
+        DELETE FROM l_summative 
+        WHERE student_id = $1 
+          AND subject_id = $2 
+          AND class_id = $3 
+          AND chapter_id = $4 
+          AND month = $5 
+          AND semester = $6
+      `;
+
+      const insertQuery = `
+        INSERT INTO l_summative (
+          student_id, subject_id, class_id, periode_id, chapter_id, teacher_id,
+          semester, month, oral, written, project, performance
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        RETURNING *
+      `;
+
+      let successCount = 0;
+      let errorCount = 0;
+      const errors = [];
+
+      // Process each row from Excel
+      for (let i = 0; i < data.length; i++) {
+        const row = data[i];
+        if (!Array.isArray(row) || row.length < 7) {
+          errorCount++;
+          errors.push(`Row ${i + 1}: Invalid data format`);
+          continue;
+        }
+
+        const [nis, namaSiswa, oral, written, project, performance, rataRata] =
+          row;
+
+        // Skip header row or empty rows
+        if (!nis || nis === "NIS" || nis === "") {
+          continue;
+        }
+
+        const student_id = studentsMap[nis];
+        if (!student_id) {
+          errorCount++;
+          errors.push(
+            `Row ${i + 1}: Student with NIS ${nis} not found in class`
+          );
+          continue;
+        }
+
+        try {
+          const params = [
+            student_id,
+            Number(subjectid),
+            Number(classid),
+            periode_id,
+            Number(chapterid),
+            teacher_id,
+            Number(semester),
+            month,
+            oral && oral !== "" ? Number(oral) : null,
+            written && written !== "" ? Number(written) : null,
+            project && project !== "" ? Number(project) : null,
+            performance && performance !== "" ? Number(performance) : null,
+          ];
+
+          // First delete any existing record for this combination
+          await client.query(deleteQuery, [
+            student_id,
+            Number(subjectid),
+            Number(classid),
+            Number(chapterid),
+            month,
+            Number(semester),
+          ]);
+
+          // Then insert the new record
+          const result = await client.query(insertQuery, params);
+          successCount++;
+        } catch (error) {
+          errorCount++;
+          console.error(
+            `Row ${i + 1}: Error processing student ${nis}:`,
+            error
+          );
+          errors.push(`Row ${i + 1}: ${error.message}`);
+        }
+      }
+
+      // Commit transaction
+      await client.query("COMMIT");
+
+      const message = `Berhasil mengupload ${successCount} data${
+        errorCount > 0 ? `, ${errorCount} error` : ""
+      }`;
+      res.status(200).json({
+        message,
+        successCount,
+        errorCount,
+        errors: errors.length > 0 ? errors : undefined,
+      });
+    } catch (error) {
+      // Rollback transaction on error
+      await client.query("ROLLBACK");
+      console.log(error);
+      res.status(500).json({ message: error.message });
+    } finally {
+      client.release();
+    }
+  }
+);
 
 // ==========================
 // Recap Data
@@ -1633,104 +1724,5 @@ router.get(
     }
   }
 );
-
-// Pembobotan
-router.get("/get-weighting", authorize("teacher"), async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const { subjectid } = req.query;
-    const teacherid = req.user.id; // Diambil dari pengguna yang terautentikasi
-
-    if (!subjectid) {
-      return res.status(400).json({ message: "subjectid diperlukan" });
-    }
-
-    const query = `
-      SELECT presensi, attitude, formative, summative 
-      FROM l_weighting 
-      WHERE teacherid = $1 AND subjectid = $2
-    `;
-
-    const result = await client.query(query, [teacherid, Number(subjectid)]);
-
-    // Jika tidak ada data, kembalikan nilai default atau null
-    const data = result.rows[0] || {
-      presensi: null,
-      attitude: null,
-      formative: null,
-      summative: null,
-    };
-
-    res.status(200).json(data);
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: error.message });
-  } finally {
-    client.release();
-  }
-});
-
-router.post("/add-weighting", authorize("teacher"), async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const { subjectid, presensi, attitude, formative, summative } = req.body;
-    const teacherid = req.user.id; // Diambil dari pengguna yang terautentikasi
-
-    // Validasi input
-    if (
-      subjectid === undefined ||
-      presensi === undefined ||
-      attitude === undefined ||
-      formative === undefined ||
-      summative === undefined
-    ) {
-      return res
-        .status(400)
-        .json({ message: "Semua field pembobotan diperlukan" });
-    }
-
-    // Validasi agar total bobot adalah 100
-    const totalWeight =
-      Number(presensi) +
-      Number(attitude) +
-      Number(formative) +
-      Number(summative);
-    if (totalWeight !== 100) {
-      return res.status(400).json({ message: "Total pembobotan harus 100%" });
-    }
-
-    const query = `
-      INSERT INTO l_weighting (teacherid, subjectid, presensi, attitude, formative, summative)
-      VALUES ($1, $2, $3, $4, $5, $6)
-      ON CONFLICT (teacherid, subjectid) 
-      DO UPDATE SET
-        presensi = EXCLUDED.presensi,
-        attitude = EXCLUDED.attitude,
-        formative = EXCLUDED.formative,
-        summative = EXCLUDED.summative,
-      RETURNING *
-    `;
-
-    const params = [
-      teacherid,
-      subjectid,
-      presensi,
-      attitude,
-      formative,
-      summative,
-    ];
-    const result = await client.query(query, params);
-
-    res.status(200).json({
-      message: "Pembobotan berhasil disimpan",
-      data: result.rows[0],
-    });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: error.message });
-  } finally {
-    client.release();
-  }
-});
 
 export default router;
