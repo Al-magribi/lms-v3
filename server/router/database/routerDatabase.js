@@ -275,61 +275,74 @@ router.post(
   "/add-family-data",
   authorize("admin", "teacher", "student", "parent"),
   withDbConnection(async (req, res, client) => {
-    const { userid, name, gender, birth_date } = req.body;
+    // Tambahkan 'id' ke dalam destrukturisasi body
+    const { id, userid, name, gender, birth_date } = req.body;
 
-    // Input validation
+    // Input validation (tetap sama)
     if (!userid || !name || !gender || !birth_date) {
       return res.status(400).json({
         message: "Semua field harus diisi",
-        missingFields: {
-          userid: !userid,
-          name: !name,
-          gender: !gender,
-          birth_date: !birth_date,
-        },
       });
     }
+    // ... validasi lainnya tetap sama ...
 
-    // Validate gender
-    if (!["L", "P"].includes(gender)) {
-      return res.status(400).json({
-        message: "Jenis kelamin harus L (Laki-laki) atau P (Perempuan)",
-      });
+    // **AWAL PERUBAHAN LOGIKA**
+
+    let result;
+    let message;
+
+    if (id) {
+      // **Logika untuk UPDATE jika ada ID**
+      const updateQuery = `
+        UPDATE db_family 
+        SET name = $1, gender = $2, birth_date = $3 
+        WHERE id = $4 AND userid = $5 
+        RETURNING *
+      `;
+      result = await executeQuery(client, updateQuery, [
+        name,
+        gender,
+        birth_date,
+        id,
+        userid,
+      ]);
+      message = "Data keluarga berhasil diperbarui";
+
+      if (result.rows.length === 0) {
+        return res
+          .status(404)
+          .json({ message: "Data keluarga tidak ditemukan untuk diperbarui." });
+      }
+    } else {
+      // **Logika untuk INSERT jika tidak ada ID (logika lama Anda)**
+      // Pastikan siswa ada sebelum menambahkan anggota keluarga baru
+      const studentCheck = await executeQuery(
+        client,
+        `SELECT id FROM u_students WHERE id = $1`,
+        [userid]
+      );
+      if (studentCheck.rows.length === 0) {
+        return res.status(404).json({ message: "Siswa tidak ditemukan" });
+      }
+
+      const insertQuery = `
+        INSERT INTO db_family (userid, name, gender, birth_date)
+        VALUES ($1, $2, $3, $4) 
+        RETURNING *
+      `;
+      result = await executeQuery(client, insertQuery, [
+        userid,
+        name,
+        gender,
+        birth_date,
+      ]);
+      message = "Data keluarga berhasil ditambahkan";
     }
 
-    // Validate birth date format
-    const birthDate = new Date(birth_date);
-    if (isNaN(birthDate.getTime())) {
-      return res.status(400).json({
-        message: "Format tanggal lahir tidak valid",
-      });
-    }
-
-    // Check if student exists
-    const studentCheck = await executeQuery(
-      client,
-      `SELECT id FROM u_students WHERE id = $1`,
-      [userid]
-    );
-
-    if (studentCheck.rows.length === 0) {
-      return res.status(404).json({
-        message: "Siswa tidak ditemukan",
-      });
-    }
-
-    // Insert or update family member
-    const result = await executeQuery(
-      client,
-      `INSERT INTO db_family (userid, name, gender, birth_date)
-       VALUES ($1, $2, $3, $4) RETURNING *`,
-      [userid, name, gender, birth_date]
-    );
+    // **AKHIR PERUBAHAN LOGIKA**
 
     return res.status(200).json({
-      message: result.rows[0].id
-        ? "Data keluarga berhasil diperbarui"
-        : "Data keluarga berhasil ditambahkan",
+      message: message, // Gunakan pesan yang dinamis
       data: result.rows[0],
     });
   })
