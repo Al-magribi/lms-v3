@@ -194,6 +194,7 @@ router.get("/get-juz", authorize("tahfiz", "student"), async (req, res) => {
   const client = await pool.connect();
   try {
     const { page, limit, search = "" } = req.query;
+
     let query;
     let values = [];
 
