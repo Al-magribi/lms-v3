@@ -288,23 +288,31 @@ router.post(
 
       await client.query("BEGIN");
 
+      // --- NORMALISASI INPUT ---
+      // Ubah string "null" atau string kosong "" menjadi nilai null asli.
+      const finalCategoryId =
+        categoryid === "null" || categoryid === "" ? null : categoryid;
+      const finalBranchId =
+        branchid === "null" || branchid === "" ? null : branchid;
+
       let subjectid;
       // --- LOGIKA UTAMA ---
       if (id) {
-        // 1. Jika ID ada (mode update), cukup update data teks terlebih dahulu.
-        //    Jangan sentuh file sama sekali di tahap ini.
+        // 1. Jika ID ada (mode update)
         await client.query(
           `UPDATE a_subject SET name = $1, categoryid = $2, branchid = $3
-           WHERE id = $4 AND homebase = $5`,
-          [name, categoryid, branchid, id, homebase]
+       WHERE id = $4 AND homebase = $5`,
+          // Gunakan variabel yang sudah dinormalisasi
+          [name, finalCategoryId, finalBranchId, id, homebase]
         );
         subjectid = id;
       } else {
-        // 2. Jika tidak ada ID (mode create), buat data baru.
+        // 2. Jika tidak ada ID (mode create)
         const data = await client.query(
           `INSERT INTO a_subject(homebase, name, categoryid, branchid)
-          VALUES ($1, $2, $3, $4) RETURNING id`,
-          [homebase, name, categoryid, branchid]
+       VALUES ($1, $2, $3, $4) RETURNING id`,
+          // Gunakan variabel yang sudah dinormalisasi
+          [homebase, name, finalCategoryId, finalBranchId]
         );
         subjectid = data.rows[0].id;
       }

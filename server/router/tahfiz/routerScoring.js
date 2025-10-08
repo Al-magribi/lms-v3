@@ -385,6 +385,8 @@ router.post("/add-score", authorize("tahfiz"), async (req, res) => {
   try {
     const { userid, periodeId, poin, examiner, surahs } = req.body;
 
+    console.log(req.body);
+
     // Validasi input
     if (
       !userid ||
@@ -440,8 +442,8 @@ router.post("/add-score", authorize("tahfiz"), async (req, res) => {
 
       await client.query(
         `INSERT INTO t_process 
-        (userid, periode_id, surah_id, from_count, to_count, type_id, juz_id, from_line, to_line, createdat)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())`,
+        (userid, periode_id, surah_id, from_count, to_count, type_id, juz_id, from_line, to_line)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
         [
           userid,
           periodeId,

@@ -129,94 +129,267 @@ const buildStudentData = async (client, rows) => {
 };
 
 router.get("/get-all", async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const search = req.query.search || "";
+  const type = req.query.type || null;
+  const offset = (page - 1) * limit;
+
   const client = await pool.connect();
   try {
-    const { page = 1, limit = 10, search = "", type } = req.query;
-
-    // Konversi page dan limit ke angka
-    const numericLimit = parseInt(limit, 10);
-    const numericOffset = (parseInt(page, 10) - 1) * numericLimit;
-
-    // Kondisi tambahan untuk filter berdasarkan type_id
-    const typeFilter = type ? "AND t.id = $2" : "";
-
-    // Main query dengan search, type filter, dan pagination
-    const mainQuery = `
-      SELECT
-        us.id AS userid,
-        us.nis AS nis,
-        us.name AS student_name,
-        g.name AS grade,
-        c.name AS class_name,
-        t.name AS type_name,
-        t.id AS type_id,
-        e.name AS examiner_name,
-        e.id AS examiner_id,
-        ts.type_id
-      FROM
-        u_students us
-        INNER JOIN cl_students cs ON us.id = cs.student
-        INNER JOIN a_class c ON cs.classid = c.id
-        INNER JOIN a_grade g ON c.grade = g.id
-        INNER JOIN t_scoring ts ON us.id = ts.userid
-        INNER JOIN t_type t ON ts.type_id = t.id
-        INNER JOIN t_examiner e ON ts.examiner_id = e.id
-      WHERE
-        LOWER(us.name) LIKE LOWER($1)
-        ${typeFilter}
-      GROUP BY
-        us.id, us.nis, us.name, g.name, c.name, t.name, e.name, ts.type_id, t.id, e.id
-      LIMIT ${numericLimit} OFFSET ${numericOffset}
+    // JOINs sudah benar dari perbaikan sebelumnya
+    const fromAndJoins = `
+      FROM t_scoring s
+      JOIN u_students u ON s.userid = u.id
+      LEFT JOIN t_type t ON s.type_id = t.id
+      LEFT JOIN t_examiner ex ON s.examiner_id = ex.id
+      LEFT JOIN cl_students cs ON u.id = cs.student
+      LEFT JOIN a_class cl ON cs.classid = cl.id
+      LEFT JOIN a_grade g ON cl.grade = g.id
     `;
 
-    // Count query dengan search dan type filter
-    const countQuery = `
-      SELECT COUNT(*) AS total
-      FROM (
-        SELECT
-          us.id
-        FROM
-          u_students us
-          INNER JOIN cl_students cs ON us.id = cs.student
-          INNER JOIN a_class c ON cs.classid = c.id
-          INNER JOIN a_grade g ON c.grade = g.id
-          INNER JOIN t_scoring ts ON us.id = ts.userid
-          INNER JOIN t_type t ON ts.type_id = t.id
-          INNER JOIN t_examiner e ON ts.examiner_id = e.id
-        WHERE
-          LOWER(us.name) LIKE LOWER($1)
-          ${typeFilter}
-        GROUP BY
-          us.id, us.name, g.name, c.name, t.name, e.name, ts.type_id, t.id, e.id
-      ) AS subquery
-    `;
-
-    // Menyusun parameter secara dinamis
     const params = [`%${search}%`];
+    let whereClause = `WHERE (u.name ILIKE $1 OR u.nis ILIKE $1)`;
+
     if (type) {
-      params.push(type); // Tambahkan type jika ada
+      whereClause += ` AND s.type_id = $${params.length + 1}`;
+      params.push(type);
     }
 
-    // Eksekusi query utama
-    const rows = await fetchQueryResults(mainQuery, params);
+    // Query untuk total data
+    const totalQuery = `SELECT COUNT(DISTINCT (s.userid, s.type_id, DATE(s.createdat))) ${fromAndJoins} ${whereClause}`;
+    const totalResult = await client.query(totalQuery, params);
+    const totalData = parseInt(totalResult.rows[0].count, 10);
 
-    // Eksekusi query untuk menghitung total data
-    const countResult = await fetchQueryResults(countQuery, params);
+    // Query utama untuk mendapatkan grup laporan per halaman
+    const paginatedGroupsQuery = `
+      SELECT DISTINCT 
+        s.userid, 
+        u.name, 
+        u.nis,
+        cl.name as class,
+        g.name as grade,
+        s.type_id, 
+        t.name as type,
+        DATE(s.createdat) AS date,
+        ex.name as examiner
+      ${fromAndJoins}
+      ${whereClause}
+      GROUP BY s.userid, u.name, u.nis, cl.name, g.name, s.type_id, t.name, date, ex.name
+      ORDER BY date DESC
+      LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+    `;
 
-    const totalData = parseInt(countResult[0]?.total || 0, 10);
-    const totalPages = Math.ceil(totalData / numericLimit);
+    const paginatedResult = await client.query(paginatedGroupsQuery, [
+      ...params,
+      limit,
+      offset,
+    ]);
+    const reportGroups = paginatedResult.rows;
 
-    // Memproses data untuk laporan
-    const report = await buildStudentData(client, rows);
+    if (reportGroups.length === 0) {
+      return res.status(200).json({
+        report: [],
+        totalData: 0,
+        page,
+        limit,
+      });
+    }
+
+    // Mengambil detail (skor dan surah) untuk setiap grup laporan
+    const reportDetailsPromises = reportGroups.map(async (group) => {
+      const queryParams = [group.userid, group.type_id, group.date];
+
+      // ==================================================================
+      // PERBAIKAN FINAL: Menambahkan kolom sc.userid, sc.type_id, dan
+      // sc.category_id ke dalam GROUP BY.
+      // ==================================================================
+      const scoresQuery = client.query(
+        `
+        SELECT 
+          c.id as category_id,
+          c.name as category,
+          sc.poin,
+          (
+            SELECT json_agg(
+              json_build_object(
+                'indicator_id', i.id,
+                'indicator', i.name,
+                'poin', si.poin
+              )
+            )
+            FROM t_scoring si
+            JOIN t_indicators i ON si.indicator_id = i.id
+            WHERE si.userid = sc.userid
+              AND si.type_id = sc.type_id
+              AND DATE(si.createdat) = DATE(sc.createdat)
+              AND si.category_id = sc.category_id
+              AND si.indicator_id IS NOT NULL
+          ) as indicators
+        FROM t_scoring sc
+        JOIN t_categories c ON sc.category_id = c.id
+        WHERE sc.userid = $1 
+          AND sc.type_id = $2 
+          AND DATE(sc.createdat) = $3
+          AND sc.indicator_id IS NULL
+        GROUP BY c.id, c.name, sc.poin, sc.createdat, sc.userid, sc.type_id, sc.category_id
+        ORDER BY sc.createdat
+        `,
+        queryParams
+      );
+      // ==================================================================
+
+      const surahsQuery = client.query(
+        `SELECT 
+          su.name, 
+          p.from_count AS from_ayat,
+          p.to_count AS to_ayat,
+          p.from_line,
+          p.to_line
+         FROM t_process p
+         JOIN t_surah su ON p.surah_id = su.id
+         WHERE p.userid = $1 AND p.type_id = $2 AND DATE(p.createdat) = $3`,
+        queryParams
+      );
+
+      const [scoresResult, surahsResult] = await Promise.all([
+        scoresQuery,
+        surahsQuery,
+      ]);
+
+      return {
+        ...group,
+        date: group.date.toISOString().split("T")[0],
+        scores: scoresResult.rows,
+        surahs: surahsResult.rows,
+        notes: [], // Tetap sebagai array kosong, bisa diisi nanti
+      };
+    });
+
+    const detailedReports = await Promise.all(reportDetailsPromises);
 
     res.status(200).json({
-      report,
+      report: detailedReports,
       totalData,
-      totalPages,
+      page,
+      limit,
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: error.message });
+    console.error("Error fetching report:", error);
+    res.status(500).json({ message: "Internal server error" });
+  } finally {
+    client.release();
+  }
+});
+
+router.get("/get-record-memo", async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const search = req.query.search || "";
+  const type = req.query.type;
+  const offset = (page - 1) * limit;
+
+  const client = await pool.connect();
+  try {
+    // ==================================================================
+    // PERBAIKAN: Menggunakan nama kolom yang benar 'cs.periode'
+    // ==================================================================
+    const fromAndJoins = `
+      FROM t_process p
+      JOIN u_students u ON p.userid = u.id
+      
+      -- Menggunakan nama kolom 'periode' yang benar dari tabel cl_students
+      JOIN cl_students cs ON u.id = cs.student 
+                          AND cs.periode IN (
+                            SELECT id FROM a_periode WHERE isactive = true
+                          )
+      
+      LEFT JOIN a_class cl ON cs.classid = cl.id
+      LEFT JOIN a_grade g ON cl.grade = g.id
+      LEFT JOIN t_type t ON p.type_id = t.id
+      LEFT JOIN t_scoring s ON p.userid = s.userid 
+                           AND p.type_id = s.type_id 
+                           AND DATE(p.createdat) = DATE(s.createdat)
+      LEFT JOIN t_examiner ex ON s.examiner_id = ex.id
+    `;
+
+    const params = [`%${search}%`];
+    let whereClause = `WHERE (u.name ILIKE $1 OR u.nis ILIKE $1)`;
+
+    if (type && !isNaN(parseInt(type))) {
+      whereClause += ` AND p.type_id = $${params.length + 1}`;
+      params.push(parseInt(type));
+    }
+
+    const totalQuery = `
+      SELECT COUNT(*) 
+      FROM (
+        SELECT DISTINCT p.userid, p.type_id, DATE(p.createdat) 
+        ${fromAndJoins} 
+        ${whereClause}
+      ) AS distinct_records
+    `;
+    const totalResult = await client.query(totalQuery, params);
+    const totalData = parseInt(totalResult.rows[0].count, 10);
+
+    const paginatedQuery = `
+      SELECT 
+        MIN(p.id) as id,
+        u.id AS userid,
+        t.id AS type_id,
+        DATE(p.createdat AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta') AS date,
+        t.name AS type,
+        u.name,
+        u.nis,
+        g.name AS grade,
+        cl.name AS classname,
+        ex.name AS examiner,
+        (
+          SELECT json_agg(juz_agg)
+          FROM (
+            SELECT
+              j.id, j.name,
+              json_agg(
+                json_build_object(
+                  'id', su.id, 'name', su.name, 'from_ayat', p_inner.from_count,
+                  'to_ayat', p_inner.to_count, 'from_line', p_inner.from_line,
+                  'to_line', p_inner.to_line
+                ) ORDER BY su.id
+              ) AS verses
+            FROM t_process p_inner
+            JOIN t_surah su ON p_inner.surah_id = su.id
+            JOIN t_juz j ON p_inner.juz_id = j.id
+            WHERE p_inner.userid = u.id
+              AND p_inner.type_id = t.id
+              AND DATE(p_inner.createdat) = DATE(p.createdat)
+            GROUP BY j.id, j.name
+            ORDER BY j.id
+          ) AS juz_agg
+        ) AS juzs
+      ${fromAndJoins}
+      ${whereClause}
+      GROUP BY 
+        u.id, g.name, cl.name, ex.name, t.id, p.createdat
+      ORDER BY 
+        date DESC
+      LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+    `;
+
+    const result = await client.query(paginatedQuery, [
+      ...params,
+      limit,
+      offset,
+    ]);
+
+    const report = result.rows.map((row) => ({
+      ...row,
+      juzs: row.juzs || [],
+    }));
+
+    res.status(200).json({ report, totalData, page, limit });
+  } catch (error) {
+    console.error("Error fetching record memo:", error);
+    res.status(500).json({ message: "Internal server error" });
   } finally {
     client.release();
   }
