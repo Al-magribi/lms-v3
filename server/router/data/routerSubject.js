@@ -512,21 +512,41 @@ router.get("/get-categories", authorize("admin"), async (req, res) => {
     const homebase = req.user.homebase;
 
     let queryParams = [homebase];
-    let baseQuery = `FROM a_category WHERE homebase = $1`;
-    let searchQuery = "";
 
+    // Base query to filter categories by homebase and optional search
+    let filterCondition = `WHERE c.homebase = $1`;
     if (search) {
       queryParams.push(`%${search}%`);
-
-      searchQuery = ` AND name ILIKE $${queryParams.length}`;
+      filterCondition += ` AND c.name ILIKE $${queryParams.length}`;
     }
 
-    const totalDataQuery = `SELECT COUNT(*) ${baseQuery}${searchQuery}`;
+    // Query to get the total count of matching categories (for pagination)
+    // This remains simple and fast, as it only needs to count categories.
+    const totalDataQuery = `SELECT COUNT(*) FROM a_category c ${filterCondition}`;
     const totalDataResult = await client.query(totalDataQuery, queryParams);
     const totalData = parseInt(totalDataResult.rows[0].count, 10);
 
-    let dataQuery = `SELECT * ${baseQuery}${searchQuery} ORDER BY createdat DESC`;
+    // Main query to get category data along with an aggregated array of its branches
+    let dataQuery = `
+      SELECT
+        c.id,
+        c.name,
+        c.createdat,
+        c.homebase,
+        COALESCE(
+          jsonb_agg(
+            DISTINCT jsonb_build_object('id', b.id, 'name', b.name)
+          ) FILTER (WHERE b.id IS NOT NULL),
+          '[]'::jsonb
+        ) AS branches
+      FROM a_category c
+      LEFT JOIN a_branch b ON c.id = b.categoryid
+      ${filterCondition}
+      GROUP BY c.id
+      ORDER BY c.createdat DESC
+    `;
 
+    // Handle pagination
     if (page && limit) {
       const pageInt = parseInt(page, 10);
       const limitInt = parseInt(limit, 10);
@@ -546,6 +566,7 @@ router.get("/get-categories", authorize("admin"), async (req, res) => {
         categories,
       });
     } else {
+      // If no pagination, fetch all matching categories
       const dataResult = await client.query(dataQuery, queryParams);
       const categories = dataResult.rows;
 
@@ -553,7 +574,6 @@ router.get("/get-categories", authorize("admin"), async (req, res) => {
     }
   } catch (error) {
     console.error("Error fetching categories:", error);
-
     res.status(500).json({ message: error.message });
   } finally {
     if (client) {
@@ -644,11 +664,11 @@ router.get("/get-branches", authorize("admin"), async (req, res) => {
   let client;
   try {
     client = await pool.connect();
-    const { page, limit, search } = req.query;
+    const { page, limit, search, categoryid } = req.query;
     const { homebase } = req.user;
 
-    let queryParams = [homebase];
-    let baseQuery = `FROM a_branch WHERE homebase = $1`;
+    let queryParams = [homebase, categoryid];
+    let baseQuery = `FROM a_branch WHERE homebase = $1 AND categoryid = $2`;
     let searchQuery = "";
 
     if (search) {
@@ -695,8 +715,7 @@ router.post("/add-branch", authorize("admin"), async (req, res) => {
   let client;
   try {
     client = await pool.connect();
-    const { name, id } = req.body;
-    const { homebase } = req.user;
+    const { name, id, categoryid } = req.body;
 
     if (!name || name.trim() === "") {
       return res.status(400).json({ message: "Nama wajib diisi" });
@@ -709,28 +728,26 @@ router.post("/add-branch", authorize("admin"), async (req, res) => {
       // --- LOGIKA UPDATE JIKA ADA ID ---
       const updateQuery = `
                 UPDATE a_branch 
-                SET name = $1 
-                WHERE id = $2 AND homebase = $3 
+                SET name = $1, categoryid = $2 
+                WHERE id = $3
                 RETURNING *`; // Mengembalikan data yang sudah diupdate
 
-      result = await client.query(updateQuery, [name, id, homebase]);
+      result = await client.query(updateQuery, [name, categoryid, id]);
 
-      // Cek jika tidak ada baris yang ter-update (ID salah atau bukan milik homebase tsb)
       if (result.rowCount === 0) {
         return res.status(404).json({ message: "Data tidak ditemukan" });
       }
     } else {
       // --- LOGIKA CREATE JIKA TIDAK ADA ID ---
       const insertQuery = `
-                INSERT INTO a_branch (name, homebase) 
+                INSERT INTO a_branch (name, categoryid) 
                 VALUES ($1, $2) 
-                RETURNING *`; // Mengembalikan data yang baru dibuat
+                RETURNING *`;
 
-      result = await client.query(insertQuery, [name, homebase]);
+      result = await client.query(insertQuery, [name, categoryid]);
       statusCode = 201; // Status 201 Created untuk resource baru
     }
 
-    // Kirim response sukses
     res.status(statusCode).json({
       message: id ? update : create,
     });

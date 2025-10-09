@@ -468,7 +468,8 @@ router.get(
 							a_major.name AS major_name,
 							a_grade.id AS grade_id,
 							a_grade.name AS grade_name,
-							a_homebase.name AS homebase_name
+							a_homebase.name AS homebase_name,
+              a_homebase.id AS homebase_id
 						FROM u_parents
 						INNER JOIN u_students ON u_parents.studentid = u_students.id
 						LEFT JOIN cl_students ON u_students.id = cl_students.student
@@ -487,6 +488,7 @@ router.get(
             student: row.student_name,
             student_id: row.student_id,
             nis: row.nis,
+            homebase_id: row.homebase_id,
             homebase: row.homebase_name,
             periode: row.periode,
             periode_name: row.periode_name,

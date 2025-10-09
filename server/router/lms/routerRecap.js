@@ -4,6 +4,60 @@ import { pool } from "../../config/config.js";
 
 const router = Router();
 
+const getMonthNumber = (monthName) => {
+  const months = {
+    januari: 1,
+    februari: 2,
+    maret: 3,
+    april: 4,
+    mei: 5,
+    juni: 6,
+    juli: 7,
+    agustus: 8,
+    september: 9,
+    oktober: 10,
+    november: 11,
+    desember: 12,
+  };
+  return months[monthName.toLowerCase()];
+};
+
+// Filter
+router.get("/categories", async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const homebase = req.user.homebase;
+    const results = await client.query(
+      `SELECT * FROM a_category
+    WHERE homebase = $1`,
+      [homebase]
+    );
+
+    res.status(200).json(results.rows);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.get("/branches", async (req, res) => {
+  try {
+    const { categoryid } = req.query;
+    const homebase = req.user.homebase;
+
+    const results = await client.query(
+      `SELECT *
+    FORM a_branch WHERE categoryid = $1 AND homebase = $2`,
+      [categoryid, homebase]
+    );
+
+    res.status(200).json(results.rows);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Rekap nilai perchapter perbulan
 router.get(
   "/chapter-final-score",
@@ -176,5 +230,215 @@ router.get(
     }
   }
 );
+
+router.get("/monthly-recap", async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { studentId, month, periode } = req.query;
+
+    if (!studentId || !month || !periode) {
+      return res.status(400).json({
+        message: "Parameter studentId, month, dan periode wajib diisi.",
+      });
+    }
+
+    // --- QUERY DENGAN PERBAIKAN AMBIGUITY ---
+    const query = `
+        WITH ActiveSubjects AS (
+            -- Mengambil semua mata pelajaran yang diikuti siswa di periode aktif
+            SELECT DISTINCT s.id as subject_id, s.name as subject_name,
+                            cat.name as category_name, b.name as branch_name,
+                            t.name as teacher_name, cat.id as category_id,
+                            w.presensi, w.attitude, w.daily
+            FROM u_students us
+            JOIN cl_students cs ON us.id = cs.student
+            JOIN l_cclass lcc ON cs.classid = lcc.classid
+            JOIN l_chapter lc ON lcc.chapter = lc.id
+            JOIN a_subject s ON lc.subject = s.id
+            JOIN u_teachers t ON lc.teacher = t.id
+            LEFT JOIN a_category cat ON s.categoryid = cat.id
+            LEFT JOIN a_branch b ON s.branchid = b.id
+            LEFT JOIN l_weighting w ON lc.teacher = w.teacherid AND s.id = w.subjectid
+            WHERE us.id = $1 AND cs.periode = $2
+        ),
+        AttendanceData AS (
+            -- Menghitung data kehadiran
+            SELECT subjectid,
+                COALESCE(COUNT(*) FILTER (WHERE note = 'Hadir'), 0) AS hadir,
+                COALESCE(COUNT(*) FILTER (WHERE note = 'Sakit'), 0) AS sakit,
+                COALESCE(COUNT(*) FILTER (WHERE note = 'Ijin'), 0) AS ijin,
+                COALESCE(COUNT(*) FILTER (WHERE note = 'Alpa'), 0) AS alpa,
+                TRUNC(COALESCE((COUNT(*) FILTER (WHERE note = 'Hadir')) * 100.0 / NULLIF(COUNT(*), 0), 0), 2) AS attendance_percentage
+            FROM l_attendance
+            WHERE studentid = $1 AND periode = $2 AND EXTRACT(MONTH FROM day_date) = $3
+            GROUP BY subjectid
+        ),
+        ScoreData AS (
+            -- Menghitung semua data nilai
+            -- [FIX] Memberi alias 's' pada a_subject untuk kejelasan
+            SELECT
+                s.id as subject_id,
+                COALESCE(AVG(att.rata_rata), 0) as avg_attitude,
+                COALESCE(AVG(att.kinerja), 0) as kinerja, COALESCE(AVG(att.kedisiplinan), 0) as kedisiplinan,
+                COALESCE(AVG(att.keaktifan), 0) as keaktifan, COALESCE(AVG(att.percaya_diri), 0) as percaya_diri,
+                COALESCE(AVG(sm.rata_rata), 0) as avg_summative,
+                COALESCE(AVG(sm.oral), 0) as oral, COALESCE(AVG(sm.written), 0) as written,
+                COALESCE(AVG(sm.project), 0) as project, COALESCE(AVG(sm.performance), 0) as performance,
+                COALESCE(AVG(f.rata_rata), 0) as avg_formative,
+                jsonb_agg(DISTINCT f.rata_rata) FILTER (WHERE f.rata_rata IS NOT NULL) AS formative_scores,
+                string_agg(DISTINCT att.catatan_guru, ' | ') as note,
+                jsonb_agg(DISTINCT jsonb_build_object('id', ch.id, 'name', ch.title)) FILTER (WHERE ch.id IS NOT NULL) as chapters
+            FROM a_subject s
+            LEFT JOIN l_attitude att ON s.id = att.subject_id AND att.student_id = $1 AND att.periode_id = $2 AND att.month = $4
+            LEFT JOIN l_summative sm ON s.id = sm.subject_id AND sm.student_id = $1 AND sm.periode_id = $2 AND sm.month = $4
+            LEFT JOIN l_formative f ON s.id = f.subject_id AND f.student_id = $1 AND f.periode_id = $2 AND f.month = $4
+            LEFT JOIN l_chapter ch ON (att.chapter_id = ch.id OR sm.chapter_id = ch.id OR f.chapter_id = ch.id)
+            GROUP BY s.id
+        )
+        SELECT
+            s.nis, s.name AS student_name, hb.name AS homebase_name, p.name AS periode_name,
+            g.name AS grade_name, c.name AS class_name, th.name AS teacher_homeroom,
+            subj.*,
+            COALESCE(ad.hadir, 0) AS hadir, COALESCE(ad.sakit, 0) AS sakit,
+            COALESCE(ad.ijin, 0) AS ijin, COALESCE(ad.alpa, 0) AS alpa,
+            COALESCE(ad.attendance_percentage, 0) AS attendance_score,
+            -- [FIX] Menggunakan sc.subject_id untuk menghindari ambiguitas
+            sc.avg_attitude, sc.kinerja, sc.kedisiplinan, sc.keaktifan, sc.percaya_diri,
+            sc.avg_summative, sc.oral, sc.written, sc.project, sc.performance,
+            sc.avg_formative, sc.formative_scores, sc.note, sc.chapters
+        FROM u_students s
+        JOIN cl_students cs ON s.id = cs.student
+        JOIN a_periode p ON cs.periode = p.id
+        JOIN a_class c ON cs.classid = c.id
+        JOIN a_homebase hb ON c.homebase = hb.id
+        JOIN a_grade g ON c.grade = g.id
+        LEFT JOIN u_teachers th ON c.id = th.class AND th.homeroom = TRUE
+        JOIN ActiveSubjects subj ON 1=1
+        LEFT JOIN AttendanceData ad ON subj.subject_id = ad.subjectid
+        -- [FIX] Menggunakan sc.subject_id untuk join agar tidak ambigu
+        LEFT JOIN ScoreData sc ON subj.subject_id = sc.subject_id
+        WHERE s.id = $1 AND cs.periode = $2;
+      `;
+
+    const monthNumber = getMonthNumber(month);
+    const { rows } = await client.query(query, [
+      studentId,
+      periode,
+      monthNumber,
+      month,
+    ]);
+
+    if (rows.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "Data rekapitulasi tidak ditemukan." });
+    }
+
+    // Bagian pemrosesan data di bawah ini tidak perlu diubah
+    const studentInfo = {
+      month: month,
+      nis: rows[0].nis,
+      name: rows[0].student_name,
+      homebase: rows[0].homebase_name,
+      periode: rows[0].periode_name,
+      grade: rows[0].grade_name,
+      class: rows[0].class_name,
+      teacher_homeroom: rows[0].teacher_homeroom || "-",
+    };
+
+    const categoriesMap = new Map();
+
+    for (const row of rows) {
+      const dailyScoreAvg =
+        (Number(row.avg_formative) + Number(row.avg_summative)) / 2;
+      const weightedScore =
+        (Number(row.attendance_score) * Number(row.presensi || 0)) / 100 +
+        (Number(row.avg_attitude) * Number(row.attitude || 0)) / 100 +
+        (dailyScoreAvg * Number(row.daily || 0)) / 100;
+
+      const subjectData = {
+        name: row.subject_name,
+        teacher: row.teacher_name,
+        score: parseFloat(weightedScore.toFixed(2)),
+        chapters: row.chapters || [],
+        note: row.note || null,
+        detail: [
+          {
+            attendance: [
+              { Hadir: Number(row.hadir) },
+              { Sakit: Number(row.sakit) },
+              { Ijin: Number(row.ijin) },
+              { Alpa: Number(row.alpa) },
+              {
+                presentase: parseFloat(Number(row.attendance_score).toFixed(2)),
+              },
+            ],
+          },
+          {
+            attitude: [
+              { kinerja: parseFloat(Number(row.kinerja).toFixed(2)) },
+              { kedisiplinan: parseFloat(Number(row.kedisiplinan).toFixed(2)) },
+              { keaktifan: parseFloat(Number(row.keaktifan).toFixed(2)) },
+              { percaya_diri: parseFloat(Number(row.percaya_diri).toFixed(2)) },
+            ],
+          },
+          {
+            summative: [
+              { lisan: parseFloat(Number(row.oral).toFixed(2)) },
+              { tulis: parseFloat(Number(row.written).toFixed(2)) },
+              { proyek: parseFloat(Number(row.project).toFixed(2)) },
+              { keterampilan: parseFloat(Number(row.performance).toFixed(2)) },
+            ],
+            formative: (row.formative_scores || []).map((val) =>
+              parseFloat(Number(val).toFixed(2))
+            ),
+          },
+        ],
+      };
+
+      const categoryName = row.category_name || "Lainnya";
+      if (!categoriesMap.has(categoryName)) {
+        const isDiniyah = categoryName === "Diniyah";
+        categoriesMap.set(categoryName, {
+          name: categoryName,
+          ...(isDiniyah ? { branch: [] } : { subjects: [] }),
+        });
+      }
+
+      const category = categoriesMap.get(categoryName);
+      if (categoryName === "Diniyah") {
+        const branchName = row.branch_name || "Tanpa Rumpun";
+        let branch = category.branch.find((b) => b.name === branchName);
+        if (!branch) {
+          branch = { name: branchName, subjects: [] };
+          category.branch.push(branch);
+        }
+        branch.subjects.push(subjectData);
+      } else {
+        category.subjects.push(subjectData);
+      }
+    }
+
+    const categoryArray = Array.from(categoriesMap.values());
+
+    const diniyahCat = categoryArray.find((c) => c.name === "Diniyah");
+    if (diniyahCat) {
+      diniyahCat.branch.forEach((b) => {
+        const totalScore = b.subjects.reduce((sum, sub) => sum + sub.score, 0);
+        b.score =
+          b.subjects.length > 0
+            ? parseFloat((totalScore / b.subjects.length).toFixed(2))
+            : 0;
+      });
+    }
+
+    res.status(200).json([{ ...studentInfo, category: categoryArray }]);
+  } catch (error) {
+    console.error("Error fetching monthly recap:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  } finally {
+    client.release();
+  }
+});
 
 export default router;

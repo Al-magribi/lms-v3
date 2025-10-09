@@ -14,11 +14,14 @@ router.get(
   authorize("admin", "teacher", "student", "parent"),
   withDbConnection(async (req, res, client) => {
     const { homebase } = req.user;
+    const { homebaseid } = req.query;
+
+    const home = req.user.level !== "parent" ? homebase : homebaseid;
 
     const result = await executeQuery(
       client,
       `SELECT * FROM a_periode WHERE homebase = $1 ORDER BY name ASC`,
-      [homebase]
+      [home]
     );
 
     return res.status(200).json(result.rows);
@@ -620,7 +623,6 @@ router.get(
   authorize("admin", "teacher", "student", "parent"),
   withDbConnection(async (req, res, client) => {
     const { userid } = req.query;
-    console.log(userid);
 
     // Get student data with all fields from db_student
     const studentResult = await executeQuery(
