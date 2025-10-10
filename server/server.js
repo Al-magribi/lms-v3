@@ -33,5 +33,3 @@ connectToDatabase()
   .catch((error) => {
     console.error("Gagal menyambungkan ke database:", error);
   });
-
-server.js;
