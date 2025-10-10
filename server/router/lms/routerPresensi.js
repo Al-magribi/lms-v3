@@ -309,6 +309,162 @@ router.get(
 );
 
 // Endpoint matriks presensi yang diperbarui dengan kalkulasi persentase
+// router.get(
+//   "/get-presensi-matrix",
+//   authorize("teacher", "admin"),
+//   async (req, res) => {
+//     const client = await pool.connect();
+//     const { classid, subjectid, month } = req.query;
+//     const userHomebase = req.user.homebase;
+
+//     if (!classid || !subjectid || !userHomebase) {
+//       return res
+//         .status(400)
+//         .json({
+//           message: "Class ID, Subject ID, and User Homebase are required.",
+//         });
+//     }
+
+//     try {
+//       // 1. Dapatkan periode aktif
+//       const periodeRes = await client.query(
+//         "SELECT id FROM a_periode WHERE homebase = $1 AND isactive = true LIMIT 1",
+//         [userHomebase]
+//       );
+
+//       if (periodeRes.rows.length === 0) {
+//         return res
+//           .status(404)
+//           .json({ message: "Periode aktif tidak ditemukan." });
+//       }
+//       const activePeriodeId = periodeRes.rows[0].id;
+
+//       // 2. Bangun filter tanggal
+//       const dateFilterParams = [classid, subjectid, activePeriodeId];
+//       let dateFilterClause = "";
+//       if (month) {
+//         if (!/^\d{4}-\d{2}$/.test(month)) {
+//           return res
+//             .status(400)
+//             .json({ message: "Format bulan tidak valid. Gunakan YYYY-MM." });
+//         }
+//         dateFilterClause = `AND TO_CHAR(day_date, 'YYYY-MM') = $4`;
+//         dateFilterParams.push(month);
+//       }
+
+//       // 3. Dapatkan tanggal unik untuk kolom
+//       const dateQuery = `
+//       SELECT DISTINCT TO_CHAR(day_date, 'YYYY-MM-DD') AS date
+//       FROM l_attendance
+//       WHERE classid = $1 AND subjectid = $2 AND periode = $3 ${dateFilterClause}
+//       ORDER BY date ASC
+//     `;
+//       const dateRes = await client.query(dateQuery, dateFilterParams);
+//       const dates = dateRes.rows.map((row) => row.date);
+
+//       // Jika tidak ada data, tetap kirim daftar siswa
+//       if (dates.length === 0) {
+//         const studentQuery = `
+//         SELECT s.id as studentid, s.nis, s.name as student_name
+//         FROM u_students s
+//         JOIN cl_students cs ON s.id = cs.student
+//         WHERE cs.classid = $1 AND cs.periode = $2
+//         ORDER BY s.nis, s.name;
+//       `;
+//         const studentsRes = await client.query(studentQuery, [
+//           classid,
+//           activePeriodeId,
+//         ]);
+//         // Tambahkan presentase 0 jika tidak ada data hari
+//         const studentsWithPercentage = studentsRes.rows.map((s) => ({
+//           ...s,
+//           presentase: 0,
+//         }));
+//         return res
+//           .status(200)
+//           .json({ students: studentsWithPercentage, dates: [] });
+//       }
+
+//       // 4. Bangun query untuk crosstab dengan hati-hati
+//       const escapeSqlLiteral = (str) => `'${String(str).replace(/'/g, "''")}'`;
+
+//       let sourceQuery = `
+//       SELECT studentid, TO_CHAR(day_date, 'YYYY-MM-DD') as date, note
+//       FROM l_attendance
+//       WHERE classid = ${Number(classid)} AND subjectid = ${Number(
+//         subjectid
+//       )} AND periode = ${Number(activePeriodeId)}
+//     `;
+//       if (month) {
+//         sourceQuery += ` AND TO_CHAR(day_date, 'YYYY-MM') = ${escapeSqlLiteral(
+//           month
+//         )}`;
+//       }
+//       sourceQuery += ` ORDER BY 1, 2`;
+
+//       const categoryQuery = `SELECT unnest(ARRAY[${dates
+//         .map(escapeSqlLiteral)
+//         .join(",")}])`;
+//       const dateColumns = dates.map((date) => `"${date}" TEXT`).join(", ");
+
+//       // **PERUBAHAN UTAMA DI SINI**
+//       // 5. Bangun bagian query untuk kalkulasi persentase
+//       const totalDays = dates.length;
+//       const percentageCalculation = `
+//       ROUND(
+//         (
+//           ${dates
+//             .map(
+//               (date) =>
+//                 `(CASE WHEN p."${date}" ILIKE 'Hadir' THEN 1 ELSE 0 END)`
+//             )
+//             .join(" + ")}
+//         )::NUMERIC / ${totalDays} * 100, 0
+//       ) AS presentase
+//     `;
+
+//       // 6. Query crosstab final dengan kolom persentase
+//       const matrixQuery = `
+//       WITH attendance_pivot AS (
+//         SELECT * FROM crosstab(
+//           ${escapeSqlLiteral(sourceQuery)},
+//           ${escapeSqlLiteral(categoryQuery)}
+//         ) AS ct(
+//           studentid INTEGER,
+//           ${dateColumns}
+//         )
+//       )
+//       SELECT
+//         s.id AS studentid, s.nis, s.name AS student_name,
+//         ${dates.map((date) => `p."${date}"`).join(", ")},
+//         ${percentageCalculation}
+//       FROM u_students s
+//       JOIN cl_students cs ON s.id = cs.student
+//       LEFT JOIN attendance_pivot p ON s.id = p.studentid
+//       WHERE cs.classid = $1 AND cs.periode = $2
+//       ORDER BY s.nis, s.name;
+//     `;
+
+//       const result = await client.query(matrixQuery, [
+//         classid,
+//         activePeriodeId,
+//       ]);
+
+//       res.status(200).json({
+//         students: result.rows,
+//         dates: dates,
+//       });
+//     } catch (error) {
+//       console.error(error);
+//       return res
+//         .status(500)
+//         .json({ message: "Terjadi kesalahan pada server: " + error.message });
+//     } finally {
+//       client.release();
+//     }
+//   }
+// );
+
 router.get(
   "/get-presensi-matrix",
   authorize("teacher", "admin"),
@@ -318,15 +474,13 @@ router.get(
     const userHomebase = req.user.homebase;
 
     if (!classid || !subjectid || !userHomebase) {
-      return res
-        .status(400)
-        .json({
-          message: "Class ID, Subject ID, and User Homebase are required.",
-        });
+      return res.status(400).json({
+        message: "Class ID, Subject ID, and User Homebase are required.",
+      });
     }
 
     try {
-      // 1. Dapatkan periode aktif
+      // 1. Dapatkan periode aktif (No change here)
       const periodeRes = await client.query(
         "SELECT id FROM a_periode WHERE homebase = $1 AND isactive = true LIMIT 1",
         [userHomebase]
@@ -339,7 +493,7 @@ router.get(
       }
       const activePeriodeId = periodeRes.rows[0].id;
 
-      // 2. Bangun filter tanggal
+      // 2. Bangun filter tanggal (No change here)
       const dateFilterParams = [classid, subjectid, activePeriodeId];
       let dateFilterClause = "";
       if (month) {
@@ -352,30 +506,29 @@ router.get(
         dateFilterParams.push(month);
       }
 
-      // 3. Dapatkan tanggal unik untuk kolom
+      // 3. Dapatkan tanggal unik untuk kolom (No change here)
       const dateQuery = `
-      SELECT DISTINCT TO_CHAR(day_date, 'YYYY-MM-DD') AS date 
-      FROM l_attendance 
-      WHERE classid = $1 AND subjectid = $2 AND periode = $3 ${dateFilterClause}
-      ORDER BY date ASC
-    `;
+        SELECT DISTINCT TO_CHAR(day_date, 'YYYY-MM-DD') AS date 
+        FROM l_attendance 
+        WHERE classid = $1 AND subjectid = $2 AND periode = $3 ${dateFilterClause}
+        ORDER BY date ASC
+      `;
       const dateRes = await client.query(dateQuery, dateFilterParams);
       const dates = dateRes.rows.map((row) => row.date);
 
-      // Jika tidak ada data, tetap kirim daftar siswa
+      // Handle jika tidak ada data (No major change here)
       if (dates.length === 0) {
         const studentQuery = `
-        SELECT s.id as studentid, s.nis, s.name as student_name
-        FROM u_students s
-        JOIN cl_students cs ON s.id = cs.student
-        WHERE cs.classid = $1 AND cs.periode = $2
-        ORDER BY s.nis, s.name;
-      `;
+          SELECT s.id as studentid, s.nis, s.name as student_name
+          FROM u_students s
+          JOIN cl_students cs ON s.id = cs.student
+          WHERE cs.classid = $1 AND cs.periode = $2
+          ORDER BY s.nis, s.name;
+        `;
         const studentsRes = await client.query(studentQuery, [
           classid,
           activePeriodeId,
         ]);
-        // Tambahkan presentase 0 jika tidak ada data hari
         const studentsWithPercentage = studentsRes.rows.map((s) => ({
           ...s,
           presentase: 0,
@@ -385,70 +538,55 @@ router.get(
           .json({ students: studentsWithPercentage, dates: [] });
       }
 
-      // 4. Bangun query untuk crosstab dengan hati-hati
-      const escapeSqlLiteral = (str) => `'${String(str).replace(/'/g, "''")}'`;
+      // ===================================================================
+      // **PERUBAHAN UTAMA DI SINI: MENGGUNAKAN CONDITIONAL AGGREGATION**
+      // ===================================================================
 
-      let sourceQuery = `
-      SELECT studentid, TO_CHAR(day_date, 'YYYY-MM-DD') as date, note
-      FROM l_attendance
-      WHERE classid = ${Number(classid)} AND subjectid = ${Number(
-        subjectid
-      )} AND periode = ${Number(activePeriodeId)}
-    `;
-      if (month) {
-        sourceQuery += ` AND TO_CHAR(day_date, 'YYYY-MM') = ${escapeSqlLiteral(
-          month
-        )}`;
-      }
-      sourceQuery += ` ORDER BY 1, 2`;
+      // 4. Bangun kolom SELECT dinamis untuk setiap tanggal
+      const selectDateColumns = dates
+        .map(
+          (date) =>
+            `MAX(CASE WHEN TO_CHAR(la.day_date, 'YYYY-MM-DD') = '${date}' THEN la.note END) AS "${date}"`
+        )
+        .join(",\n");
 
-      const categoryQuery = `SELECT unnest(ARRAY[${dates
-        .map(escapeSqlLiteral)
-        .join(",")}])`;
-      const dateColumns = dates.map((date) => `"${date}" TEXT`).join(", ");
-
-      // **PERUBAHAN UTAMA DI SINI**
-      // 5. Bangun bagian query untuk kalkulasi persentase
+      // 5. Bangun kalkulasi persentase langsung di dalam query
       const totalDays = dates.length;
       const percentageCalculation = `
-      ROUND(
-        (
-          ${dates
-            .map(
-              (date) =>
-                `(CASE WHEN p."${date}" ILIKE 'Hadir' THEN 1 ELSE 0 END)`
-            )
-            .join(" + ")}
-        )::NUMERIC / ${totalDays} * 100, 0
-      ) AS presentase
-    `;
+        ROUND(
+          (
+            SUM(CASE WHEN la.note ILIKE 'Hadir' THEN 1 ELSE 0 END)::NUMERIC 
+            / ${totalDays} * 100
+          ), 0
+        ) AS presentase
+      `;
 
-      // 6. Query crosstab final dengan kolom persentase
+      // 6. Query final menggunakan LEFT JOIN dan GROUP BY
       const matrixQuery = `
-      WITH attendance_pivot AS (
-        SELECT * FROM crosstab(
-          ${escapeSqlLiteral(sourceQuery)},
-          ${escapeSqlLiteral(categoryQuery)}
-        ) AS ct(
-          studentid INTEGER,
-          ${dateColumns}
-        )
-      )
-      SELECT
-        s.id AS studentid, s.nis, s.name AS student_name,
-        ${dates.map((date) => `p."${date}"`).join(", ")},
-        ${percentageCalculation}
-      FROM u_students s
-      JOIN cl_students cs ON s.id = cs.student
-      LEFT JOIN attendance_pivot p ON s.id = p.studentid
-      WHERE cs.classid = $1 AND cs.periode = $2
-      ORDER BY s.nis, s.name;
-    `;
+        SELECT
+          s.id AS studentid,
+          s.nis,
+          s.name AS student_name,
+          ${selectDateColumns},
+          ${percentageCalculation}
+        FROM u_students s
+        JOIN cl_students cs ON s.id = cs.student
+        LEFT JOIN l_attendance la ON s.id = la.studentid
+          AND la.classid = cs.classid
+          AND la.subjectid = $3 -- Bind subjectid here
+          AND la.periode = cs.periode
+          ${month ? `AND TO_CHAR(la.day_date, 'YYYY-MM') = $4` : ""}
+        WHERE cs.classid = $1 AND cs.periode = $2
+        GROUP BY s.id, s.nis, s.name
+        ORDER BY s.nis, s.name;
+      `;
 
-      const result = await client.query(matrixQuery, [
-        classid,
-        activePeriodeId,
-      ]);
+      const queryParams = [classid, activePeriodeId, subjectid];
+      if (month) {
+        queryParams.push(month);
+      }
+
+      const result = await client.query(matrixQuery, queryParams);
 
       res.status(200).json({
         students: result.rows,

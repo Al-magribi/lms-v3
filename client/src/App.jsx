@@ -1,384 +1,174 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { Toaster } from "react-hot-toast";
-import Meta from "./components/meta/Meta";
-import { useDispatch } from "react-redux";
-import { useLoadUserMutation } from "./controller/api/auth/ApiAuth";
-import { setLogin } from "./controller/slice/AuthSlice";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import LoadingScreen from "./components/loader/LoadingScreen";
-import { useGetAppQuery } from "./controller/api/center/ApiApp";
-import Homepage from "./home/Homepage";
+import Login from "./module/auth/Login";
+import LoadingScreen from "./components/loaders/LoadingScreen";
+import { useLoadUserQuery } from "./service/api/auth/ApiAuth";
+import Profile from "./components/profile/Profile";
 
-// Otentikasi
-const Activation = lazy(() => import("./components/auth/Activation"));
-const Signin = lazy(() => import("./components/auth/Signin"));
-const Signup = lazy(() => import("./components/auth/SignUp"));
-
-// Public
-const News = lazy(() => import("./home/news/News"));
-const Detail = lazy(() => import("./home/news/Detail"));
-
-// CMS
-const CmsDash = lazy(() => import("./page/cms/Dashboard/CmsDash"));
-const CmsNews = lazy(() => import("./page/cms/News/NewsPage"));
-const CmsReasons = lazy(() => import("./page/cms/Reasons/ReasonsPage"));
-const CmsFacilities = lazy(() =>
-  import("./page/cms/Facilities/FacilitiesPage")
-);
-const CmsTestimonials = lazy(() =>
-  import("./page/cms/Testimonials/TestimonialsPage")
-);
-const CmsGraduation = lazy(() =>
-  import("./page/cms/Graduation/GraduationPage")
-);
-const CmsCategories = lazy(() =>
-  import("./page/cms/Categories/CategoriesPage")
-);
-const CmsSettings = lazy(() => import("./page/cms/Settings/SettingsPage"));
-
-// Admin Pusat
-const CenterDash = lazy(() => import("./page/center/dashboard/CenterDash"));
+// Center
+const CenterDash = lazy(() => import("./module/center/Dashboard/CenterDash"));
+const CenterAdmin = lazy(() => import("./module/center/admin/CenterAdmin"));
 const CenterHomebase = lazy(() =>
-  import("./page/center/homebase/CenterHomebase")
+  import("./module/center/homebase/CenterHomebase")
 );
-const CenterAdmin = lazy(() => import("./page/center/admin/CenterAdmin"));
-const CenterTeacher = lazy(() => import("./page/center/teacher/CenterTeacher"));
-const CenterStudents = lazy(() =>
-  import("./page/center/student/CenterStudents")
+const CenterAnalysis = lazy(() =>
+  import("./module/center/analysis/CenterAnalysis")
 );
-const CenterMarket = lazy(() => import("./page/center/market/CenterMarket"));
-const CenterSetting = lazy(() => import("./page/center/setting/CenterSetting"));
 
-// Admin Satuan
-const AdminDash = lazy(() => import("./page/admin/dashboard/AdminDash"));
-const AdminMajor = lazy(() => import("./page/admin/major/AdminMajor"));
-const AdminPeriode = lazy(() => import("./page/admin/periode/AdminPeriode"));
-const AdminGrade = lazy(() => import("./page/admin/grade/AdminGrade"));
-const AdminGraduation = lazy(() =>
-  import("./page/admin/graduation/AdminGraduation")
+// Admin
+const AdminDash = lazy(() => import("./module/admin/dashboard/AdminDash"));
+const AdminData = lazy(() => import("./module/admin/data/AdminData"));
+const AdminStudent = lazy(() => import("./module/admin/student/AdminStudent"));
+const AdminAcademic = lazy(() =>
+  import("./module/admin/academic/AdminAcademic")
 );
-const AdminStudents = lazy(() => import("./page/admin/student/AdminStudents"));
-const AdminParent = lazy(() => import("./page/admin/parent/AdminParent"));
-const AdminTeachers = lazy(() => import("./page/admin/teacher/AdminTeachers"));
-const AdminClass = lazy(() => import("./page/admin/class/AdminClass"));
-const AdminSubject = lazy(() => import("./page/admin/subject/AdminSubject"));
-const AdminCbt = lazy(() => import("./page/admin/cbt/AdminCbt"));
-const AdminExam = lazy(() => import("./page/admin/cbt/AdminExam"));
-const AdminProfile = lazy(() => import("./page/admin/profile/AdminProfile"));
 
 // Teacher
-const TeacherDash = lazy(() => import("./page/teacher/dashboard/TeacherDash"));
-const TeacherCbt = lazy(() => import("./page/teacher/cbt/TeacherCbt"));
-const TeacherExam = lazy(() => import("./page/teacher/cbt/TeacherExam"));
-const TeacherDatabase = lazy(() =>
-  import("./page/teacher/database/TeacherDatabase")
+const TeacherDash = lazy(() =>
+  import("./module/teacher/dashboard/TeacherDash")
 );
-const TeacherProfile = lazy(() =>
-  import("./page/teacher/profile/TeacherProfile")
+
+// Parent
+const ParentDash = lazy(() => import("./module/parent/dashboard/ParentDash"));
+const ParentDatabase = lazy(() =>
+  import("./module/parent/database/ParentDatabase")
 );
-const TeacherPresensi = lazy(() =>
-  import("./page/teacher/presensi/TeacherPresensi")
+const ParentAcademic = lazy(() =>
+  import("./module/parent/report/academic/ParentAcademic")
+);
+const ParentTahfiz = lazy(() =>
+  import("./module/parent/report/tahfiz/ParentTahfiz")
 );
 
 // Student
-const StudentDash = lazy(() => import("./page/student/Dashborad/StudentDash"));
-const StudentSubject = lazy(() =>
-  import("./page/student/subjects/StudentSubject")
+const StudentDash = lazy(() =>
+  import("./module/student/dashboard/StudentDash")
 );
-const StudentCbt = lazy(() => import("./page/student/cbt/StudentCbt"));
-const StudentProfile = lazy(() =>
-  import("./page/student/profile/StudentProfile")
+const StudentAcademic = lazy(() =>
+  import("./module/student/report/academic/StudentAcademic")
 );
+const StudentTahfiz = lazy(() =>
+  import("./module/student/report/tahfiz/StudentTahfiz")
+);
+const StudentExam = lazy(() => import("./module/student/exam/StudentExam"));
+const StudentLms = lazy(() => import("./module/student/lms/StudentLms"));
 
 // CBT
-const CbtAddQues = lazy(() => import("./page/cbt/bank/CbtAddQues"));
-const CbtQuesList = lazy(() => import("./page/cbt/bank/CbtQuesList"));
-const StartPage = lazy(() => import("./page/cbt/student/start/StartPage"));
-const ExamReport = lazy(() => import("./page/cbt/exam/report/ExamReport"));
+const CbtControl = lazy(() => import("./module/cbt/control/CbtControl"));
 
 // LMS
-const TeacherSubject = lazy(() => import("./page/teacher/lms/TeacherSubject"));
-const LmsSubject = lazy(() => import("./page/lms/subject/LmsSubject"));
-const Subject = lazy(() => import("./page/lms/list/Subject"));
-const TeacherScores = lazy(() => import("./page/teacher/scores/TeacherScores"));
-
-// Tahfiz
-const TahfizDash = lazy(() => import("./page/tahfiz/dashboard/TahfizDash"));
-const TahfizJuz = lazy(() => import("./page/tahfiz/juz/TahfizJuz"));
-const TahfizSurah = lazy(() => import("./page/tahfiz/surah/TahfizSurah"));
-const TahfizTarget = lazy(() => import("./page/tahfiz/target/TahfizTarget"));
-const TahfizExaminer = lazy(() =>
-  import("./page/tahfiz/examnier/TahfizExaminer")
-);
-const TahfizType = lazy(() => import("./page/tahfiz/type/TahfizType"));
-const TahfizMetric = lazy(() => import("./page/tahfiz/metric/TahfizMetric"));
-const TahfizMemo = lazy(() => import("./page/tahfiz/memo/TahfizMemo"));
-const TahfizStudent = lazy(() => import("./page/tahfiz/memo/TahfizStudent"));
-const TahfizReport = lazy(() => import("./page/tahfiz/report/TahfizReport"));
-const StudentReport = lazy(() => import("./page/tahfiz/report/StudentReport"));
-const TahfizProfile = lazy(() => import("./page/tahfiz/profile/TahfizProfile"));
+const LmsControl = lazy(() => import("./module/lms/control/LmsControl"));
 
 // Database
-const DbPage = lazy(() => import("./page/Database/DbPage"));
-const DbList = lazy(() => import("./page/Database/DbList"));
+const Database = lazy(() => import("./module/database/Database"));
 
-// Wali Murid
-const ParentDash = lazy(() => import("./page/parent/dashboard/ParentDash"));
-const ParentTahfiz = lazy(() => import("./page/parent/tahfiz/ParentTahfiz"));
-const ParentAcademinc = lazy(() =>
-  import("./page/parent/academic/ParentAcademinc")
+// Tahfiz
+const TahfizDash = lazy(() => import("./module/tahfiz/dashboard/TahfizDash"));
+const TahfizQuran = lazy(() => import("./module/tahfiz/quran/TahfizQuran"));
+const TahfizScoring = lazy(() =>
+  import("./module/tahfiz/Scoring/TahfizScoring")
 );
-const ParentProfile = lazy(() => import("./page/parent/profile/ParentProfile"));
+const TahfizMemo = lazy(() =>
+  import("./module/tahfiz/Memorization/TahfizMemo")
+);
 
-function App() {
-  const dispatch = useDispatch();
-  const [loadUser] = useLoadUserMutation();
-  const { data: appData } = useGetAppQuery();
+const App = () => {
+  const isSignin = localStorage.getItem("isSignin");
 
-  // Update favicon when app.logo is available
-  useEffect(() => {
-    if (appData?.logo) {
-      const favicon = document.querySelector("link[rel='icon']");
-      if (favicon) {
-        favicon.href = appData.logo;
-      } else {
-        const newFavicon = document.createElement("link");
-        newFavicon.rel = "icon";
-        newFavicon.type = "image/svg+xml";
-        newFavicon.href = appData.logo;
-        document.head.appendChild(newFavicon);
-      }
-    }
-  }, [appData]);
+  const { isLoading } = useLoadUserQuery(undefined, { skip: !isSignin });
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        // Use a timeout to prevent hanging if the server doesn't respond
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Request timed out")), 10000)
-        );
-
-        // Race between the actual request and the timeout
-        const response = await Promise.race([
-          loadUser().unwrap(),
-          timeoutPromise,
-        ]);
-
-        dispatch(setLogin(response));
-      } catch (error) {
-        // Don't show error to user, just silently fail
-        // This allows the app to continue functioning for non-logged in users
-        console.error("Error loading user data:", error);
-      }
-    };
-
-    // Always fetch user data from server on app load
-    fetchUser();
-  }, [dispatch, loadUser]);
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
 
   return (
     <DndProvider backend={HTML5Backend}>
       <BrowserRouter>
-        <Toaster />
-        <Meta
-          title={"Nuraida Islamic Boarding School"}
-          desc={
-            "Nuraida Islamic Boarding School adalah sekolah yang berdedikasi untuk pendidikan Islam yang berkualitas tinggi."
-          }
-          favicon={appData?.logo}
-        />
-        <Suspense fallback={<LoadingScreen logo={appData?.logo} />}>
+        <Suspense fallback={<LoadingScreen />}>
           <Routes>
-            <Route path="*" element={<Homepage />} />
+            <Route path="*" element={<Login />} />
 
-            <Route path="/" element={<Homepage />} />
+            <Route path="/" element={<Login />} />
 
-            <Route path="/berita" element={<News />} />
+            <Route path="/profile" element={<Profile />} />
 
-            <Route path="/berita/:id" element={<Detail />} />
-
-            {/* Otentikasi */}
-            <Route path="/aktivasi-akun/:code" element={<Activation />} />
-
-            <Route path="/signin" element={<Signin />} />
-
-            <Route path="/signup" element={<Signup />} />
-
-            {/* CMS */}
-
-            <Route path="/cms-dashboard" element={<CmsDash />} />
-
-            <Route path="/cms-news" element={<CmsNews />} />
-
-            <Route path="/cms-reason" element={<CmsReasons />} />
-
-            <Route path="/cms-facility" element={<CmsFacilities />} />
-
-            <Route path="/cms-testimoni" element={<CmsTestimonials />} />
-
-            <Route path="/cms-graduation" element={<CmsGraduation />} />
-
-            <Route path="/cms-category" element={<CmsCategories />} />
-
-            <Route path="/cms-settings" element={<CmsSettings />} />
-
-            {/* Admin Pusat */}
+            {/* Center */}
             <Route path="/center-dashboard" element={<CenterDash />} />
-
-            <Route path="/center-satuan" element={<CenterHomebase />} />
 
             <Route path="/center-admin" element={<CenterAdmin />} />
 
-            <Route path="/center-guru" element={<CenterTeacher />} />
+            <Route path="/center-satuan" element={<CenterHomebase />} />
 
-            <Route path="/center-siswa" element={<CenterStudents />} />
+            <Route path="/center-market" element={<CenterAnalysis />} />
 
-            <Route path="/center-market" element={<CenterMarket />} />
-
-            <Route path="/center-pengaturan" element={<CenterSetting />} />
-
-            {/*Admin Satuan */}
+            {/* Admin */}
             <Route path="/admin-dashboard" element={<AdminDash />} />
 
-            <Route path="/admin-jurusan" element={<AdminMajor />} />
+            <Route path="/admin-data-pokok" element={<AdminData />} />
 
-            <Route path="/admin-periode" element={<AdminPeriode />} />
+            <Route path="/admin-data-siswa" element={<AdminStudent />} />
 
-            <Route path="/admin-tingkat" element={<AdminGrade />} />
-
-            <Route path="/admin-lulusan" element={<AdminGraduation />} />
-
-            <Route path="/admin-siswa" element={<AdminStudents />} />
-
-            <Route path="/admin-wali" element={<AdminParent />} />
-
-            <Route path="/admin-guru" element={<AdminTeachers />} />
-
-            <Route path="/admin-kelas" element={<AdminClass />} />
-
-            <Route path="/admin-mapel" element={<AdminSubject />} />
-
-            <Route path="/admin-cbt-bank" element={<AdminCbt />} />
-
-            <Route path="/admin-cbt-exam" element={<AdminExam />} />
-
-            <Route path="/admin-profile" element={<AdminProfile />} />
+            <Route path="/admin-data-akademik" element={<AdminAcademic />} />
 
             {/* Teacher */}
             <Route path="/guru-dashboard" element={<TeacherDash />} />
 
-            <Route path="/guru-bank" element={<TeacherCbt />} />
-
-            <Route path="/guru-ujian" element={<TeacherExam />} />
+            {/* Parent */}
+            <Route path="/orangtua-dashboard" element={<ParentDash />} />
 
             <Route
-              path="/guru-wali-kelas/:classname/:classid"
-              element={<TeacherDatabase />}
+              path="/orangtua-database-siswa"
+              element={<ParentDatabase />}
             />
 
-            <Route path="/guru-profile" element={<TeacherProfile />} />
+            <Route
+              path="/orangtua-laporan-akademik"
+              element={<ParentAcademic />}
+            />
 
-            <Route path="/guru-absensi" element={<TeacherPresensi />} />
+            <Route path="/orangtua-laporan-tahfiz" element={<ParentTahfiz />} />
 
             {/* Student */}
             <Route path="/siswa-dashboard" element={<StudentDash />} />
 
-            <Route path="/siswa-pelajaran" element={<StudentSubject />} />
+            <Route
+              path="/siswa-laporan-akademik"
+              element={<StudentAcademic />}
+            />
 
-            <Route path="/siswa-daftar-ujian" element={<StudentCbt />} />
+            <Route path="/siswa-laporan-tahfiz" element={<StudentTahfiz />} />
 
-            <Route path="/siswa-profile" element={<StudentProfile />} />
+            <Route path="siswa-cbt" element={<StudentExam />} />
+
+            <Route path="siswa-lms" element={<StudentLms />} />
 
             {/* CBT */}
-            <Route
-              path="/admin-cbt-bank/:subject/:name/:bankid"
-              element={<CbtQuesList />}
-            />
-
-            <Route
-              path="/admin-cbt-bank/:subject/:name/:bankid/tambah-soal"
-              element={<CbtAddQues />}
-            />
-
-            <Route
-              path="/admin-cbt-bank/:subject/:name/:bankid/:questionid/edit-soal"
-              element={<CbtAddQues />}
-            />
-
-            <Route
-              path="/siswa-cbt/:name/:examid/:token"
-              element={<StartPage />}
-            />
-
-            <Route
-              path="/laporan-ujian/:name/:examid/:token"
-              element={<ExamReport />}
-            />
+            <Route path="/computer-based-test" element={<CbtControl />} />
 
             {/* LMS */}
-            <Route path="/guru-mapel" element={<TeacherSubject />} />
+            <Route
+              path="/learning-management-system"
+              element={<LmsControl />}
+            />
 
-            <Route path="/guru-mapel/:name/:id" element={<LmsSubject />} />
-
-            <Route path="/pelajaran/:name/:id" element={<Subject />} />
-
-            <Route path="/guru-penilaian" element={<TeacherScores />} />
+            {/* Database */}
+            <Route path="/database" element={<Database />} />
 
             {/* Tahfiz */}
             <Route path="/tahfiz-dashboard" element={<TahfizDash />} />
 
-            <Route path="/tahfiz-juz" element={<TahfizJuz />} />
+            <Route path="/tahfiz-alquran" element={<TahfizQuran />} />
 
-            <Route path="/tahfiz-surah" element={<TahfizSurah />} />
-
-            <Route path="/tahfiz-target" element={<TahfizTarget />} />
-
-            <Route path="/tahfiz-penguji" element={<TahfizExaminer />} />
-
-            <Route path="/tahfiz-penilaian" element={<TahfizType />} />
-
-            <Route path="/tahfiz-metrik" element={<TahfizMetric />} />
+            <Route path="/tahfiz-penilaian" element={<TahfizScoring />} />
 
             <Route path="/tahfiz-hafalan" element={<TahfizMemo />} />
-
-            <Route
-              path="/tahfiz-hafalan-siswa/:periodeId/:name/:userid"
-              element={<TahfizStudent />}
-            />
-
-            <Route path="/tahfiz-laporan" element={<TahfizReport />} />
-
-            <Route
-              path="/tahfiz-laporan-siswa/:userid/:name"
-              element={<StudentReport />}
-            />
-
-            <Route path="/tahfiz-profile" element={<TahfizProfile />} />
-
-            {/* Database */}
-            <Route path="/database/:userid/:name" element={<DbPage />} />
-
-            <Route path="/database" element={<DbList />} />
-
-            {/* Wali Murid */}
-            <Route path="/wali-dashboard" element={<ParentDash />} />
-
-            <Route path="/wali-laporan-tahfiz" element={<ParentTahfiz />} />
-
-            <Route
-              path="/wali-laporan-akademik"
-              element={<ParentAcademinc />}
-            />
-
-            <Route path="/wali-profile" element={<ParentProfile />} />
           </Routes>
         </Suspense>
       </BrowserRouter>
     </DndProvider>
   );
-}
+};
 
 export default App;

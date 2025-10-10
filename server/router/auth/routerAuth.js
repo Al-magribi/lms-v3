@@ -317,10 +317,6 @@ router.get(
     try {
       const token = req.cookies.token;
       const { level, id } = req.user;
-      const periode = await client.query(
-        `SELECT * FROM a_periode WHERE isactive = true`
-      );
-      const activePeriode = periode.rows[0];
 
       if (!token) {
         return res.status(401).json({
@@ -336,7 +332,6 @@ router.get(
         });
       }
 
-      // Query untuk setiap level user
       const queries = {
         tahfiz: {
           text: `SELECT * FROM u_admin WHERE id = $1`,
@@ -352,50 +347,65 @@ router.get(
         },
         admin: {
           text: `SELECT u_admin.id, u_admin.name, u_admin.email,
-						u_admin.activation, a_homebase.name AS homebase, 
-						u_admin.isactive, u_admin.phone, u_admin.level
-					FROM u_admin
-					LEFT JOIN a_homebase ON a_homebase.id = u_admin.homebase
-					WHERE u_admin.id = $1`,
+                  u_admin.activation, a_homebase.name AS homebase, 
+                  u_admin.isactive, u_admin.phone, u_admin.level
+                FROM u_admin
+                LEFT JOIN a_homebase ON a_homebase.id = u_admin.homebase
+                WHERE u_admin.id = $1`,
           transform: (row) => row,
         },
         student: {
           text: `
-						WITH student_data AS (
-							SELECT 
-								u_students.*,
-								a_homebase.name AS homebase_name
-							FROM u_students 
-							LEFT JOIN a_homebase ON u_students.homebase = a_homebase.id
-							WHERE u_students.id = $1
-						),
-						class_data AS (
-							SELECT 
-								cl_students.id AS student_class_id,
-								cl_students.periode,
-								a_periode.name AS periode_name,
-								a_periode.isactive AS periode_active,
-								a_class.id AS class_id,
-								a_class.name AS class_name,
-								a_grade.id AS grade_id,
-								a_grade.name AS grade_name,
-								a_homebase.name AS class_homebase
-							FROM cl_students
-							INNER JOIN a_class ON cl_students.classid = a_class.id
-							INNER JOIN a_grade ON a_class.grade = a_grade.id
-							INNER JOIN a_homebase ON a_class.homebase = a_homebase.id
-							INNER JOIN a_periode ON cl_students.periode = a_periode.id
-							WHERE cl_students.student = $1
-							AND cl_students.periode = $2
-						)
-						SELECT * FROM student_data
-						LEFT JOIN class_data ON true`,
+            WITH student_info AS (
+              SELECT 
+                s.id, s.name, s.nis, s.level, s.gender, s.isactive,
+                s.homebase AS homebase_id,
+                hb.name AS homebase_name
+              FROM u_students s
+              LEFT JOIN a_homebase hb ON s.homebase = hb.id
+              WHERE s.id = $1
+            ),
+            active_periode_for_homebase AS (
+              SELECT ap.id
+              FROM a_periode ap
+              WHERE ap.isactive = true AND ap.homebase = (SELECT homebase_id FROM student_info)
+            ),
+            class_info AS (
+              SELECT
+                cs.id AS student_class_id,
+                cs.periode,
+                ap.name AS periode_name,
+                ap.isactive AS periode_active,
+                ac.id AS class_id,
+                ac.name AS class_name,
+                ag.id AS grade_id,
+                ag.name AS grade_name
+              FROM cl_students cs
+              JOIN a_class ac ON cs.classid = ac.id
+              JOIN a_grade ag ON ac.grade = ag.id
+              JOIN a_periode ap ON cs.periode = ap.id
+              WHERE cs.student = (SELECT id FROM student_info) AND cs.periode = (SELECT id FROM active_periode_for_homebase)
+            )
+            SELECT 
+              si.*,
+              ci.student_class_id,
+              ci.periode,
+              ci.periode_name,
+              ci.periode_active,
+              ci.class_id,
+              ci.class_name,
+              ci.grade_id,
+              ci.grade_name
+            FROM student_info si
+            LEFT JOIN class_info ci ON true;
+          `,
           transform: (row) => ({
             id: row.id,
             name: row.name,
             nis: row.nis,
             level: row.level,
             gender: row.gender,
+            homebase_id: row.homebase_id,
             homebase: row.homebase_name,
             student_class_id: row.student_class_id,
             periode: row.periode,
@@ -410,35 +420,29 @@ router.get(
         },
         teacher: {
           text: `
-						SELECT 
-							u_teachers.*,
-							a_class.name AS class_name,
-              a_class.id AS class_id,
-							hb.name AS homebase_name,
-							COALESCE(
-								json_agg(
-									DISTINCT jsonb_build_object(
-										'id', a_subject.id,
-										'name', a_subject.name,
-										'cover', a_subject.cover
-									)
-								) FILTER (WHERE a_subject.id IS NOT NULL),
-								'[]'
-							) AS subjects
-						FROM u_teachers
-						LEFT JOIN a_homebase hb ON u_teachers.homebase = hb.id
-						LEFT JOIN a_class ON u_teachers.class = a_class.id
-						LEFT JOIN at_subject ON u_teachers.id = at_subject.teacher
-						LEFT JOIN a_subject ON at_subject.subject = a_subject.id
-						WHERE u_teachers.id = $1
-						GROUP BY 
-							u_teachers.id, 
-              a_class.name,
-							a_class.id,
-							hb.name`,
+            SELECT 
+              t.*,
+              c.name AS class_name,
+              c.id AS class_id,
+              hb.name AS homebase_name,
+              COALESCE(
+                json_agg(
+                  DISTINCT jsonb_build_object(
+                    'id', s.id, 'name', s.name, 'cover', s.cover
+                  )
+                ) FILTER (WHERE s.id IS NOT NULL),
+                '[]'
+              ) AS subjects
+            FROM u_teachers t
+            LEFT JOIN a_homebase hb ON t.homebase = hb.id
+            LEFT JOIN a_class c ON t.class = c.id
+            LEFT JOIN at_subject ats ON t.id = ats.teacher
+            LEFT JOIN a_subject s ON ats.subject = s.id
+            WHERE t.id = $1
+            GROUP BY t.id, c.name, c.id, hb.name`,
           transform: (row) => ({
             id: row.id,
-            nip: row.nip,
+            nip: row.username,
             name: row.name,
             email: row.email,
             img: row.img,
@@ -454,32 +458,39 @@ router.get(
         },
         parent: {
           text: `
-						SELECT 
-							u_parents.*,
-							u_students.name AS student_name,
-							u_students.nis,
-							u_students.id AS student_id,
-							cl_students.periode,
-							a_periode.name AS periode_name,
-							a_periode.isactive AS periode_active,
-							a_class.id AS class_id,
-							a_class.name AS class_name,
-							a_class.major AS major_id,
-							a_major.name AS major_name,
-							a_grade.id AS grade_id,
-							a_grade.name AS grade_name,
-							a_homebase.name AS homebase_name,
-              a_homebase.id AS homebase_id
-						FROM u_parents
-						INNER JOIN u_students ON u_parents.studentid = u_students.id
-						LEFT JOIN cl_students ON u_students.id = cl_students.student
-						LEFT JOIN a_class ON cl_students.classid = a_class.id
-						LEFT JOIN a_grade ON a_class.grade = a_grade.id
-						LEFT JOIN a_major ON a_class.major = a_major.id
-						LEFT JOIN a_homebase ON a_class.homebase = a_homebase.id
-						LEFT JOIN a_periode ON cl_students.periode = a_periode.id
-						WHERE u_parents.id = $1
-						AND (cl_students.periode = $2 OR cl_students.periode IS NULL)`,
+            WITH parent_student_info AS (
+                SELECT 
+                    p.id, p.name, p.email,
+                    s.id AS student_id, s.name AS student_name, s.nis,
+                    s.homebase AS homebase_id,
+                    hb.name AS homebase_name
+                FROM u_parents p
+                JOIN u_students s ON p.studentid = s.id
+                LEFT JOIN a_homebase hb ON s.homebase = hb.id
+                WHERE p.id = $1
+            ),
+            active_periode_for_homebase AS (
+                SELECT id FROM a_periode
+                WHERE isactive = true AND homebase = (SELECT homebase_id FROM parent_student_info)
+            ),
+            class_info AS (
+                SELECT 
+                    cs.periode, ap.name AS periode_name, ap.isactive AS periode_active,
+                    ac.id AS class_id, ac.name AS class_name,
+                    ac.major AS major_id, am.name AS major_name,
+                    ag.id AS grade_id, ag.name AS grade_name
+                FROM cl_students cs
+                JOIN a_class ac ON cs.classid = ac.id
+                JOIN a_grade ag ON ac.grade = ag.id
+                LEFT JOIN a_major am ON ac.major = am.id
+                JOIN a_periode ap ON cs.periode = ap.id
+                WHERE cs.student = (SELECT student_id FROM parent_student_info)
+                AND cs.periode = (SELECT id FROM active_periode_for_homebase)
+            )
+            SELECT psi.*, ci.*
+            FROM parent_student_info psi
+            LEFT JOIN class_info ci ON true;
+          `,
           transform: (row) => ({
             id: row.id,
             name: row.name,
@@ -511,11 +522,8 @@ router.get(
         });
       }
 
-      // For student and parent queries, we need to pass the active period ID as well
-      const queryParams =
-        level === "student" || level === "parent"
-          ? [id, activePeriode.id]
-          : [id];
+      // Simplified parameter handling: all queries now only need the user's ID.
+      const queryParams = [id];
       const result = await client.query(query.text, queryParams);
 
       if (result.rows.length === 0) {
