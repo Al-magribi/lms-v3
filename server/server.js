@@ -61,6 +61,7 @@ app.use(express.static(clientDistPath));
 // Rute sederhana untuk mengecek apakah server berjalan
 app.get("/check-server", (req, res) => {
   res.send("Server is running");
+  console.log(`[SERVER INFO] Serving static files from: ${clientDistPath}`);
 });
 
 // 4. Handle semua rute lain (catch-all) untuk mendukung client-side routing
