@@ -1,2 +1,0 @@
-import{j as o,B as i,a0 as s}from"./index-uqXiPZaM.js";import"./vendor-DTs43g_X.js";import{R as a}from"./SaveOutlined-DWY1OAxH.js";const l=({onClick:s,disabled:l})=>o.jsx(i,{style:{backgroundColor:"#52c41a",color:"#fff"},onClick:s,disabled:l,icon:o.jsx(a,{}),children:"Simpan"}),n=({disabled:a,onClick:l})=>o.jsx(i,{icon:o.jsx(s,{}),color:"danger",variant:"solid",onClick:l,disabled:a,children:"Cancel"});export{n as C,l as S};
-//# sourceMappingURL=Cancel-Die9NTL0.js.map
