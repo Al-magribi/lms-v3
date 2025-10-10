@@ -16,7 +16,7 @@ app.get("/check-server", (req, res) => {
 });
 
 // Handle all routes - send index.html for client-side routing
-app.get("*", (req, res) => {
+app.get("/{*splat}", (req, res) => {
   res.sendFile(path.join(__dirname, "../client/dist/index.html"));
 });
 
