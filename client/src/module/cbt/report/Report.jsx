@@ -1,4 +1,8 @@
-import { ArrowLeftOutlined, DownloadOutlined } from "@ant-design/icons";
+import {
+  ArrowLeftOutlined,
+  CloudSyncOutlined,
+  DownloadOutlined,
+} from "@ant-design/icons";
 import { Button, Flex, Select, Space, Tabs, Typography, message } from "antd";
 import React, { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -13,6 +17,7 @@ const Report = ({ name, examid, token }) => {
 
   const [classid, setClassid] = useState("");
   const [activeTab, setActiveTab] = useState("1");
+  const [syncCounter, setSyncCounter] = useState(0);
 
   const logsTableRef = useRef(null);
   const analysisTableRef = useRef(null);
@@ -75,12 +80,22 @@ const Report = ({ name, examid, token }) => {
     }
   };
 
+  const handleSync = () => {
+    setSyncCounter((prev) => prev + 1); // Tingkatkan counter untuk memicu useEffect di child
+    message.success("Memulai sinkronisasi data...");
+  };
+
   const items = [
     {
       label: "Absen",
       key: "1",
       children: (
-        <Logs examid={examid} classid={classid} tableRef={logsTableRef} />
+        <Logs
+          examid={examid}
+          classid={classid}
+          tableRef={logsTableRef}
+          syncTrigger={syncCounter}
+        />
       ),
     },
     {
@@ -91,6 +106,7 @@ const Report = ({ name, examid, token }) => {
           examid={examid}
           classid={classid}
           tableRef={analysisTableRef}
+          syncTrigger={syncCounter}
         />
       ),
     },
@@ -98,16 +114,21 @@ const Report = ({ name, examid, token }) => {
       label: "Nilai",
       key: "3",
       children: (
-        <Scores examid={examid} classid={classid} tableRef={scoreTableRef} />
+        <Scores
+          examid={examid}
+          classid={classid}
+          tableRef={scoreTableRef}
+          syncTrigger={syncCounter}
+        />
       ),
     },
   ];
   return (
     <Flex vertical gap={"small"}>
-      <Flex align="center" justify="space-between">
+      <Flex align='center' justify='space-between'>
         <Space>
           <Button
-            shape="circle"
+            shape='circle'
             icon={<ArrowLeftOutlined />}
             onClick={handleBack}
           />
@@ -125,7 +146,7 @@ const Report = ({ name, examid, token }) => {
         <Space>
           <Select
             style={{ width: 200 }}
-            placeholder="Pilih Kelas"
+            placeholder='Pilih Kelas'
             options={classOpts}
             onChange={handleSelect}
             allowClear
@@ -133,6 +154,10 @@ const Report = ({ name, examid, token }) => {
 
           <Button icon={<DownloadOutlined />} onClick={handleDownload}>
             Unduh Data
+          </Button>
+
+          <Button icon={<CloudSyncOutlined />} onClick={handleSync}>
+            Sinkron Data
           </Button>
         </Space>
       </Flex>

@@ -11,46 +11,55 @@ import {
   Flex,
   Tooltip,
   Pagination,
-  Skeleton,
-  Grid, // Gunakan Skeleton untuk loading state yang lebih baik
+  Grid,
+  Empty, // Tambahkan Empty untuk kasus data tidak ada
 } from "antd";
 import {
   ClockCircleOutlined,
   UserOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
-  KeyOutlined,
-  LoginOutlined, // Ikon untuk tombol "Ikuti Ujian"
+  LoginOutlined,
 } from "@ant-design/icons";
+import FormModal from "./FormModal";
 
-const { screen } = Grid;
-
+const { useBreakpoint } = Grid;
 const { Title, Text } = Typography;
 const { Search } = Input;
 
 const ExamList = ({ classid }) => {
-  // State untuk manajemen paginasi dan pencarian
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(9); // Sesuaikan limit agar pas dengan grid (misal kelipatan 3)
+  const [limit, setLimit] = useState(9);
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
+  const [exam, setExam] = useState("");
+  const [open, setOpen] = useState(false);
 
-  // RTK Query hook
+  const screens = useBreakpoint();
+
   const { data, isLoading, isFetching } = useGetExamsByClassQuery(
     { classid, page, limit, search: debounced },
     { skip: !classid }
   );
 
-  // Efek untuk debouncing
+  const handleOpen = (item) => {
+    setExam(item);
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setExam("");
+    setOpen(false);
+  };
+
   useEffect(() => {
     const timeout = setTimeout(() => {
       setDebounced(search);
-      setPage(1);
+      setPage(1); // Reset ke halaman pertama setiap kali ada pencarian baru
     }, 500);
     return () => clearTimeout(timeout);
   }, [search]);
 
-  // Handler untuk paginasi
   const handlePageChange = (newPage, newPageSize) => {
     setPage(newPage);
     setLimit(newPageSize);
@@ -59,46 +68,55 @@ const ExamList = ({ classid }) => {
   const loading = isLoading || isFetching;
 
   return (
-    <Space direction="vertical" size="large" style={{ width: "100%" }}>
+    <Space direction='vertical' size='large' style={{ width: "100%" }}>
       {/* Header: Judul dan Pencarian */}
-      <Card>
-        <Flex justify="space-between" align="center">
-          <Title level={5} style={{ margin: 0 }}>
-            Daftar Ujian Tersedia
-          </Title>
-          <Search
-            placeholder="Cari nama ujian..."
-            allowClear
-            onSearch={(value) => setSearch(value)}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ width: 200 }}
-            value={search}
-          />
-        </Flex>
-      </Card>
+      <Flex
+        vertical={!screens.sm} // Gunakan vertical jika layar lebih kecil dari sm
+        justify='space-between'
+        align={!screens.sm ? "stretch" : "center"}
+        gap={!screens.sm ? 8 : 16}
+      >
+        <Title level={5} style={{ margin: 0 }}>
+          Daftar Ujian Tersedia
+        </Title>
+        <Search
+          placeholder='Cari nama ujian...'
+          allowClear
+          onSearch={(value) => setSearch(value)}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{ width: !screens.sm ? "100%" : 250 }} // Lebar penuh di mobile
+          value={search}
+        />
+      </Flex>
 
       {/* Daftar Ujian dalam Bentuk Kartu */}
       <List
         loading={loading}
         grid={{
           gutter: 16,
-          xs: 1, // 1 kolom di layar extra small
-          sm: 2, // 2 kolom di layar small
-          md: 2, // 2 kolom di layar medium
-          lg: 3, // 3 kolom di layar large
-          xl: 3, // 3 kolom di layar extra large
-          xxl: 3, // 3 kolom di layar extra extra large
+          xs: 1,
+          sm: 2,
+          md: 2,
+          lg: 3,
+          xl: 3,
+          xxl: 3,
         }}
-        dataSource={data?.exams || []}
+        dataSource={data?.exams}
+        // Menampilkan pesan jika data kosong
+        locale={{
+          emptyText: <Empty description='Tidak ada ujian yang ditemukan' />,
+        }}
         renderItem={(exam) => (
           <List.Item>
             <Card
               hoverable
               title={
-                <Flex justify="space-between" align="center">
-                  <Text style={{ fontWeight: "bold" }} ellipsis>
-                    {exam.name}
-                  </Text>
+                <Flex justify='space-between' align='center' gap={8}>
+                  <Tooltip title={exam.name}>
+                    <Text style={{ fontWeight: "bold" }} ellipsis>
+                      {exam.name}
+                    </Text>
+                  </Tooltip>
                   <Tag
                     icon={
                       exam.isactive ? (
@@ -115,31 +133,31 @@ const ExamList = ({ classid }) => {
               }
               actions={[
                 <Tooltip
-                  key="take-exam"
+                  key='take-exam'
                   title={
                     !exam.isactive
                       ? "Ujian ini tidak sedang aktif"
                       : "Masuk ke ruang ujian"
                   }
                 >
-                  {/* Tombol akan nonaktif jika ujian tidak aktif */}
                   <Button
-                    type="primary"
+                    type='primary'
                     icon={<LoginOutlined />}
                     disabled={!exam.isactive}
                     style={{ width: "90%" }}
+                    onClick={() => handleOpen(exam)}
                   >
                     Ikuti Ujian
                   </Button>
                 </Tooltip>,
               ]}
             >
-              <Space direction="vertical" style={{ width: "100%" }}>
-                <Text type="secondary">
+              <Space direction='vertical' style={{ width: "100%" }}>
+                <Text type='secondary'>
                   <UserOutlined style={{ marginRight: 8 }} />
                   {exam.teacher_name}
                 </Text>
-                <Text type="secondary">
+                <Text type='secondary'>
                   <ClockCircleOutlined style={{ marginRight: 8 }} />
                   Durasi: {exam.duration} menit
                 </Text>
@@ -151,19 +169,28 @@ const ExamList = ({ classid }) => {
 
       {/* Paginasi di Bawah Daftar */}
       {!loading && data?.totalData > 0 && (
-        <Flex justify="center">
+        <Flex justify='center'>
           <Pagination
+            // ================== PERBAIKAN ==================
+            simple={screens.xs} // Gunakan mode simpel di layar mobile (xs)
             current={page}
             pageSize={limit}
             total={data?.totalData || 0}
             onChange={handlePageChange}
-            showSizeChanger
-            showTotal={(total, range) =>
-              `${range[0]}-${range[1]} dari ${total} Ujian`
+            showSizeChanger={!screens.xs} // Sembunyikan size changer di mobile
+            showTotal={
+              // Sembunyikan total di mobile, perbaiki typo sx -> xs
+              !screens.xs
+                ? (total, range) =>
+                    `${range[0]}-${range[1]} dari ${total} Ujian`
+                : undefined
             }
+            // ===============================================
           />
         </Flex>
       )}
+
+      <FormModal open={open} onClose={handleClose} exam={exam} />
     </Space>
   );
 };

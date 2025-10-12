@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useGetExamScoreListQuery } from "../../../service/api/cbt/ApiAnswer";
 import {
   Table,
@@ -15,7 +15,7 @@ import {
 const { Title, Text } = Typography;
 const { Search } = Input;
 
-const Scores = ({ examid, classid, tableRef }) => {
+const Scores = ({ examid, classid, tableRef, syncTrigger }) => {
   // State untuk manajemen paginasi dan pencarian
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -23,13 +23,29 @@ const Scores = ({ examid, classid, tableRef }) => {
   const [onSearch, setOnSearch] = useState("");
 
   // Hook RTK Query untuk mengambil data
-  const { data, isLoading, isError } = useGetExamScoreListQuery({
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch: scoreRefetch,
+  } = useGetExamScoreListQuery({
     exam: examid,
     classid,
     page,
     limit,
     search: onSearch,
   });
+
+  const isInitialMount = useRef(true); // Untuk mencegah refetch pada render pertama
+
+  // 3. Gunakan useEffect untuk memanggil refetch saat syncTrigger berubah
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+    } else {
+      scoreRefetch();
+    }
+  }, [syncTrigger, scoreRefetch]);
 
   // Efek untuk debouncing input pencarian (menunda eksekusi pencarian)
   useEffect(() => {
@@ -120,9 +136,9 @@ const Scores = ({ examid, classid, tableRef }) => {
   if (isError) {
     return (
       <Alert
-        message="Terjadi Kesalahan"
-        description="Gagal memuat data nilai. Silakan coba lagi nanti."
-        type="error"
+        message='Terjadi Kesalahan'
+        description='Gagal memuat data nilai. Silakan coba lagi nanti.'
+        type='error'
         showIcon
       />
     );
@@ -130,9 +146,9 @@ const Scores = ({ examid, classid, tableRef }) => {
 
   const cardTitle = data?.exam_name || "Daftar Nilai";
   const cardDescription = (
-    <Space direction="vertical" size="small">
-      <Text type="secondary">Guru: {data?.teacher_name}</Text>
-      <Text type="secondary">Sekolah: {data?.homebase_name}</Text>
+    <Space direction='vertical' size='small'>
+      <Text type='secondary'>Guru: {data?.teacher_name}</Text>
+      <Text type='secondary'>Sekolah: {data?.homebase_name}</Text>
     </Space>
   );
 
@@ -142,10 +158,10 @@ const Scores = ({ examid, classid, tableRef }) => {
         <Title level={4}>{cardTitle}</Title>
         {cardDescription}
 
-        <Row justify="end" style={{ margin: "16px 0" }}>
+        <Row justify='end' style={{ margin: "16px 0" }}>
           <Col>
             <Search
-              placeholder="Cari nama atau NIS siswa..."
+              placeholder='Cari nama atau NIS siswa...'
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               style={{ width: 280 }}
@@ -158,7 +174,7 @@ const Scores = ({ examid, classid, tableRef }) => {
         <Table
           columns={columns}
           dataSource={data?.students || []}
-          rowKey="student_id"
+          rowKey='student_id'
           loading={isLoading}
           onChange={handleTableChange}
           pagination={{

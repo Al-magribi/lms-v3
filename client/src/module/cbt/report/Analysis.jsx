@@ -1,21 +1,36 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useRef, useEffect } from "react";
 import { useGetExamAnalysisQuery } from "../../../service/api/cbt/ApiAnswer";
 import TableLayout from "../../../components/table/TableLayout";
 import { Tag, Tooltip, Typography } from "antd";
 import { CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
 
-const Analysis = ({ examid, classid, tableRef }) => {
+const Analysis = ({ examid, classid, tableRef, syncTrigger }) => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState("");
 
-  const { data, isLoading } = useGetExamAnalysisQuery({
+  const {
+    data,
+    isLoading,
+    refetch: analysisRefetch,
+  } = useGetExamAnalysisQuery({
     page,
     limit,
     search,
     exam: examid,
     classid,
   });
+
+  const isInitialMount = useRef(true); // Untuk mencegah refetch pada render pertama
+
+  // 3. Gunakan useEffect untuk memanggil refetch saat syncTrigger berubah
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+    } else {
+      analysisRefetch();
+    }
+  }, [syncTrigger, analysisRefetch]);
 
   const handleSearch = (value) => {
     setSearch(value);
@@ -74,7 +89,7 @@ const Analysis = ({ examid, classid, tableRef }) => {
           const isCorrect = studentAnswer === question.qkey.toUpperCase();
 
           if (!studentAnswerObj) {
-            return <Typography.Text type="secondary">-</Typography.Text>;
+            return <Typography.Text type='secondary'>-</Typography.Text>;
           }
 
           return (
@@ -146,7 +161,7 @@ const Analysis = ({ examid, classid, tableRef }) => {
       isLoading={isLoading}
       columns={columns}
       source={data?.students}
-      rowKey="id"
+      rowKey='id'
       page={page}
       limit={limit}
       totalData={data?.totalData}

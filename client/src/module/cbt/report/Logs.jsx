@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   useFinishCbtMutation,
   useGetExamLogQuery,
@@ -6,16 +6,22 @@ import {
   useRetakeExamMutation,
 } from "../../../service/api/log/ApiLog";
 import TableLayout from "../../../components/table/TableLayout";
-import { Dropdown, Modal, Tag, message } from "antd";
+import { Dropdown, Modal, Tag, message, Checkbox, Select, Space } from "antd";
 
 const { confirm } = Modal;
 
-const Logs = ({ examid, classid, tableRef }) => {
+const Logs = ({ examid, classid, tableRef, syncTrigger }) => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState("");
+  const [autoRefetchEnabled, setAutoRefetchEnabled] = useState(false);
+  const [refetchInterval, setRefetchInterval] = useState(300000); // Default 5 menit (dalam ms)
 
-  const { data, isLoading } = useGetExamLogQuery({
+  const {
+    data,
+    isLoading,
+    refetch: logRefetch,
+  } = useGetExamLogQuery({
     page,
     limit,
     search,
@@ -23,9 +29,41 @@ const Logs = ({ examid, classid, tableRef }) => {
     classid,
   });
 
+  console.log(data);
+
   const [finishCbt, { isLoading: finishLoading }] = useFinishCbtMutation();
   const [rejoinExam, { isLoading: rejoingLoading }] = useRejoinExamMutation();
   const [retakeExam, { isLoading: retakeLoading }] = useRetakeExamMutation();
+
+  const isInitialMount = useRef(true);
+
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+    } else {
+      logRefetch();
+    }
+  }, [syncTrigger, logRefetch]);
+
+  // useEffect untuk menangani logika auto-refetch
+  useEffect(() => {
+    let intervalId = null;
+
+    if (autoRefetchEnabled) {
+      // Set interval hanya jika auto-refetch diaktifkan
+      intervalId = setInterval(() => {
+        logRefetch();
+        message.success("Data berhasil di-refresh secara otomatis");
+      }, refetchInterval);
+    }
+
+    // Cleanup function untuk membersihkan interval
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [autoRefetchEnabled, refetchInterval, logRefetch]);
 
   const handleSearch = (value) => {
     setSearch(value);
@@ -49,6 +87,7 @@ const Logs = ({ examid, classid, tableRef }) => {
           async onOk() {
             try {
               await rejoinExam(record.log_id);
+              console.log(record);
               message.success(
                 `${record.student_name} telah diizinkan masuk kembali`
               );
@@ -71,11 +110,12 @@ const Logs = ({ examid, classid, tableRef }) => {
           okType: "danger",
           async onOk() {
             try {
-              await finishCbt(record.log_id);
+              await finishCbt({ id: record.log_id, exam: examid });
               message.success(
                 `Ujian ${record.student_name} telah diselesaikan`
               );
             } catch (error) {
+              console.log(error);
               message.error(error?.data?.message || "Terjadi kesalahan");
             }
           },
@@ -94,7 +134,11 @@ const Logs = ({ examid, classid, tableRef }) => {
           okType: "danger",
           async onOk() {
             try {
-              await retakeExam(record.log_id);
+              await retakeExam({
+                id: record.log_id,
+                exam: examid,
+                student: record.student_id,
+              });
               message.success(
                 `Data ujian ${record.student_name} telah direset`
               );
@@ -144,10 +188,10 @@ const Logs = ({ examid, classid, tableRef }) => {
       render: (record) =>
         record.ispenalty ? (
           <Tag color='red'>Melanggar</Tag>
-        ) : record.isactive ? (
-          <Tag color='blue'>Mengerjakan</Tag>
         ) : record.isdone ? (
           <Tag color='green'>Selesai</Tag>
+        ) : record.isactive ? (
+          <Tag color='blue'>Mengerjakan</Tag>
         ) : (
           <Tag>Belum Masuk</Tag>
         ),
@@ -167,12 +211,12 @@ const Logs = ({ examid, classid, tableRef }) => {
               {
                 key: "allow",
                 label: "Izikan Masuk",
-                disabled: !record.isactive,
+                disabled: record.isdone || !record.isactive,
               },
               {
                 key: "finish",
                 label: "Selesaikan Ujian",
-                disabled: !record.isdone || !record.isactive,
+                disabled: record.isdone || !record.isactive,
               },
               {
                 key: "retake",
@@ -191,18 +235,39 @@ const Logs = ({ examid, classid, tableRef }) => {
   ];
 
   return (
-    <TableLayout
-      tableRef={tableRef}
-      onSearch={handleSearch}
-      isLoading={isLoading || rejoingLoading || finishLoading || retakeLoading}
-      columns={columns}
-      source={data?.result}
-      rowKey='student_id'
-      page={page}
-      limit={limit}
-      totalData={data?.totalData}
-      onChange={handleTableChange}
-    />
+    <>
+      <div style={{ marginBottom: 16 }}>
+        <Space>
+          <Checkbox
+            checked={autoRefetchEnabled}
+            onChange={(e) => setAutoRefetchEnabled(e.target.checked)}
+          >
+            Auto Refetch
+          </Checkbox>
+          <Select
+            value={refetchInterval}
+            onChange={setRefetchInterval}
+            disabled={!autoRefetchEnabled}
+            style={{ width: 150 }}
+          >
+            <Select.Option value={300000}>Setiap 5 Menit</Select.Option>
+            <Select.Option value={600000}>Setiap 10 Menit</Select.Option>
+          </Select>
+        </Space>
+      </div>
+      <TableLayout
+        tableRef={tableRef}
+        onSearch={handleSearch}
+        isLoading={isLoading || rejoingLoading || finishLoading || retakeLoading}
+        columns={columns}
+        source={data?.result}
+        rowKey='student_id'
+        page={page}
+        limit={limit}
+        totalData={data?.totalData}
+        onChange={handleTableChange}
+      />
+    </>
   );
 };
 

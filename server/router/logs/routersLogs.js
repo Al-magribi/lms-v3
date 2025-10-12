@@ -54,26 +54,26 @@ router.post("/add-cbt-logs", authorize("student"), async (req, res) => {
     }
 
     // Check if browser is Chrome - Temporarily disabled for debugging
-    /*
-    if (req.useragent && !req.useragent.browser.toLowerCase().includes("chrome")) {
-      console.log("Browser check failed - not Chrome");
-      const data = {
-        userid: student,
-        exam,
-        ipAddress,
-        browser,
-      };
 
-      console.log("Browser validation data:", data);
+    // if (
+    //   req.useragent &&
+    //   !req.useragent.browser.toLowerCase().includes("chrome")
+    // ) {
+    //   console.log("Browser check failed - not Chrome");
+    //   const data = {
+    //     userid: student,
+    //     exam,
+    //     ipAddress,
+    //     browser,
+    //   };
 
-      res.status(400).json({
-        message: "Gunakan Chrome untuk mengikuti ujian ini",
-        browser: browser,
-        ip: ipAddress,
-      });
-      return;
-    }
-    */
+    //   res.status(400).json({
+    //     message: "Gunakan Chrome untuk mengikuti ujian ini",
+    //     browser: browser,
+    //     ip: ipAddress,
+    //   });
+    //   return;
+    // }
 
     // Check if student and exam combination exists
     const existingLog = await client.query(
@@ -170,6 +170,10 @@ router.put("/rejoin-exam", authorize("admin", "teacher"), async (req, res) => {
   try {
     const { id } = req.query;
 
+    if (!id) {
+      return res.status(400).json({ message: "ID log tidak tersedia" });
+    }
+
     const isactive = false;
     const ispenalty = false;
     const isdone = false;
@@ -183,6 +187,60 @@ router.put("/rejoin-exam", authorize("admin", "teacher"), async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+router.post(
+  "/finish-cbt",
+  authorize("student", "admin", "teacher"),
+  async (req, res) => {
+    const client = await pool.connect();
+    try {
+      const { id, exam } = req.query;
+      console.log(req.query);
+
+      const examData = await client.query(
+        `SELECT * FROM c_exam WHERE id = $1`,
+        [exam]
+      );
+
+      const isactive = true;
+      const isdone = true;
+      const action = `Ujian ${examData.rows[0].name} diselesaikan`;
+
+      await client.query(
+        `UPDATE logs SET isactive = $1, isdone = $2, action = $3 WHERE id = $4`,
+        [isactive, isdone, action, id]
+      );
+
+      res.status(200).json({ message: finish });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: error.message });
+    } finally {
+      client.release();
+    }
+  }
+);
+
+router.put("/penalty", authorize("student"), async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { student, exam } = req.query;
+
+    const ispenalty = true;
+    const isactive = true;
+    const isdone = false;
+
+    await client.query(
+      `UPDATE logs SET ispenalty = $1, isactive = $2, isdone = $3 WHERE student = $4 AND exam = $5`,
+      [ispenalty, isactive, isdone, student, exam]
+    );
+
+    res.status(200).json({ message: `Anda Melakukan Pelanggaran` });
+  } catch (error) {
   } finally {
     client.release();
   }
@@ -206,38 +264,6 @@ router.delete(
       res.status(200).json({ message: remove });
     } catch (error) {
       console.error(error);
-    }
-  }
-);
-
-router.post(
-  "/finish-cbt",
-  authorize("student", "admin", "teacher"),
-  async (req, res) => {
-    const client = await pool.connect();
-    try {
-      const { id, exam } = req.query;
-
-      const examData = await client.query(
-        `SELECT * FROM c_exam WHERE id = $1`,
-        [exam]
-      );
-
-      const isactive = false;
-      const isdone = true;
-      const action = `Ujian ${examData.rows[0].name} diselesaikan`;
-
-      await client.query(
-        `UPDATE logs SET isactive = $1, isdone = $2, action = $3 WHERE id = $4`,
-        [isactive, isdone, action, id]
-      );
-
-      res.status(200).json({ message: finish });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: error.message });
-    } finally {
-      client.release();
     }
   }
 );

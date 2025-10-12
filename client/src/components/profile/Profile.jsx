@@ -141,10 +141,10 @@ const Profile = () => {
 
     const items = [
       { key: "email", label: "Email", children: user.email },
-      user.phone && { key: "phone", label: "Phone", children: user.phone },
+      user.phone && { key: "phone", label: "WhatsApp", children: user.phone },
       user.homebase && {
         key: "homebase",
-        label: "Homebase",
+        label: "Sekolah",
         children: user.homebase,
       },
     ];
@@ -153,8 +153,8 @@ const Profile = () => {
       case "student":
         items.push(
           { key: "nis", label: "NIS", children: user.nis },
-          { key: "grade", label: "Grade", children: user.grade },
-          { key: "class", label: "Class", children: user.class }
+          { key: "grade", label: "Tingkat", children: user.grade },
+          { key: "class", label: "Kelas", children: user.class }
         );
         break;
       case "teacher":
@@ -162,12 +162,12 @@ const Profile = () => {
           { key: "nip", label: "NIP", children: user.nip },
           {
             key: "homeroom",
-            label: "Homeroom",
+            label: "Wali Kelas",
             children: user.homeroom ? user.class : "N/A",
           },
           {
             key: "subjects",
-            label: "Subjects",
+            label: "Mata Pelajaran",
             children:
               user.subjects?.length > 0
                 ? user.subjects.map((s) => <Tag key={s.id}>{s.name}</Tag>)
@@ -179,13 +179,13 @@ const Profile = () => {
         items.push(
           {
             key: "student_name",
-            label: "Student Name",
+            label: "Nama Siswa",
             children: user.student,
             span: 2,
           },
-          { key: "student_nis", label: "Student NIS", children: user.nis },
-          { key: "student_grade", label: "Grade", children: user.grade },
-          { key: "student_class", label: "Class", children: user.class }
+          { key: "student_nis", label: "NIS", children: user.nis },
+          { key: "student_grade", label: "Tingkat", children: user.grade },
+          { key: "student_class", label: "Kelas", children: user.class }
         );
         break;
       default: // Admin and other roles
@@ -212,12 +212,12 @@ const Profile = () => {
         {/* Profile Display Column */}
         <Col xs={24} md={10} lg={8}>
           <Card>
-            <Flex vertical align="center">
+            <Flex vertical align='center'>
               <Avatar size={128} icon={<UserOutlined />} src={user?.img} />
               <Title level={5} style={{ marginTop: 16, marginBottom: 0 }}>
                 {user?.name}
               </Title>
-              <Text type="secondary" style={{ textTransform: "capitalize" }}>
+              <Text type='secondary' style={{ textTransform: "capitalize" }}>
                 {user?.level}
               </Text>
             </Flex>
@@ -229,11 +229,11 @@ const Profile = () => {
         {/* Profile Update Column */}
         <Col xs={24} md={14} lg={16}>
           <Card>
-            <Tabs defaultActiveKey="1">
-              <TabPane tab="Update Information" key="1">
+            <Tabs defaultActiveKey='1'>
+              <TabPane tab='Informasi Akun' key='1'>
                 <Form
                   form={profileForm}
-                  layout="vertical"
+                  layout='vertical'
                   onFinish={handleProfileUpdate}
                   initialValues={{
                     name: user?.name,
@@ -242,17 +242,20 @@ const Profile = () => {
                   }}
                 >
                   <Form.Item
-                    name="name"
-                    label="Full Name"
+                    name='name'
+                    label='Nama Lengkap'
                     rules={[
                       { required: true, message: "Please input your name!" },
                     ]}
                   >
-                    <Input prefix={<UserOutlined />} placeholder="Full Name" />
+                    <Input
+                      prefix={<UserOutlined />}
+                      placeholder='Nama Lengkap'
+                    />
                   </Form.Item>
                   <Form.Item
-                    name="email"
-                    label="Email Address"
+                    name='email'
+                    label='Email'
                     rules={[
                       {
                         required: true,
@@ -261,39 +264,36 @@ const Profile = () => {
                       },
                     ]}
                   >
-                    <Input
-                      prefix={<MailOutlined />}
-                      placeholder="Email Address"
-                    />
+                    <Input prefix={<MailOutlined />} placeholder='Email' />
                   </Form.Item>
                   {user?.level !== "parent" && (
-                    <Form.Item name="phone" label="Phone Number">
+                    <Form.Item name='phone' label='WhatsApp'>
                       <Input
                         prefix={<PhoneOutlined />}
-                        placeholder="Phone Number"
+                        placeholder='WhatsApp'
                       />
                     </Form.Item>
                   )}
                   <Form.Item>
                     <Button
-                      type="primary"
-                      htmlType="submit"
+                      type='primary'
+                      htmlType='submit'
                       loading={isLoading}
                     >
-                      Save Changes
+                      Simpan Perubahan
                     </Button>
                   </Form.Item>
                 </Form>
               </TabPane>
-              <TabPane tab="Change Password" key="2">
+              <TabPane tab='Ubah Password' key='2'>
                 <Form
                   form={passwordForm}
-                  layout="vertical"
+                  layout='vertical'
                   onFinish={handlePasswordChange}
                 >
                   <Form.Item
-                    name="oldPassword"
-                    label="Old Password"
+                    name='oldPassword'
+                    label='Password Lama'
                     rules={[
                       {
                         required: true,
@@ -301,11 +301,11 @@ const Profile = () => {
                       },
                     ]}
                   >
-                    <Input.Password placeholder="Old Password" />
+                    <Input.Password placeholder='Password Lama' />
                   </Form.Item>
                   <Form.Item
-                    name="newPassword"
-                    label="New Password"
+                    name='newPassword'
+                    label='Password Baru'
                     rules={[
                       {
                         required: true,
@@ -314,11 +314,11 @@ const Profile = () => {
                     ]}
                     hasFeedback
                   >
-                    <Input.Password placeholder="New Password" />
+                    <Input.Password placeholder='Password Baru' />
                   </Form.Item>
                   <Form.Item
-                    name="confirmPassword"
-                    label="Confirm New Password"
+                    name='confirmPassword'
+                    label='Konfirmasi Password Baru'
                     dependencies={["newPassword"]}
                     hasFeedback
                     rules={[
@@ -343,15 +343,15 @@ const Profile = () => {
                       }),
                     ]}
                   >
-                    <Input.Password placeholder="Confirm New Password" />
+                    <Input.Password placeholder='Konfirmasi Password Baru' />
                   </Form.Item>
                   <Form.Item>
                     <Button
-                      type="primary"
-                      htmlType="submit"
+                      type='primary'
+                      htmlType='submit'
                       loading={isLoading}
                     >
-                      Update Password
+                      Perbarui Password
                     </Button>
                   </Form.Item>
                 </Form>

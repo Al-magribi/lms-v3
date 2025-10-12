@@ -51,10 +51,18 @@ export const ApiLog = createApi({
       invalidatesTags: ["logs", "report"],
     }),
     rejoinExam: builder.mutation({
-      query: ({ id }) => ({
+      query: (id) => ({
         url: "/rejoin-exam",
         method: "PUT",
         params: { id },
+      }),
+      invalidatesTags: ["logs", "report"],
+    }),
+    penalty: builder.mutation({
+      query: ({ student, exam }) => ({
+        url: "/penalty",
+        method: "PUT",
+        params: { student, exam },
       }),
       invalidatesTags: ["logs", "report"],
     }),
@@ -69,4 +77,5 @@ export const {
   useGetFilterQuery,
   useRetakeExamMutation,
   useRejoinExamMutation,
+  usePenaltyMutation,
 } = ApiLog;

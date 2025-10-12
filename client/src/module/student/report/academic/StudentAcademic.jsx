@@ -17,6 +17,8 @@ import {
   Col,
   Grid,
   Form,
+  Button,
+  Modal,
 } from "antd";
 import {
   UserOutlined,
@@ -27,6 +29,7 @@ import {
   RiseOutlined,
   FallOutlined,
   BookOutlined,
+  EyeOutlined,
 } from "@ant-design/icons";
 import { useSelector } from "react-redux";
 import MainLayout from "../../../../components/layout/MainLayout";
@@ -35,8 +38,8 @@ import { useGetMonthlyRecapQuery } from "../../../../service/api/lms/ApiRecap";
 const { Title, Text, Paragraph } = Typography;
 const { useBreakpoint } = Grid;
 
+// KOMPONEN UNTUK MENAMPILKAN DETAIL PENILAIAN
 const SubjectDetail = ({ detail }) => {
-  // Pastikan detail adalah array dan memiliki panjang yang cukup
   const attendanceDetail = detail?.[0]?.attendance || [];
   const attitudeDetail = detail?.[1]?.attitude || [];
   const assessmentDetail = detail?.[2] || { summative: [], formative: [] };
@@ -44,7 +47,7 @@ const SubjectDetail = ({ detail }) => {
   return (
     <Row gutter={[16, 16]}>
       <Col xs={24} md={12} lg={6}>
-        <Card size="small" title="Attendance">
+        <Card size='small' title='Attendance'>
           <List
             dataSource={attendanceDetail}
             renderItem={(item) => {
@@ -63,7 +66,7 @@ const SubjectDetail = ({ detail }) => {
         </Card>
       </Col>
       <Col xs={24} md={12} lg={6}>
-        <Card size="small" title="Attitude">
+        <Card size='small' title='Attitude'>
           <List
             dataSource={attitudeDetail}
             renderItem={(item) => {
@@ -84,7 +87,7 @@ const SubjectDetail = ({ detail }) => {
         </Card>
       </Col>
       <Col xs={24} md={12} lg={8}>
-        <Card size="small" title="Summative">
+        <Card size='small' title='Summative'>
           <List
             dataSource={assessmentDetail.summative}
             renderItem={(item) => {
@@ -105,7 +108,7 @@ const SubjectDetail = ({ detail }) => {
         </Card>
       </Col>
       <Col xs={24} md={12} lg={4}>
-        <Card size="small" title="Formative">
+        <Card size='small' title='Formative'>
           <List
             dataSource={assessmentDetail.formative}
             renderItem={(item) => <List.Item>{item}</List.Item>}
@@ -117,6 +120,96 @@ const SubjectDetail = ({ detail }) => {
   );
 };
 
+// KOMPONEN KARTU MATA PELAJARAN (DENGAN MODAL RESPONSIVE)
+const SubjectItem = ({ subject }) => {
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const screens = useBreakpoint();
+
+  const showModal = () => setIsModalVisible(true);
+  const handleCancel = () => setIsModalVisible(false);
+
+  return (
+    <List.Item key={`${subject.name}-${subject.teacher}`}>
+      <Card>
+        <Flex justify='space-between' align='center' wrap='wrap' gap='small'>
+          <div>
+            <Title level={5} style={{ marginBottom: 0 }}>
+              {subject.name}
+            </Title>
+            <Text type='secondary'>
+              <UserOutlined /> Guru: {subject.teacher}
+            </Text>
+          </div>
+          <Statistic
+            title='Nilai Akhir'
+            value={subject.score}
+            precision={2}
+            valueStyle={{
+              color: subject.score >= 75 ? "#3f8600" : "#cf1322",
+            }}
+            prefix={subject.score >= 75 ? <RiseOutlined /> : <FallOutlined />}
+          />
+        </Flex>
+
+        {subject.chapters && subject.chapters.length > 0 && (
+          <>
+            <Divider orientation='left' plain>
+              <BookOutlined /> Chapter Bulan Ini
+            </Divider>
+            <List
+              size='small'
+              dataSource={subject.chapters}
+              renderItem={(chapter) => <List.Item>{chapter.name}</List.Item>}
+            />
+          </>
+        )}
+
+        <Divider orientation='left' plain>
+          Detail Penilaian
+        </Divider>
+
+        {/* --- LOGIKA RESPONSIVE --- */}
+        {screens.md ? (
+          // Tampilan inline untuk layar medium ke atas
+          <SubjectDetail detail={subject.detail} />
+        ) : (
+          // Tombol untuk membuka modal pada layar kecil
+          <>
+            <Button
+              type='primary'
+              onClick={showModal}
+              icon={<EyeOutlined />}
+              block
+            >
+              Lihat Detail Penilaian
+            </Button>
+            <Modal
+              title={`Detail Penilaian: ${subject.name}`}
+              open={isModalVisible}
+              onCancel={handleCancel}
+              footer={null}
+              width={screens.xs ? "95vw" : "80vw"}
+              style={{ top: 20 }}
+            >
+              <SubjectDetail detail={subject.detail} />
+            </Modal>
+          </>
+        )}
+
+        {subject.note && (
+          <>
+            <Divider orientation='left' plain>
+              Catatan Guru
+            </Divider>
+            <Paragraph italic>"{subject.note}"</Paragraph>
+          </>
+        )}
+      </Card>
+    </List.Item>
+  );
+};
+
+// KOMPONEN UTAMA
 const StudentAcademic = () => {
   const months = [
     "Januari",
@@ -144,134 +237,78 @@ const StudentAcademic = () => {
   useEffect(() => {
     const today = new Date();
     const currentMonthIndex = today.getMonth();
-    // Default ke bulan sebelumnya, atau Desember jika bulan ini Januari
     const previousMonthName =
       months[currentMonthIndex === 0 ? 11 : currentMonthIndex - 1];
     setMonth(previousMonthName);
     form.setFieldsValue({ month: previousMonthName });
-  }, [user, form]); // Dependency array should include months if it were dynamic
+  }, [user, form]);
 
   const { data, error, isFetching } = useGetMonthlyRecapQuery(
     { studentId, month, periode },
     { skip: !studentId || !month || !periode }
   );
 
+  console.log(data);
+
   const screens = useBreakpoint();
   const recapData = data?.[0];
 
   const renderSubjectList = (subjects) => (
     <List
-      itemLayout="vertical"
+      itemLayout='vertical'
       dataSource={subjects}
-      renderItem={(subject) => (
-        <List.Item key={`${subject.name}-${subject.teacher}`}>
-          <Card>
-            <Flex
-              justify="space-between"
-              align="center"
-              wrap="wrap"
-              gap="small"
-            >
-              <div>
-                <Title level={5} style={{ marginBottom: 0 }}>
-                  {subject.name}
-                </Title>
-                <Text type="secondary">
-                  <UserOutlined /> Guru: {subject.teacher}
-                </Text>
-              </div>
-              <Statistic
-                title="Nilai Akhir"
-                value={subject.score}
-                precision={2}
-                valueStyle={{
-                  color: subject.score >= 75 ? "#3f8600" : "#cf1322",
-                }}
-                prefix={
-                  subject.score >= 75 ? <RiseOutlined /> : <FallOutlined />
-                }
-              />
-            </Flex>
-
-            {subject.chapters && subject.chapters.length > 0 && (
-              <>
-                <Divider orientation="left" plain>
-                  <BookOutlined /> Chapter Bulan Ini
-                </Divider>
-                <List
-                  size="small"
-                  dataSource={subject.chapters}
-                  renderItem={(chapter) => (
-                    <List.Item>{chapter.name}</List.Item>
-                  )}
-                />
-              </>
-            )}
-
-            <Divider orientation="left" plain>
-              Detail Penilaian
-            </Divider>
-            <SubjectDetail detail={subject.detail} />
-
-            {subject.note && (
-              <>
-                <Divider orientation="left" plain>
-                  Catatan Guru
-                </Divider>
-                <Paragraph italic>"{subject.note}"</Paragraph>
-              </>
-            )}
-          </Card>
-        </List.Item>
+      renderItem={(subject, index) => (
+        <SubjectItem subject={subject} key={index} />
       )}
     />
   );
 
   return (
     <MainLayout title={`Laporan Akademik ${user?.name}`} levels={["student"]}>
-      <Flex vertical gap="large">
-        <Card>
-          <Form form={form} layout="vertical">
-            <Form.Item
-              name="month"
-              label={
-                <Title level={4} style={{ margin: 0 }}>
-                  Pilih Bulan Laporan
-                </Title>
-              }
-            >
-              <Select
-                placeholder="Pilih Bulan"
-                onChange={(value) => setMonth(value)}
-                options={monthOpts}
-              />
-            </Form.Item>
-          </Form>
-        </Card>
+      <Flex vertical gap='large'>
+        <Form form={form} layout='vertical'>
+          <Form.Item
+            name='month'
+            label={
+              <Title level={5} style={{ margin: 0 }}>
+                Pilih Bulan Laporan
+              </Title>
+            }
+          >
+            <Select
+              placeholder='Pilih Bulan'
+              onChange={(value) => setMonth(value)}
+              options={monthOpts}
+              style={{ width: 300 }}
+            />
+          </Form.Item>
+        </Form>
 
         {isFetching && (
           <div style={{ textAlign: "center", marginTop: 50 }}>
-            <Spin size="large" />
+            <Spin size='large' />
           </div>
         )}
         {error && (
           <Alert
-            message="Terjadi Kesalahan"
+            message='Terjadi Kesalahan'
             description={error?.data?.message || "Gagal memuat data."}
-            type="error"
+            type='error'
             showIcon
           />
         )}
+
         {!isFetching && recapData && (
-          <Card>
-            <Descriptions bordered column={screens.md ? 2 : 1} size="small">
+          <>
+            <Descriptions bordered column={screens.md ? 2 : 1} size='small'>
               <Descriptions.Item
                 label={
                   <>
                     <UserOutlined /> Nama Siswa
                   </>
                 }
-                span={2}
+                // --- PERBAIKAN WARNING ---
+                span={screens.md ? 2 : 1}
               >
                 <Text strong>
                   {recapData.name} ({recapData.nis})
@@ -331,11 +368,11 @@ const StudentAcademic = () => {
                         key: branchIndex,
                         label: (
                           <Flex
-                            justify="space-between"
+                            justify='space-between'
                             style={{ width: "100%" }}
                           >
                             <Text strong>{branch.name}</Text>
-                            <Tag color="blue">
+                            <Tag color='blue'>
                               Rata-rata Nilai: {branch.score}
                             </Tag>
                           </Flex>
@@ -348,11 +385,12 @@ const StudentAcademic = () => {
                   ),
               }))}
             />
-          </Card>
+          </>
         )}
+
         {!isFetching && !recapData && month && !error && (
           <Card>
-            <Empty description="Data laporan untuk bulan yang dipilih tidak tersedia." />
+            <Empty description='Data laporan untuk bulan yang dipilih tidak tersedia.' />
           </Card>
         )}
       </Flex>

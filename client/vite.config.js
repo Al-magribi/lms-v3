@@ -17,12 +17,18 @@ export default defineConfig(({ mode }) => {
       },
     },
     build: {
-      sourcemap: true,
-      minify: "terser",
+      sourcemap: mode === "development", // hanya aktif saat dev
+      minify: mode === "production" ? "terser" : false, // terser di production, none di dev
+      terserOptions: {
+        compress: {
+          drop_console: mode === "production", // hapus console.log di production
+          drop_debugger: mode === "production", // hapus debugger di production
+        },
+      },
       rollupOptions: {
         output: {
           manualChunks: {
-            vendor: ["react", "react-dom", "react-router-dom"],
+            vendor: ["react", "react-dom", "react-router-dom"], // pisahkan vendor bundle
           },
         },
       },

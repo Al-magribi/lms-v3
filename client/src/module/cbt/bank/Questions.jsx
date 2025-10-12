@@ -158,7 +158,10 @@ const Questions = ({ subject, bankid, name }) => {
             </Space>
           }
         >
-          <div dangerouslySetInnerHTML={createMarkup(item.question)} />
+          <div
+            style={{ maxWidth: "100%", overflow: "auto" }}
+            dangerouslySetInnerHTML={createMarkup(item.question)}
+          />
 
           {item.qtype === 1 && (
             <>
