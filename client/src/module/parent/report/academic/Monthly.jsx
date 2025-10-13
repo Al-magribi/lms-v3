@@ -16,6 +16,8 @@ import {
   Col,
   Grid,
   Form,
+  Button,
+  Modal,
 } from "antd";
 import {
   UserOutlined,
@@ -32,7 +34,6 @@ import { useGetMonthlyRecapQuery } from "../../../../service/api/lms/ApiRecap";
 
 const { Title, Text, Paragraph } = Typography;
 const { useBreakpoint } = Grid;
-const { Panel } = Collapse;
 
 const SubjectDetail = ({ detail }) => {
   // Pastikan detail adalah array dan memiliki panjang yang cukup
@@ -134,12 +135,14 @@ const Monthly = () => {
   const monthOpts = months.map((month) => ({ label: month, value: month }));
 
   const [month, setMonth] = useState(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedChapter, setSelectedChapter] = useState(null);
 
   const { user } = useSelector((state) => state.auth);
   const [form] = Form.useForm();
   const screens = useBreakpoint();
 
-  const isMobile = screens.xs;
+  const isSmallScreen = !screens.md;
 
   const studentId = user?.student_id;
   const periode = user?.periode;
@@ -151,7 +154,7 @@ const Monthly = () => {
       months[currentMonthIndex === 0 ? 11 : currentMonthIndex - 1];
     setMonth(previousMonthName);
     form.setFieldsValue({ month: previousMonthName });
-  }, [form]);
+  }, [form, months]);
 
   const { data, error, isFetching } = useGetMonthlyRecapQuery(
     { studentId, month, periode },
@@ -159,6 +162,16 @@ const Monthly = () => {
   );
 
   const recapData = data && data;
+
+  const showChapterDetails = (chapter) => {
+    setSelectedChapter(chapter);
+    setIsModalVisible(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalVisible(false);
+    setSelectedChapter(null);
+  };
 
   const renderSubjectList = (subjects) => (
     <List
@@ -199,10 +212,40 @@ const Monthly = () => {
                 <Divider orientation="left" plain>
                   <BookOutlined /> Chapter Bulan Ini
                 </Divider>
-                <Collapse accordion>
-                  {subject.chapters.map((chapter, index) => (
-                    <Panel
-                      header={
+                {isSmallScreen ? (
+                  <List
+                    dataSource={subject.chapters}
+                    renderItem={(chapter) => (
+                      <List.Item>
+                        <Row
+                          align="middle"
+                          justify="space-between"
+                          style={{ width: "100%" }}
+                        >
+                          <Col xs={24} sm={18}>
+                            <Text strong>{chapter.name}</Text>
+                            <br />
+                            <Text type="secondary">Nilai: {chapter.score}</Text>
+                          </Col>
+                          <Col xs={24} sm={6}>
+                            <Flex justify="end">
+                              <Button
+                                onClick={() => showChapterDetails(chapter)}
+                              >
+                                Detail
+                              </Button>
+                            </Flex>
+                          </Col>
+                        </Row>
+                      </List.Item>
+                    )}
+                  />
+                ) : (
+                  <Collapse
+                    accordion
+                    items={subject.chapters.map((chapter, index) => ({
+                      key: index,
+                      label: (
                         <Flex
                           justify="space-between"
                           align="center"
@@ -220,17 +263,19 @@ const Monthly = () => {
                             }}
                           />
                         </Flex>
-                      }
-                      key={index}
-                    >
-                      <Paragraph italic>
-                        <strong>Catatan Guru:</strong> "{chapter.note}"
-                      </Paragraph>
-                      <Divider plain>Detail Penilaian Chapter</Divider>
-                      <SubjectDetail detail={chapter.detail} />
-                    </Panel>
-                  ))}
-                </Collapse>
+                      ),
+                      children: (
+                        <>
+                          <Paragraph italic>
+                            <strong>Catatan Guru:</strong> "{chapter.note}"
+                          </Paragraph>
+                          <Divider plain>Detail Penilaian Chapter</Divider>
+                          <SubjectDetail detail={chapter.detail} />
+                        </>
+                      ),
+                    }))}
+                  />
+                )}
               </>
             )}
           </Card>
@@ -259,7 +304,7 @@ const Monthly = () => {
         </Form.Item>
       </Form>
 
-      {isFetching && <Spin tip="Memuat data..." size="large" />}
+      {isFetching && <Spin size="large" />}
       {error && (
         <Alert
           message="Error"
@@ -272,7 +317,11 @@ const Monthly = () => {
       {recapData && (
         <>
           <Card>
-            <Descriptions title="Data Siswa" bordered column={isMobile ? 1 : 2}>
+            <Descriptions
+              title="Data Siswa"
+              bordered
+              column={isSmallScreen ? 1 : 2}
+            >
               <Descriptions.Item label="Nama">
                 <UserOutlined /> {recapData.name}
               </Descriptions.Item>
@@ -311,6 +360,29 @@ const Monthly = () => {
         <Card>
           <Empty description="Data laporan untuk bulan yang dipilih tidak tersedia." />
         </Card>
+      )}
+
+      {selectedChapter && (
+        <Modal
+          title={`Detail Penilaian: ${selectedChapter.name}`}
+          open={isModalVisible}
+          onCancel={handleModalClose}
+          footer={[
+            <Button key="back" onClick={handleModalClose}>
+              Tutup
+            </Button>,
+          ]}
+          width={isSmallScreen ? "100vw" : "80vw"}
+          style={{ top: 20 }}
+        >
+          <div style={{ height: "80vh", overflow: "auto" }}>
+            <Paragraph italic>
+              <strong>Catatan Guru:</strong> "{selectedChapter.note}"
+            </Paragraph>
+            <Divider plain>Detail Penilaian Chapter</Divider>
+            <SubjectDetail detail={selectedChapter.detail} />
+          </div>
+        </Modal>
       )}
     </Flex>
   );
