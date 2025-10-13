@@ -9,10 +9,18 @@ export const ApiRecap = createApi({
   tagTypes: ["recap"],
   endpoints: (builder) => ({
     getChapterRecap: builder.query({
-      query: ({ classid, chapterid, month, search, page, limit }) => ({
+      query: ({
+        classid,
+        subjectid,
+        chapterid,
+        month,
+        search,
+        page,
+        limit,
+      }) => ({
         url: "/chapter-final-score",
         method: "GET",
-        params: { classid, chapterid, month, search, page, limit },
+        params: { classid, subjectid, chapterid, month, search, page, limit },
       }),
       providesTags: ["recap"],
     }),

@@ -523,7 +523,7 @@ router.get(
           FROM u_students s
           JOIN cl_students cs ON s.id = cs.student
           WHERE cs.classid = $1 AND cs.periode = $2
-          ORDER BY s.nis, s.name;
+          ORDER BY s.name;
         `;
         const studentsRes = await client.query(studentQuery, [
           classid,
@@ -578,7 +578,7 @@ router.get(
           ${month ? `AND TO_CHAR(la.day_date, 'YYYY-MM') = $4` : ""}
         WHERE cs.classid = $1 AND cs.periode = $2
         GROUP BY s.id, s.nis, s.name
-        ORDER BY s.nis, s.name;
+        ORDER BY s.name;
       `;
 
       const queryParams = [classid, activePeriodeId, subjectid];

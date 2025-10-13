@@ -639,8 +639,20 @@ router.delete("/delete-category", authorize("admin"), async (req, res) => {
     const { id } = req.query;
     const { homebase } = req.user;
 
+    const check = await client.query(
+      `SELECT name FROM a_category
+    WHERE id = $1`,
+      [id]
+    );
+
+    if (check.rows[0].name.toLowerCase() === "diniyah") {
+      return res
+        .status(403)
+        .json({ message: "Kategori Diniyah tidak bisa dihapus" });
+    }
+
     const deleteQuery = `
-            DELETE FROM a_category 
+            DELETE FROM a_category
             WHERE id = $1 AND homebase = $2`;
 
     const result = await client.query(deleteQuery, [id, homebase]);

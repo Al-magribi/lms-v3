@@ -12,6 +12,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useGetChapterRecapQuery } from "../../../service/api/lms/ApiRecap";
 import { SyncOutlined } from "@ant-design/icons";
+import { useSelector } from "react-redux";
 
 const { Title, Text } = Typography;
 const { Search } = Input;
@@ -22,8 +23,8 @@ const TableHeader = ({ data }) => {
 
   const firstStudent = data.results[0];
   return (
-    <Card size='small'>
-      <Flex justify='space-between' wrap='wrap'>
+    <Card size="small">
+      <Flex justify="space-between" wrap="wrap">
         <Flex vertical>
           <Text strong>Mata Pelajaran</Text>
           <Text>{firstStudent.subject_name}</Text>
@@ -51,20 +52,27 @@ const ChapterRecap = () => {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState(search);
 
+  const { user } = useSelector((state) => state.auth);
+  console.log(user);
+
   const [searchParams] = useSearchParams();
   const month = searchParams.get("month");
+  const subjectid = searchParams.get("subjectid");
   const chapterid = searchParams.get("chapter");
   const classid = searchParams.get("class");
 
   // Hook RTK Query untuk mengambil data dari API
-  const { data, isLoading, isError, refetch } = useGetChapterRecapQuery({
+  const { data, isLoading, isError, refetch, error } = useGetChapterRecapQuery({
     page,
     limit,
     search: debouncedSearch, // Gunakan debounced search untuk query
     month,
+    subjectid,
     chapterid,
     classid,
   });
+
+  console.log(data);
 
   // Manual Debounce untuk input pencarian
   useEffect(() => {
@@ -91,35 +99,31 @@ const ChapterRecap = () => {
       title: "Nama Siswa",
       dataIndex: "student_name",
       key: "student_name",
-      sorter: (a, b) => a.student_name.localeCompare(b.student_name),
     },
     {
       title: "Kehadiran",
       dataIndex: "attendance",
       key: "attendance",
       align: "center",
-      sorter: (a, b) => a.attendance - b.attendance,
     },
     {
       title: "Sikap",
       dataIndex: "attitude",
       key: "attitude",
       align: "center",
-      sorter: (a, b) => a.attitude - b.attitude,
     },
     {
       title: "Harian",
       dataIndex: "daily",
       key: "daily",
       align: "center",
-      sorter: (a, b) => a.daily - b.daily,
     },
     {
       title: "Nilai Akhir",
       dataIndex: "final_score",
       key: "final_score",
       align: "center",
-      sorter: (a, b) => a.final_score - b.final_score,
+
       render: (score) => <Text strong>{score}</Text>,
     },
   ];
@@ -134,30 +138,30 @@ const ChapterRecap = () => {
   if (!month || !chapterid || !classid) {
     return (
       <Alert
-        message='Parameter Tidak Lengkap'
-        description='Harap pilih Bulan, Chapter, dan Kelas terlebih dahulu untuk melihat rekapitulasi nilai.'
-        type='warning'
+        message="Parameter Tidak Lengkap"
+        description="Harap pilih Bulan, Chapter, dan Kelas terlebih dahulu untuk melihat rekapitulasi nilai."
+        type="warning"
         showIcon
       />
     );
   }
 
   return (
-    <Flex vertical gap='large'>
+    <Flex vertical gap="large">
       <Alert
         showIcon
-        type='info'
-        message='Informasi Rekapitulasi'
-        description='Data yang ditampilkan adalah nilai yang sudah dibobotkan berdasarkan pengaturan yang telah ditentukan sebelumnya.'
+        type="info"
+        message="Informasi Rekapitulasi"
+        description="Data yang ditampilkan adalah nilai yang sudah dibobotkan berdasarkan pengaturan yang telah ditentukan sebelumnya."
       />
 
       <Card>
-        <Flex vertical gap='middle'>
+        <Flex vertical gap="middle">
           <TableHeader data={data} />
 
-          <Flex justify='space-between'>
+          <Flex justify="space-between">
             <Search
-              placeholder='Cari nama siswa...'
+              placeholder="Cari nama siswa..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               style={{ maxWidth: 300 }}
@@ -167,8 +171,8 @@ const ChapterRecap = () => {
             <Button
               icon={<SyncOutlined />}
               onClick={refetch}
-              color='cyan'
-              variant='solid'
+              color="cyan"
+              variant="solid"
             >
               Sinkron Data
             </Button>
@@ -178,7 +182,7 @@ const ChapterRecap = () => {
             <Table
               columns={columns}
               dataSource={data?.results}
-              rowKey='student_id'
+              rowKey="student_id"
               pagination={{
                 current: page,
                 pageSize: limit,

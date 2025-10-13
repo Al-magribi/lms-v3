@@ -34,52 +34,64 @@ const resultsWithBranches = [
             name: "Nama Mata Pelajaran diambil dari a_subject",
             teacher:
               "Nama guru yang ditugaskan di subject ini diambil dari at_subject dan yang mengajar di kelas ini dapat diliat di l_chapter",
-            score: `Nilai ini diambil pada setiap bulan dan ini dicapai dari 
-            rata rata l_attendance (dengan note Hadir) dikali l_weighting.presensi
-              + rata rata l_attitude dikali l_weighting.attitude
-              + rata rata l_summative dan l_formative dikali l_weighting.daily`,
+            score: `Jika subject ini memiliki 1 array chapter maka Nilainya harus sama dengan final_score di endpoint /chapter-final-score,
+           Jika  `,
             chapters: [
               {
                 id: "Id Chapter",
                 name: "Nama Chapter yang sesuai dengan bulan ini yang memiliki chapter_id di l_summatice dan l_formative ",
               },
-            ],
-            note: "Catatan guru",
-            detail: [
+              { note: "Catatan guru" },
               {
-                attendance: [
-                  { Hadir: "Jumlah note Hadir pada l_attendance" },
-                  { Sakit: "Jumlah note Sakit pada l_attendance" },
-                  { Ijin: "Jumlah note Ijin pada l_attendance" },
-                  { Alpa: "Jumlah note Alpa pada l_attendance" },
-                  { presentase: "Presentase Hadir" },
-                ],
-              },
-              {
-                attitude: [
-                  { kinerja: "Nilai kinerja dari l_attitude.kinerja" },
+                detail: [
                   {
-                    kedisiplinan:
-                      "Nilai kedisiplinan dari l_attitude.kedisiplinan",
+                    attendance: [
+                      { Hadir: "Jumlah note Hadir pada l_attendance" },
+                      { Sakit: "Jumlah note Sakit pada l_attendance" },
+                      { Ijin: "Jumlah note Ijin pada l_attendance" },
+                      { Alpa: "Jumlah note Alpa pada l_attendance" },
+                      { presentase: "Presentase Hadir" },
+                    ],
                   },
-                  { keaktifan: "Nilai keaktifan dari l_attitude.kinerja" },
                   {
-                    percaya_diri:
-                      "Nilai percaya_diri dari l_attitude.percaya_diri",
+                    attitude: [
+                      { kinerja: "Nilai kinerja dari l_attitude.kinerja" },
+                      {
+                        kedisiplinan:
+                          "Nilai kedisiplinan dari l_attitude.kedisiplinan",
+                      },
+                      { keaktifan: "Nilai keaktifan dari l_attitude.kinerja" },
+                      {
+                        percaya_diri:
+                          "Nilai percaya_diri dari l_attitude.percaya_diri",
+                      },
+                      {
+                        rerata: "rata rata nilai attitude",
+                      },
+                    ],
+                  },
+                  {
+                    summative: [
+                      { lisan: "Nilai oral dari l_summative.oral" },
+                      { tulis: "Nilai written dari l_summative.written" },
+                      { proyek: "Nilai project dari l_summative.project" },
+                      {
+                        keterampilan:
+                          "Nilai performance dari l_summative.performance",
+                      },
+                      {
+                        rerata: "rata rata nilai summative",
+                      },
+                    ],
+                    formative: [
+                      { f_1: "nilai formative di l_formative" },
+                      // Tampilkan semua nilai formative
+                      {
+                        rerata: "rata rata nilai attitude",
+                      },
+                    ],
                   },
                 ],
-              },
-              {
-                summative: [
-                  { lisan: "Nilai oral dari l_summative.oral" },
-                  { tulis: "Nilai written dari l_summative.written" },
-                  { proyek: "Nilai project dari l_summative.project" },
-                  {
-                    keterampilan:
-                      "Nilai performance dari l_summative.performance",
-                  },
-                ],
-                formative: ["Semua nilai formative di l_formative"],
               },
             ],
           },
