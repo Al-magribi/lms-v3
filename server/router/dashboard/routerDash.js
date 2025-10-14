@@ -504,27 +504,28 @@ router.get("/student-stats", authorize("student"), async (req, res) => {
     );
     const activePeriode = periode.rows[0];
 
-    // Get student's class and subjects
+    // Get student's class and subjects (Fixed Query)
     const studentInfo = await pool.query(
       `
       SELECT 
         c.name as class_name,
         g.name as grade_name,
         m.name as major_name,
-        COUNT(DISTINCT ats.subject) as total_subjects
+        (SELECT COUNT(DISTINCT ch.subject) 
+         FROM l_chapter ch
+         JOIN l_cclass lc ON lc.chapter = ch.id
+         WHERE lc.classid = cs.classid) as total_subjects
       FROM cl_students cs
       JOIN a_class c ON cs.classid = c.id
       JOIN a_grade g ON c.grade = g.id
       LEFT JOIN a_major m ON c.major = m.id
-      LEFT JOIN at_class atc ON atc.class_id = c.id
-      LEFT JOIN at_subject ats ON ats.teacher = atc.teacher_id
       WHERE cs.student = $1 AND cs.homebase = $2 AND cs.periode = $3
-      GROUP BY c.name, g.name, m.name
+      GROUP BY c.id, c.name, g.name, m.name, cs.classid
       `,
       [studentId, homebaseId, activePeriode.id]
     );
 
-    // Get upcoming exams
+    // Get upcoming exams (No changes needed)
     const upcomingExams = await pool.query(
       `
       SELECT 
@@ -550,7 +551,7 @@ router.get("/student-stats", authorize("student"), async (req, res) => {
       [studentId]
     );
 
-    // Get recent learning materials
+    // Get recent learning materials (No changes needed)
     const recentMaterials = await pool.query(
       `
       SELECT 
@@ -571,7 +572,7 @@ router.get("/student-stats", authorize("student"), async (req, res) => {
       [studentId]
     );
 
-    // Get Quran learning progress
+    // Get Quran learning progress (No changes needed)
     const quranProgress = await pool.query(
       `
       SELECT 

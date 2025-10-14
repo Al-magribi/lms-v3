@@ -105,7 +105,7 @@ const TableData = ({ onEdit }) => {
       render: (record, text) => (
         <Flex vertical gap={"small"}>
           <Text>{record}</Text>
-          <Text type="secondary" italic>
+          <Text type="secondary" italic copyable>
             {text.parent_email}
           </Text>
         </Flex>

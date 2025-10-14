@@ -26,6 +26,7 @@ const Summative = ({
   const { user } = useSelector((state) => state.auth);
   const teacher_id = user?.id;
   const [searchParams] = useSearchParams();
+  const subjectname = searchParams.get("name");
   const subjectid = searchParams.get("subjectid");
   const chapterid = searchParams.get("chapter");
   const classid = searchParams.get("class");
@@ -96,19 +97,23 @@ const Summative = ({
         "Proyek",
         "Keterampilan",
         "Rata2",
-      ], // Header di template juga diubah
+      ],
     ];
 
     if (students) {
       students.forEach((student) => {
+        const studentId = student.student;
+        const scores = summativeScores[studentId] || {};
+        const average = calculateAverage(studentId);
+
         excelData.push([
           student.nis || "",
           student.student_name || "",
-          "",
-          "",
-          "",
-          "",
-          "",
+          scores.oral ?? "",
+          scores.written ?? "",
+          scores.project ?? "",
+          scores.performance ?? "",
+          average > 0 ? average : "",
         ]);
       });
     }
@@ -125,7 +130,10 @@ const Summative = ({
       { wch: 12 },
     ];
     XLSX.utils.book_append_sheet(workbook, worksheet, "Penilaian Sumatif");
-    XLSX.writeFile(workbook, "template_penilaian_sumatif.xlsx");
+    XLSX.writeFile(
+      workbook,
+      `penilaian_sumatif_${subjectname?.replace(/-/g, " ")}.xlsx`
+    );
     message.success("Template berhasil diunduh!");
   };
 
@@ -214,10 +222,10 @@ const Summative = ({
       width: 120,
       render: (_, record) => (
         <Input
-          type='number'
+          type="number"
           min={0}
           max={100}
-          placeholder='0-100'
+          placeholder="0-100"
           value={summativeScores[record.student]?.[col.key] ?? ""}
           onChange={(e) =>
             handleScoreChange(record.student, col.key, e.target.value)
@@ -241,8 +249,8 @@ const Summative = ({
       fixed: "right",
       render: (_, record) => (
         <Button
-          type='primary'
-          size='small'
+          type="primary"
+          size="small"
           onClick={() => handleSave(record)}
           loading={isSaving}
         >
@@ -254,7 +262,7 @@ const Summative = ({
 
   return (
     <Card
-      title='Penilaian Sumatif'
+      title="Penilaian Sumatif"
       extra={
         <Space>
           <Button
@@ -266,9 +274,9 @@ const Summative = ({
           <Button
             icon={<DownloadOutlined />}
             onClick={handleDownloadTemplate}
-            type='primary'
+            type="primary"
           >
-            Download Template
+            Download
           </Button>
         </Space>
       }
@@ -276,7 +284,7 @@ const Summative = ({
       <Table
         columns={columns}
         dataSource={students}
-        rowKey='id'
+        rowKey="id"
         bordered
         loading={isLoading}
         pagination={{
@@ -289,7 +297,7 @@ const Summative = ({
         scroll={{ x: 1200 }}
       />
       <UploadBulk
-        title='Upload Nilai Sumatif (Bulk)'
+        title="Upload Nilai Sumatif (Bulk)"
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         onUpload={handleBulkUpload}

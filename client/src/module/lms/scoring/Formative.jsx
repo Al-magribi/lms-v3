@@ -26,6 +26,7 @@ const Formative = ({
   const { user } = useSelector((state) => state.auth);
   const teacher_id = user?.id;
   const [searchParams] = useSearchParams();
+  const subjectname = searchParams.get("name");
   const subjectid = searchParams.get("subjectid");
   const chapterid = searchParams.get("chapter");
   const classid = searchParams.get("class");
@@ -140,8 +141,16 @@ const Formative = ({
 
     if (students) {
       students.forEach((student) => {
+        const studentId = student.student;
+        const scores = formativeScores[studentId] || {};
+        const average = calculateAverage(studentId);
+
         const row = [student.nis || "", student.student_name || ""];
-        for (let i = 1; i <= 10; i++) row.push(""); // 8 kolom nilai + 1 rerata
+        for (let i = 1; i <= 8; i++) {
+          row.push(scores[`f_${i}`] ?? ""); // Ambil nilai yang ada atau string kosong
+        }
+        row.push(average > 0 ? average : ""); // Tambahkan rerata jika lebih dari 0
+
         excelData.push(row);
       });
     }
@@ -162,7 +171,10 @@ const Formative = ({
       { wch: 10 },
     ];
     XLSX.utils.book_append_sheet(workbook, worksheet, "Penilaian Formatif");
-    XLSX.writeFile(workbook, "template_penilaian_formatif.xlsx");
+    XLSX.writeFile(
+      workbook,
+      `penilaian_formatif_${subjectname?.replace(/-/g, " ")}.xlsx`
+    );
     message.success("Template berhasil diunduh!");
   };
 
@@ -212,11 +224,11 @@ const Formative = ({
       width: 100,
       render: (_, record) => (
         <Input
-          type='number'
+          type="number"
           min={0}
           max={100}
           style={{ textAlign: "center" }}
-          placeholder='0-100'
+          placeholder="0-100"
           value={formativeScores[record.student]?.[`f_${taskNumber}`] ?? ""}
           onChange={(e) =>
             handleScoreChange(record.student, taskNumber, e.target.value)
@@ -243,8 +255,8 @@ const Formative = ({
       fixed: "right",
       render: (_, record) => (
         <Button
-          type='primary'
-          size='small'
+          type="primary"
+          size="small"
           onClick={() => handleSave(record)}
           loading={isSaving}
         >
@@ -258,7 +270,7 @@ const Formative = ({
 
   return (
     <Card
-      title='Penilaian Formatif'
+      title="Penilaian Formatif"
       extra={
         <Space>
           <Button
@@ -270,9 +282,9 @@ const Formative = ({
           <Button
             icon={<DownloadOutlined />}
             onClick={handleDownloadTemplate}
-            type='primary'
+            type="primary"
           >
-            Download Template
+            Download
           </Button>
         </Space>
       }
@@ -280,7 +292,7 @@ const Formative = ({
       <Table
         columns={columns}
         dataSource={students}
-        rowKey='id'
+        rowKey="id"
         bordered
         loading={isLoading}
         pagination={{
@@ -293,7 +305,7 @@ const Formative = ({
         scroll={{ x: 1500 }}
       />
       <UploadBulk
-        title='Upload Nilai Formatif (Bulk)'
+        title="Upload Nilai Formatif (Bulk)"
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         onUpload={handleBulkUpload}

@@ -28,6 +28,7 @@ const Attitude = ({
   const { user } = useSelector((state) => state.auth);
   const teacher_id = user?.id;
   const [searchParams] = useSearchParams();
+  const subjectname = searchParams.get("name");
   const subjectid = searchParams.get("subjectid");
   const chapterid = searchParams.get("chapter");
   const classid = searchParams.get("class");
@@ -151,7 +152,6 @@ const Attitude = ({
 
   // Handler untuk mengunduh template Excel
   const handleDownloadTemplate = () => {
-    // 1. Tambahkan header "Rerata"
     const excelData = [
       [
         "NIS",
@@ -161,22 +161,25 @@ const Attitude = ({
         "Keaktifan",
         "Percaya Diri",
         "Catatan",
-        "Rerata", // <-- Kolom ke-8 ditambahkan
+        "Rerata",
       ],
     ];
 
     if (students) {
       students.forEach((student) => {
-        // 2. Tambahkan kolom kosong ke-8 untuk setiap baris siswa
+        const studentId = student.student;
+        const scores = attitudeScores[studentId] || {};
+        const average = calculateAverage(studentId);
+
         excelData.push([
           student.nis || "",
           student.student_name || "",
-          "", // Kinerja
-          "", // Kedisiplinan
-          "", // Keaktifan
-          "", // Percaya Diri
-          "", // Catatan
-          "", // Rerata (dibiarkan kosong dalam template)
+          scores.kinerja ?? "",
+          scores.kedisiplinan ?? "",
+          scores.keaktifan ?? "",
+          scores.percayaDiri ?? "",
+          scores.catatan ?? "",
+          average > 0 ? average : "",
         ]);
       });
     }
@@ -184,7 +187,6 @@ const Attitude = ({
     const workbook = XLSX.utils.book_new();
     const worksheet = XLSX.utils.aoa_to_sheet(excelData);
 
-    // 3. Atur lebar untuk 8 kolom
     worksheet["!cols"] = [
       { wch: 15 }, // NIS
       { wch: 30 }, // Nama Siswa
@@ -197,7 +199,7 @@ const Attitude = ({
     ];
 
     XLSX.utils.book_append_sheet(workbook, worksheet, "Penilaian Sikap");
-    const filename = `template_penilaian_sikap.xlsx`;
+    const filename = `penilaian_sikap_${subjectname?.replace(/-/g, " ")}.xlsx`;
     XLSX.writeFile(workbook, filename);
     message.success("Template berhasil diunduh!");
   };
@@ -258,7 +260,7 @@ const Attitude = ({
       width: 120,
       render: (_, record) => (
         <Input
-          type='number'
+          type="number"
           min={0}
           max={100}
           // PERBAIKAN: Gunakan record.student sebagai key
@@ -266,7 +268,7 @@ const Attitude = ({
           onChange={(e) =>
             handleScoreChange(record.student, "kinerja", e.target.value)
           }
-          placeholder='0-100'
+          placeholder="0-100"
         />
       ),
     },
@@ -276,7 +278,7 @@ const Attitude = ({
       width: 120,
       render: (_, record) => (
         <Input
-          type='number'
+          type="number"
           min={0}
           max={100}
           // PERBAIKAN: Gunakan record.student sebagai key
@@ -284,7 +286,7 @@ const Attitude = ({
           onChange={(e) =>
             handleScoreChange(record.student, "kedisiplinan", e.target.value)
           }
-          placeholder='0-100'
+          placeholder="0-100"
         />
       ),
     },
@@ -294,7 +296,7 @@ const Attitude = ({
       width: 120,
       render: (_, record) => (
         <Input
-          type='number'
+          type="number"
           min={0}
           max={100}
           // PERBAIKAN: Gunakan record.student sebagai key
@@ -302,7 +304,7 @@ const Attitude = ({
           onChange={(e) =>
             handleScoreChange(record.student, "keaktifan", e.target.value)
           }
-          placeholder='0-100'
+          placeholder="0-100"
         />
       ),
     },
@@ -312,7 +314,7 @@ const Attitude = ({
       width: 120,
       render: (_, record) => (
         <Input
-          type='number'
+          type="number"
           min={0}
           max={100}
           // PERBAIKAN: Gunakan record.student sebagai key
@@ -320,7 +322,7 @@ const Attitude = ({
           onChange={(e) =>
             handleScoreChange(record.student, "percayaDiri", e.target.value)
           }
-          placeholder='0-100'
+          placeholder="0-100"
         />
       ),
     },
@@ -336,7 +338,7 @@ const Attitude = ({
           onChange={(e) =>
             handleScoreChange(record.student, "catatan", e.target.value)
           }
-          placeholder='Catatan...'
+          placeholder="Catatan..."
         />
       ),
     },
@@ -356,8 +358,8 @@ const Attitude = ({
       fixed: "right",
       render: (_, record) => (
         <Button
-          type='primary'
-          size='small'
+          type="primary"
+          size="small"
           onClick={() => handleSave(record)}
           loading={isSaving}
         >
@@ -369,7 +371,7 @@ const Attitude = ({
 
   return (
     <Card
-      title='Penilaian Sikap'
+      title="Penilaian Sikap"
       extra={
         <Space>
           <Button
@@ -381,9 +383,9 @@ const Attitude = ({
           <Button
             icon={<DownloadOutlined />}
             onClick={handleDownloadTemplate}
-            type='primary'
+            type="primary"
           >
-            Download Template
+            Download
           </Button>
         </Space>
       }
@@ -392,7 +394,7 @@ const Attitude = ({
         columns={columns}
         dataSource={students}
         // rowKey tetap 'id' karena ini adalah unique key untuk setiap baris data di prop 'students'
-        rowKey='id'
+        rowKey="id"
         bordered
         // 3. Konfigurasi pagination dan loading sebagai controlled component
         loading={isLoading}
@@ -407,7 +409,7 @@ const Attitude = ({
       />
 
       <UploadBulk
-        title='Upload Nilai Sikap (Bulk)'
+        title="Upload Nilai Sikap (Bulk)"
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         onUpload={handleBulkUpload}

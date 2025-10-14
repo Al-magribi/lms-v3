@@ -148,7 +148,11 @@ const Teachers = () => {
           <Meta
             avatar={<Avatar src={item.img} icon={<UserOutlined />} />}
             title={item.name}
-            description={item.homebase}
+            description={
+              <Typography.Text type="secondary" copyable>
+                {item.username}
+              </Typography.Text>
+            }
           />
           <Flex vertical gap={"small"} style={{ marginTop: "1rem" }}>
             <Space>
@@ -185,6 +189,7 @@ const Teachers = () => {
             enterButton
             loading={isLoading && searchTerm.length > 0}
             style={{ width: 250 }}
+            allowClear
           />
         </Space>
         <Add onClick={() => setOpen(true)} />

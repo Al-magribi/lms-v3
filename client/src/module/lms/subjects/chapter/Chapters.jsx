@@ -41,9 +41,7 @@ const createMarkup = (html) => {
 
 const { confirm } = Modal;
 
-const Chapters = ({ name, id }) => {
-  const navigate = useNavigate();
-
+const Chapters = ({ name, id, onBack }) => {
   const [openContent, setOpenContent] = useState(false);
   const [open, setOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
@@ -79,10 +77,6 @@ const Chapters = ({ name, id }) => {
     setOpenContent(true);
   };
 
-  const handleBack = () => {
-    navigate("/learning-management-system");
-  };
-
   const handleClose = () => {
     setChapter("");
     setIsEdit(false);
@@ -112,7 +106,7 @@ const Chapters = ({ name, id }) => {
             <Button
               shape="circle"
               icon={<ArrowLeftOutlined />}
-              onClick={handleBack}
+              onClick={onBack}
             />
             <div>
               <Typography.Title style={{ margin: 0 }} level={5}>

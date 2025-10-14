@@ -2,17 +2,22 @@ import React from "react";
 import MainLayout from "../../../components/layout/MainLayout";
 import { Tabs } from "antd";
 import Subjects from "../subjects/Subjects";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Chapters from "../subjects/chapter/Chapters";
 import Attendance from "../attendance/Attendance";
 import Scoring from "../scoring/Scoring";
 import TabScore from "../scoring/TabScore";
 
 const LmsControl = () => {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const name = searchParams.get("name");
   const subjectid = searchParams.get("subjectid");
   const mode = searchParams.get("mode");
+
+  const handleBack = () => {
+    navigate("/learning-management-system");
+  };
 
   const items = [
     { label: "Absen", key: "1", children: <Attendance /> },
@@ -21,7 +26,7 @@ const LmsControl = () => {
   ];
 
   if (mode === "lms") {
-    return <Chapters name={name} id={subjectid} />;
+    return <Chapters name={name} id={subjectid} onBack={handleBack} />;
   }
 
   if (mode === "scoring") {
