@@ -542,7 +542,7 @@ router.get("/get-categories", authorize("admin"), async (req, res) => {
       FROM a_category c
       LEFT JOIN a_branch b ON c.id = b.categoryid
       ${filterCondition}
-      GROUP BY c.id
+      GROUP BY c.id, c.name, c.createdat, c.homebase
       ORDER BY c.createdat DESC
     `;
 
