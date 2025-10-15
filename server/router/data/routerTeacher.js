@@ -144,26 +144,40 @@ router.get("/get-teachers", authorize("admin"), async (req, res) => {
     const [count, data] = await Promise.all([
       client.query(
         `SELECT COUNT(*) FROM u_teachers 
-				WHERE homebase = $1 AND (name ILIKE $2 OR username ILIKE $2)`,
+         WHERE homebase = $1 AND (name ILIKE $2 OR username ILIKE $2)`,
         [homebase, `%${search}%`]
       ),
       client.query(
-        `SELECT u_teachers.*, 
-					a_class.name AS class_name, 
-					a_homebase.name AS homebase,
-					COALESCE(json_agg(
-						json_build_object('id', a_subject.id, 'name', a_subject.name)
-					) FILTER (WHERE a_subject.id IS NOT NULL), '[]') AS subjects
-				FROM u_teachers
-				LEFT JOIN a_homebase ON u_teachers.homebase = a_homebase.id
-				LEFT JOIN a_class ON u_teachers.class = a_class.id
-				LEFT JOIN at_subject ON u_teachers.id = at_subject.teacher
-				LEFT JOIN a_subject ON at_subject.subject = a_subject.id
-				WHERE u_teachers.homebase = $1
-				AND (u_teachers.name ILIKE $2 OR u_teachers.username ILIKE $2)
-				GROUP BY u_teachers.id, a_class.name, a_homebase.name
-				ORDER BY a_homebase.name ASC, u_teachers.name ASC
-				LIMIT $3 OFFSET $4`,
+        `SELECT 
+           u_teachers.id, 
+           u_teachers.name, 
+           u_teachers.username, 
+           u_teachers.email,
+           u_teachers.phone,
+           a_class.name AS class_name, 
+           a_homebase.name AS homebase_name,
+           COALESCE(json_agg(
+             json_build_object('id', a_subject.id, 'name', a_subject.name)
+           ) FILTER (WHERE a_subject.id IS NOT NULL), '[]'::json) AS subjects
+         FROM u_teachers
+         LEFT JOIN a_homebase ON u_teachers.homebase = a_homebase.id
+         LEFT JOIN a_class ON u_teachers.class = a_class.id
+         LEFT JOIN at_subject ON u_teachers.id = at_subject.teacher
+         LEFT JOIN a_subject ON at_subject.subject = a_subject.id
+         WHERE u_teachers.homebase = $1
+         AND (u_teachers.name ILIKE $2 OR u_teachers.username ILIKE $2)
+         -- ===== PERBAIKAN FINAL DI SINI =====
+         GROUP BY 
+           u_teachers.id,
+           u_teachers.name,
+           u_teachers.username,
+           u_teachers.email,
+           u_teachers.phone,
+           a_class.name,
+           a_homebase.name
+         -- ===== PERBAIKAN SELESAI =====
+         ORDER BY a_homebase.name ASC, u_teachers.name ASC
+         LIMIT $3 OFFSET $4`,
         [homebase, `%${search}%`, limit, offset]
       ),
     ]);
