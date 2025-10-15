@@ -53,94 +53,67 @@ router.get("/get-teachers", authorize("admin", "teacher"), async (req, res) => {
 
     let dataQuery;
     if (level === "teacher" && id) {
+      // Query untuk level teacher
       dataQuery = {
-        text: `SELECT u_teachers.*, 
-					   a_class.name AS class_name, 
-					   a_homebase.name AS homebase,
-					   COALESCE(
-						   (
-							   SELECT json_agg(DISTINCT jsonb_build_object(
-								   'id', subject.id, 
-								   'name', subject.name
-							   ))
-							   FROM (
-								   SELECT DISTINCT a_subject.id, a_subject.name
-								   FROM at_subject
-								   LEFT JOIN a_subject ON at_subject.subject = a_subject.id
-								   WHERE at_subject.teacher = u_teachers.id
-							   ) subject
-						   ),
-						   '[]'
-					   ) AS subjects,
-					   COALESCE(
-						   (
-							   SELECT json_agg(DISTINCT jsonb_build_object(
-								   'id', bank.id, 
-								   'name', bank.name,
-								   'type', bank.btype
-							   ))
-							   FROM (
-								   SELECT DISTINCT id, name, btype
-								   FROM c_bank
-								   WHERE teacher = u_teachers.id
-									 ORDER BY btype ASC, name ASC
-							   ) bank
-						   ),
-						   '[]'
-					   ) AS bank
-				FROM u_teachers
-				LEFT JOIN a_homebase ON u_teachers.homebase = a_homebase.id
-				LEFT JOIN a_class ON u_teachers.class = a_class.id
-				WHERE u_teachers.homebase = $1 AND u_teachers.id = $2
-				GROUP BY u_teachers.id, a_class.name, a_homebase.name
-				ORDER BY a_homebase.name ASC, u_teachers.name ASC`,
+        text: `SELECT 
+                  t.*, 
+                  c.name AS class_name, 
+                  hb.name AS homebase_name,
+                  (
+                    SELECT COALESCE(
+                      json_agg(DISTINCT jsonb_build_object('id', s.id, 'name', s.name)),
+                      '[]'::json
+                    )
+                    FROM at_subject ats
+                    LEFT JOIN a_subject s ON ats.subject = s.id
+                    WHERE ats.teacher = t.id
+                  ) AS subjects,
+                  (
+                    SELECT COALESCE(
+                      json_agg(DISTINCT jsonb_build_object('id', b.id, 'name', b.name, 'type', b.btype)),
+                      '[]'::json
+                    )
+                    FROM c_bank b
+                    WHERE b.teacher = t.id
+                  ) AS bank
+                FROM u_teachers t
+                LEFT JOIN a_homebase hb ON t.homebase = hb.id
+                LEFT JOIN a_class c ON t.class = c.id
+                WHERE t.homebase = $1 AND t.id = $2
+                ORDER BY hb.name ASC, t.name ASC`,
         values: [homebase, id],
       };
     } else {
+      // Query untuk level admin
       dataQuery = {
-        text: `SELECT u_teachers.name, u_teachers.id,
-					   COALESCE(
-						   (
-							   SELECT json_agg(DISTINCT jsonb_build_object(
-								   'id', subject.id, 
-								   'name', subject.name
-							   ))
-							   FROM (
-								   SELECT DISTINCT a_subject.id, a_subject.name
-								   FROM at_subject
-								   LEFT JOIN a_subject ON at_subject.subject = a_subject.id
-								   WHERE at_subject.teacher = u_teachers.id
-							   ) subject
-						   ),
-						   '[]'
-					   ) AS subjects,
-					   COALESCE(
-						   (
-							   SELECT json_agg(DISTINCT jsonb_build_object(
-								   'id', bank.id, 
-								   'name', bank.name,
-								   'type', bank.btype
-							   ))
-							   FROM (
-								   SELECT DISTINCT id, name, btype
-								   FROM c_bank
-								   WHERE teacher = u_teachers.id
-									 ORDER BY btype ASC, name ASC
-							   ) bank
-						   ),
-						   '[]'
-					   ) AS bank
-				FROM u_teachers
-				WHERE u_teachers.homebase = $1
-				GROUP BY u_teachers.id
-				ORDER BY u_teachers.name ASC`,
+        text: `SELECT 
+                  t.name, 
+                  t.id,
+                  (
+                    SELECT COALESCE(
+                      json_agg(DISTINCT jsonb_build_object('id', s.id, 'name', s.name)),
+                      '[]'::json
+                    )
+                    FROM at_subject ats
+                    LEFT JOIN a_subject s ON ats.subject = s.id
+                    WHERE ats.teacher = t.id
+                  ) AS subjects,
+                  (
+                    SELECT COALESCE(
+                      json_agg(DISTINCT jsonb_build_object('id', b.id, 'name', b.name, 'type', b.btype)),
+                      '[]'::json
+                    )
+                    FROM c_bank b
+                    WHERE b.teacher = t.id
+                  ) AS bank
+                FROM u_teachers t
+                WHERE t.homebase = $1
+                ORDER BY t.name ASC`,
         values: [homebase],
       };
     }
 
     const dataResult = await client.query(dataQuery);
-
-    // Kirimkan data ke klien
     res.status(200).json(dataResult.rows);
   } catch (error) {
     console.error(error);
@@ -200,51 +173,65 @@ router.get("/get-bank", authorize("admin", "teacher"), async (req, res) => {
     const { homebase, id, level } = req.user;
     const offset = (page - 1) * limit;
 
+    const countQuery =
+      level === "admin"
+        ? `SELECT COUNT(*) FROM c_bank 
+           LEFT JOIN u_teachers ON c_bank.teacher = u_teachers.id
+           WHERE c_bank.homebase = $1 AND (c_bank.name ILIKE $2 OR u_teachers.name ILIKE $2)`
+        : `SELECT COUNT(*) FROM c_bank 
+           LEFT JOIN u_teachers ON c_bank.teacher = u_teachers.id
+           WHERE c_bank.teacher = $1 AND (c_bank.name ILIKE $2 OR u_teachers.name ILIKE $2)`;
+    const countParams =
+      level === "admin" ? [homebase, `%${search}%`] : [id, `%${search}%`];
+
+    // ===== PERBAIKAN ERROR BARIS 205 DENGAN CTE =====
+    const dataQuery =
+      level === "admin"
+        ? `WITH QuestionCounts AS (
+             SELECT bank, COUNT(id) AS question_count FROM c_question GROUP BY bank
+           )
+           SELECT 
+             c_bank.*, 
+             u_teachers.name AS teacher_name,
+             a_subject.name AS subject_name,
+             COALESCE(qc.question_count, 0) AS question_count
+           FROM c_bank
+           LEFT JOIN u_teachers ON c_bank.teacher = u_teachers.id
+           LEFT JOIN a_subject ON c_bank.subject = a_subject.id
+           LEFT JOIN QuestionCounts qc ON c_bank.id = qc.bank
+           WHERE c_bank.homebase = $1 AND (c_bank.name ILIKE $2 OR u_teachers.name ILIKE $2)
+           ORDER BY c_bank.name ASC
+           LIMIT $3 OFFSET $4`
+        : `WITH QuestionCounts AS (
+             SELECT bank, COUNT(id) AS question_count FROM c_question GROUP BY bank
+           )
+           SELECT 
+             c_bank.*, 
+             u_teachers.name AS teacher_name,
+             a_subject.name AS subject_name,
+             COALESCE(qc.question_count, 0) AS question_count
+           FROM c_bank
+           LEFT JOIN u_teachers ON c_bank.teacher = u_teachers.id
+           LEFT JOIN a_subject ON c_bank.subject = a_subject.id
+           LEFT JOIN QuestionCounts qc ON c_bank.id = qc.bank
+           WHERE c_bank.teacher = $1 AND (c_bank.name ILIKE $2 OR u_teachers.name ILIKE $2)
+           ORDER BY u_teachers.name ASC, c_bank.name ASC
+           LIMIT $3 OFFSET $4`;
+    // ===== AKHIR PERBAIKAN =====
+
+    const dataParams =
+      level === "admin"
+        ? [homebase, `%${search}%`, limit, offset]
+        : [id, `%${search}%`, limit, offset];
+
     const [countResult, dataResult] = await Promise.all([
-      client.query(
-        level === "admin"
-          ? `SELECT COUNT(*) FROM c_bank 
-						LEFT JOIN u_teachers ON c_bank.teacher = u_teachers.id
-						WHERE c_bank.homebase = $1 AND (c_bank.name ILIKE $2 OR u_teachers.name ILIKE $2)`
-          : `SELECT COUNT(*) FROM c_bank 
-						LEFT JOIN u_teachers ON c_bank.teacher = u_teachers.id
-						WHERE c_bank.teacher = $1 AND (c_bank.name ILIKE $2 OR u_teachers.name ILIKE $2)`,
-        level === "admin" ? [homebase, `%${search}%`] : [id, `%${search}%`]
-      ),
-      client.query(
-        level === "admin"
-          ? `SELECT c_bank.*, u_teachers.name AS teacher_name,
-						a_subject.name AS subject_name,
-						COUNT(c_question.id) AS question_count
-						FROM c_bank
-						LEFT JOIN u_teachers ON c_bank.teacher = u_teachers.id
-						LEFT JOIN a_subject ON c_bank.subject = a_subject.id
-						LEFT JOIN c_question ON c_bank.id = c_question.bank
-						WHERE c_bank.homebase = $1 AND (c_bank.name ILIKE $2 OR u_teachers.name ILIKE $2)
-						GROUP BY c_bank.id, u_teachers.name, a_subject.name
-						ORDER BY c_bank.name ASC
-						LIMIT $3 OFFSET $4`
-          : `SELECT c_bank.*, u_teachers.name AS teacher_name,
-						a_subject.name AS subject_name,
-						COUNT(c_question.id) AS question_count
-						FROM c_bank
-						LEFT JOIN u_teachers ON c_bank.teacher = u_teachers.id
-						LEFT JOIN a_subject ON c_bank.subject = a_subject.id
-						LEFT JOIN c_question ON c_bank.id = c_question.bank
-						WHERE c_bank.teacher = $1 AND (c_bank.name ILIKE $2 OR u_teachers.name ILIKE $2)
-						GROUP BY c_bank.id, u_teachers.name, a_subject.name
-						ORDER BY u_teachers.name ASC, c_bank.name ASC
-						LIMIT $3 OFFSET $4`,
-        level === "admin"
-          ? [homebase, `%${search}%`, limit, offset]
-          : [id, `%${search}%`, limit, offset]
-      ),
+      client.query(countQuery, countParams),
+      client.query(dataQuery, dataParams),
     ]);
 
     const totalData = parseInt(countResult.rows[0].count);
     const totalPages = Math.ceil(totalData / limit);
 
-    // Kirimkan data dan informasi paginasi ke klien
     res.status(200).json({
       totalData,
       totalPages,

@@ -40,7 +40,8 @@ router.get("/get-class", authorize("admin", "teacher"), async (req, res) => {
 					LEFT JOIN cl_students ON a_class.id = cl_students.classid
 					LEFT JOIN u_students ON cl_students.student = u_students.id
 					WHERE a_class.name ILIKE $1 AND a_class.homebase = $2
-					GROUP BY a_class.id, a_grade.name, a_major.name
+					GROUP BY a_class.id, a_grade.name, a_major.name, a_class.homebase,
+            a_class.grade, a_class.major, a_class.name, a_class.createdat
 					ORDER BY a_grade.name::int ASC, regexp_replace(a_class.name, '^\\d+\\s*', '', 'g') ASC
 					LIMIT $3 OFFSET $4
 				`,

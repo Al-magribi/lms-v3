@@ -259,33 +259,32 @@ router.post("/signin", async (req, res) => {
         };
       }
     } else if (user.level === "teacher") {
+      // PERBAIKAN DI SINI
       const teacherData = await client.query(
         `SELECT 
-					u_teachers.*,
-					a_class.name AS class_name,
-					a_class.id AS class_id,
-					hb.name AS homebase_name,
-					COALESCE(
-						json_agg(
-							DISTINCT jsonb_build_object(
-								'id', a_subject.id,
-								'name', a_subject.name,
-								'cover', a_subject.cover
-							)
-						) FILTER (WHERE a_subject.id IS NOT NULL),
-						'[]'
-					) AS subjects
-				FROM u_teachers
-				LEFT JOIN a_homebase hb ON u_teachers.homebase = hb.id
-				LEFT JOIN a_class ON u_teachers.class = a_class.id
-				LEFT JOIN at_subject ON u_teachers.id = at_subject.teacher
-				LEFT JOIN a_subject ON at_subject.subject = a_subject.id
-				WHERE u_teachers.id = $1
-				GROUP BY 
-					u_teachers.id, 
-					a_class.name,
-					a_class.id,
-					hb.name`,
+          t.*,
+          c.name AS class_name,
+          c.id AS class_id,
+          hb.name AS homebase_name,
+          (
+            SELECT COALESCE(
+              json_agg(
+                DISTINCT jsonb_build_object(
+                  'id', s.id,
+                  'name', s.name,
+                  'cover', s.cover
+                )
+              ),
+              '[]'::json -- Mengubah ::jsonb menjadi ::json
+            )
+            FROM at_subject ats
+            LEFT JOIN a_subject s ON ats.subject = s.id
+            WHERE ats.teacher = t.id
+          ) AS subjects
+        FROM u_teachers t
+        LEFT JOIN a_homebase hb ON t.homebase = hb.id
+        LEFT JOIN a_class c ON t.class = c.id
+        WHERE t.id = $1`,
         [user.id]
       );
       if (teacherData.rowCount > 0) {
@@ -419,27 +418,32 @@ router.get(
           }),
         },
         teacher: {
+          // PERBAIKAN DI SINI
           text: `
             SELECT 
               t.*,
               c.name AS class_name,
               c.id AS class_id,
               hb.name AS homebase_name,
-              COALESCE(
-                json_agg(
-                  DISTINCT jsonb_build_object(
-                    'id', s.id, 'name', s.name, 'cover', s.cover
-                  )
-                ) FILTER (WHERE s.id IS NOT NULL),
-                '[]'
+              (
+                SELECT COALESCE(
+                  json_agg(
+                    DISTINCT jsonb_build_object(
+                      'id', s.id,
+                      'name', s.name,
+                      'cover', s.cover
+                    )
+                  ),
+                  '[]'::json
+                )
+                FROM at_subject ats
+                LEFT JOIN a_subject s ON ats.subject = s.id
+                WHERE ats.teacher = t.id
               ) AS subjects
             FROM u_teachers t
             LEFT JOIN a_homebase hb ON t.homebase = hb.id
             LEFT JOIN a_class c ON t.class = c.id
-            LEFT JOIN at_subject ats ON t.id = ats.teacher
-            LEFT JOIN a_subject s ON ats.subject = s.id
-            WHERE t.id = $1
-            GROUP BY t.id, c.name, c.id, hb.name`,
+            WHERE t.id = $1`,
           transform: (row) => ({
             id: row.id,
             nip: row.username,

@@ -17,8 +17,8 @@ import {
   Col,
   Grid,
   Form,
-  Button,
-  Modal,
+  Button, // No longer needed for modal
+  Modal, // No longer needed for modal
 } from "antd";
 import {
   UserOutlined,
@@ -29,7 +29,7 @@ import {
   RiseOutlined,
   FallOutlined,
   BookOutlined,
-  EyeOutlined,
+  EyeOutlined, // No longer needed for modal
 } from "@ant-design/icons";
 import { useSelector } from "react-redux";
 import MainLayout from "../../../../components/layout/MainLayout";
@@ -38,8 +38,12 @@ import { useGetMonthlyRecapQuery } from "../../../../service/api/lms/ApiRecap";
 const { Title, Text, Paragraph } = Typography;
 const { useBreakpoint } = Grid;
 
-// KOMPONEN UNTUK MENAMPILKAN DETAIL PENILAIAN
+// ===================================================================
+// KOMPONEN UNTUK MENAMPILKAN DETAIL PENILAIAN (TIDAK PERLU DIUBAH)
+// Komponen ini sudah bisa menerima data detail dari chapter
+// ===================================================================
 const SubjectDetail = ({ detail }) => {
+  // Defensive checks for potentially missing data
   const attendanceDetail = detail?.[0]?.attendance || [];
   const attitudeDetail = detail?.[1]?.attitude || [];
   const assessmentDetail = detail?.[2] || { summative: [], formative: [] };
@@ -47,7 +51,7 @@ const SubjectDetail = ({ detail }) => {
   return (
     <Row gutter={[16, 16]}>
       <Col xs={24} md={12} lg={6}>
-        <Card size='small' title='Attendance'>
+        <Card size="small" title="Attendance">
           <List
             dataSource={attendanceDetail}
             renderItem={(item) => {
@@ -66,7 +70,7 @@ const SubjectDetail = ({ detail }) => {
         </Card>
       </Col>
       <Col xs={24} md={12} lg={6}>
-        <Card size='small' title='Attitude'>
+        <Card size="small" title="Attitude">
           <List
             dataSource={attitudeDetail}
             renderItem={(item) => {
@@ -87,7 +91,7 @@ const SubjectDetail = ({ detail }) => {
         </Card>
       </Col>
       <Col xs={24} md={12} lg={8}>
-        <Card size='small' title='Summative'>
+        <Card size="small" title="Summative">
           <List
             dataSource={assessmentDetail.summative}
             renderItem={(item) => {
@@ -108,7 +112,7 @@ const SubjectDetail = ({ detail }) => {
         </Card>
       </Col>
       <Col xs={24} md={12} lg={4}>
-        <Card size='small' title='Formative'>
+        <Card size="small" title="Formative">
           <List
             dataSource={assessmentDetail.formative}
             renderItem={(item) => <List.Item>{item}</List.Item>}
@@ -120,28 +124,26 @@ const SubjectDetail = ({ detail }) => {
   );
 };
 
-// KOMPONEN KARTU MATA PELAJARAN (DENGAN MODAL RESPONSIVE)
+// ===================================================================
+// KOMPONEN KARTU MATA PELAJARAN (BAGIAN INI YANG DIPERBARUI)
+// Logika modal dihapus dan diganti dengan Collapse untuk setiap chapter
+// ===================================================================
 const SubjectItem = ({ subject }) => {
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const screens = useBreakpoint();
-
-  const showModal = () => setIsModalVisible(true);
-  const handleCancel = () => setIsModalVisible(false);
-
   return (
     <List.Item key={`${subject.name}-${subject.teacher}`}>
       <Card>
-        <Flex justify='space-between' align='center' wrap='wrap' gap='small'>
+        {/* --- Bagian Header Kartu Mata Pelajaran (Nama, Guru, Nilai Akhir) --- */}
+        <Flex justify="space-between" align="center" wrap="wrap" gap="small">
           <div>
             <Title level={5} style={{ marginBottom: 0 }}>
               {subject.name}
             </Title>
-            <Text type='secondary'>
+            <Text type="secondary">
               <UserOutlined /> Guru: {subject.teacher}
             </Text>
           </div>
           <Statistic
-            title='Nilai Akhir'
+            title="Rata-rata Nilai"
             value={subject.score}
             precision={2}
             valueStyle={{
@@ -151,55 +153,62 @@ const SubjectItem = ({ subject }) => {
           />
         </Flex>
 
+        {/* --- Bagian Chapter (Menggunakan Collapse) --- */}
         {subject.chapters && subject.chapters.length > 0 && (
           <>
-            <Divider orientation='left' plain>
-              <BookOutlined /> Chapter Bulan Ini
+            <Divider orientation="left" plain>
+              <BookOutlined /> Detail Penilaian per Chapter
             </Divider>
-            <List
-              size='small'
-              dataSource={subject.chapters}
-              renderItem={(chapter) => <List.Item>{chapter.name}</List.Item>}
-            />
+            <Collapse accordion>
+              {subject.chapters.map((chapter) => (
+                <Collapse.Panel
+                  key={chapter.id}
+                  header={
+                    <Flex
+                      justify="space-between"
+                      align="center"
+                      style={{ width: "100%" }}
+                    >
+                      <Text strong>{chapter.name}</Text>
+                      <Statistic
+                        title="Nilai"
+                        value={chapter.score}
+                        precision={2}
+                        valueStyle={{
+                          fontSize: "1rem",
+                          color: chapter.score >= 75 ? "#3f8600" : "#cf1322",
+                        }}
+                      />
+                    </Flex>
+                  }
+                >
+                  {/* Menggunakan kembali komponen SubjectDetail untuk detail chapter */}
+                  <SubjectDetail detail={chapter.detail} />
+
+                  {/* Menampilkan catatan spesifik untuk chapter */}
+                  {chapter.note && (
+                    <>
+                      <Divider
+                        orientation="left"
+                        plain
+                        style={{ marginTop: "24px" }}
+                      >
+                        Catatan Guru Chapter Ini
+                      </Divider>
+                      <Paragraph italic>"{chapter.note}"</Paragraph>
+                    </>
+                  )}
+                </Collapse.Panel>
+              ))}
+            </Collapse>
           </>
         )}
 
-        <Divider orientation='left' plain>
-          Detail Penilaian
-        </Divider>
-
-        {/* --- LOGIKA RESPONSIVE --- */}
-        {screens.md ? (
-          // Tampilan inline untuk layar medium ke atas
-          <SubjectDetail detail={subject.detail} />
-        ) : (
-          // Tombol untuk membuka modal pada layar kecil
-          <>
-            <Button
-              type='primary'
-              onClick={showModal}
-              icon={<EyeOutlined />}
-              block
-            >
-              Lihat Detail Penilaian
-            </Button>
-            <Modal
-              title={`Detail Penilaian: ${subject.name}`}
-              open={isModalVisible}
-              onCancel={handleCancel}
-              footer={null}
-              width={screens.xs ? "95vw" : "80vw"}
-              style={{ top: 20 }}
-            >
-              <SubjectDetail detail={subject.detail} />
-            </Modal>
-          </>
-        )}
-
+        {/* Menampilkan catatan umum untuk mata pelajaran */}
         {subject.note && (
           <>
-            <Divider orientation='left' plain>
-              Catatan Guru
+            <Divider orientation="left" plain>
+              Catatan Umum Guru
             </Divider>
             <Paragraph italic>"{subject.note}"</Paragraph>
           </>
@@ -209,7 +218,9 @@ const SubjectItem = ({ subject }) => {
   );
 };
 
-// KOMPONEN UTAMA
+// ===================================================================
+// KOMPONEN UTAMA (TIDAK PERLU DIUBAH SECARA SIGNIFIKAN)
+// ===================================================================
 const StudentAcademic = () => {
   const months = [
     "Januari",
@@ -237,38 +248,41 @@ const StudentAcademic = () => {
   useEffect(() => {
     const today = new Date();
     const currentMonthIndex = today.getMonth();
+    // Default ke bulan sebelumnya, atau Desember jika bulan ini Januari
     const previousMonthName =
       months[currentMonthIndex === 0 ? 11 : currentMonthIndex - 1];
     setMonth(previousMonthName);
     form.setFieldsValue({ month: previousMonthName });
-  }, [user, form]);
+  }, [user, form]); // Dependency array is fine
 
   const { data, error, isFetching } = useGetMonthlyRecapQuery(
     { studentId, month, periode },
     { skip: !studentId || !month || !periode }
   );
 
-  console.log(data);
-
   const screens = useBreakpoint();
-  const recapData = data?.[0];
+  const recapData = data; // Data dari API sudah berupa objek, ini sudah benar
 
   const renderSubjectList = (subjects) => (
     <List
-      itemLayout='vertical'
+      itemLayout="vertical"
       dataSource={subjects}
       renderItem={(subject, index) => (
-        <SubjectItem subject={subject} key={index} />
+        // Menggunakan id subjek jika ada, jika tidak, kombinasi unik sebagai fallback
+        <SubjectItem
+          subject={subject}
+          key={subject.id || `${subject.name}-${index}`}
+        />
       )}
     />
   );
 
-  return (
-    <MainLayout title={`Laporan Akademik ${user?.name}`} levels={["student"]}>
-      <Flex vertical gap='large'>
-        <Form form={form} layout='vertical'>
+  if (error) {
+    return (
+      <MainLayout title={`Laporan Akademik ${user?.name}`} levels={["student"]}>
+        <Form form={form} layout="vertical">
           <Form.Item
-            name='month'
+            name="month"
             label={
               <Title level={5} style={{ margin: 0 }}>
                 Pilih Bulan Laporan
@@ -276,7 +290,38 @@ const StudentAcademic = () => {
             }
           >
             <Select
-              placeholder='Pilih Bulan'
+              placeholder="Pilih Bulan"
+              onChange={(value) => setMonth(value)}
+              options={monthOpts}
+              style={{ width: 300 }}
+            />
+          </Form.Item>
+        </Form>
+
+        <Alert
+          message="Terjadi Kesalahan"
+          description={error?.data?.message || "Gagal memuat data."}
+          type="error"
+          showIcon
+        />
+      </MainLayout>
+    );
+  }
+
+  return (
+    <MainLayout title={`Laporan Akademik ${user?.name}`} levels={["student"]}>
+      <Flex vertical gap="large">
+        <Form form={form} layout="vertical">
+          <Form.Item
+            name="month"
+            label={
+              <Title level={5} style={{ margin: 0 }}>
+                Pilih Bulan Laporan
+              </Title>
+            }
+          >
+            <Select
+              placeholder="Pilih Bulan"
               onChange={(value) => setMonth(value)}
               options={monthOpts}
               style={{ width: 300 }}
@@ -286,28 +331,19 @@ const StudentAcademic = () => {
 
         {isFetching && (
           <div style={{ textAlign: "center", marginTop: 50 }}>
-            <Spin size='large' />
+            <Spin size="large" />
           </div>
-        )}
-        {error && (
-          <Alert
-            message='Terjadi Kesalahan'
-            description={error?.data?.message || "Gagal memuat data."}
-            type='error'
-            showIcon
-          />
         )}
 
         {!isFetching && recapData && (
           <>
-            <Descriptions bordered column={screens.md ? 2 : 1} size='small'>
+            <Descriptions bordered column={screens.md ? 2 : 1} size="small">
               <Descriptions.Item
                 label={
                   <>
                     <UserOutlined /> Nama Siswa
                   </>
                 }
-                // --- PERBAIKAN WARNING ---
                 span={screens.md ? 2 : 1}
               >
                 <Text strong>
@@ -359,20 +395,20 @@ const StudentAcademic = () => {
               defaultActiveKey={["0"]}
               ghost
               items={recapData.category.map((cat, index) => ({
-                key: index,
+                key: String(index), // Key harus string
                 label: <Title level={5}>{cat.name}</Title>,
                 children:
                   cat.name === "Diniyah" && cat.branch ? (
                     <Collapse
                       items={cat.branch.map((branch, branchIndex) => ({
-                        key: branchIndex,
+                        key: String(branchIndex), // Key harus string
                         label: (
                           <Flex
-                            justify='space-between'
+                            justify="space-between"
                             style={{ width: "100%" }}
                           >
                             <Text strong>{branch.name}</Text>
-                            <Tag color='blue'>
+                            <Tag color="blue">
                               Rata-rata Nilai: {branch.score}
                             </Tag>
                           </Flex>
@@ -390,7 +426,7 @@ const StudentAcademic = () => {
 
         {!isFetching && !recapData && month && !error && (
           <Card>
-            <Empty description='Data laporan untuk bulan yang dipilih tidak tersedia.' />
+            <Empty description="Data laporan untuk bulan yang dipilih tidak tersedia." />
           </Card>
         )}
       </Flex>

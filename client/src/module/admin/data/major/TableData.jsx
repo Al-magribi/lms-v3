@@ -15,7 +15,7 @@ const TableData = ({ onEdit }) => {
 
   const [
     deleteMajor,
-    { data: delMessage, isLoading: delLoading, isSuccess, error },
+    { data: delMessage, isLoading: delLoading, isSuccess, error, reset },
   ] = useDeleteMajorMutation();
 
   //   Functions
@@ -64,10 +64,12 @@ const TableData = ({ onEdit }) => {
   useEffect(() => {
     if (isSuccess) {
       message.success(delMessage.message);
+      reset();
     }
 
     if (error) {
       message.error(error.data.message);
+      reset();
     }
   }, [delMessage, isSuccess, error]);
 

@@ -9,6 +9,7 @@ import {
   Alert,
   Collapse,
   List,
+  Tag,
   Divider,
   Descriptions,
   Statistic,
@@ -35,8 +36,10 @@ import { useGetMonthlyRecapQuery } from "../../../../service/api/lms/ApiRecap";
 const { Title, Text, Paragraph } = Typography;
 const { useBreakpoint } = Grid;
 
+// ===================================================================
+// KOMPONEN UNTUK MENAMPILKAN DETAIL PENILAIAN (TIDAK DIUBAH)
+// ===================================================================
 const SubjectDetail = ({ detail }) => {
-  // Pastikan detail adalah array dan memiliki panjang yang cukup
   const attendanceDetail = detail?.[0]?.attendance || [];
   const attitudeDetail = detail?.[1]?.attitude || [];
   const assessmentDetail = detail?.[2] || { summative: [], formative: [] };
@@ -117,23 +120,130 @@ const SubjectDetail = ({ detail }) => {
   );
 };
 
-const Monthly = () => {
-  const months = [
-    "Januari",
-    "Februari",
-    "Maret",
-    "April",
-    "Mei",
-    "Juni",
-    "Juli",
-    "Agustus",
-    "September",
-    "Oktober",
-    "November",
-    "Desember",
-  ];
-  const monthOpts = months.map((month) => ({ label: month, value: month }));
+// ===================================================================
+// KOMPONEN KARTU MATA PELAJARAN (TIDAK DIUBAH)
+// ===================================================================
+const SubjectItem = ({ subject, isSmallScreen, onChapterClick }) => {
+  return (
+    <List.Item key={`${subject.name}-${subject.teacher}`}>
+      <Card>
+        <Flex justify="space-between" align="center" wrap="wrap" gap="small">
+          <div>
+            <Title level={5} style={{ marginBottom: 0 }}>
+              {subject.name}
+            </Title>
+            <Text type="secondary">
+              <UserOutlined /> Guru: {subject.teacher}
+            </Text>
+          </div>
+          <Statistic
+            title="Nilai"
+            value={subject.score}
+            precision={2}
+            valueStyle={{
+              color: subject.score >= 75 ? "#3f8600" : "#cf1322",
+            }}
+            prefix={subject.score >= 75 ? <RiseOutlined /> : <FallOutlined />}
+          />
+        </Flex>
 
+        {subject.chapters && subject.chapters.length > 0 && (
+          <>
+            <Divider orientation="left" plain>
+              <BookOutlined /> Detail Penilaian per Chapter
+            </Divider>
+            {isSmallScreen ? (
+              <List
+                itemLayout="vertical"
+                dataSource={subject.chapters}
+                renderItem={(chapter) => (
+                  <List.Item
+                    actions={[
+                      <Button
+                        type="primary"
+                        size="small"
+                        onClick={() => onChapterClick(chapter)}
+                      >
+                        Lihat Detail
+                      </Button>,
+                    ]}
+                  >
+                    <List.Item.Meta
+                      title={<Text strong>{chapter.name}</Text>}
+                      description={`Nilai: ${chapter.score}`}
+                    />
+                  </List.Item>
+                )}
+              />
+            ) : (
+              <Collapse accordion>
+                {subject.chapters.map((chapter) => (
+                  <Collapse.Panel
+                    key={chapter.id}
+                    header={
+                      <Flex
+                        justify="space-between"
+                        align="center"
+                        style={{ width: "100%" }}
+                      >
+                        <Text strong>{chapter.name}</Text>
+                        <Statistic
+                          title="Nilai"
+                          value={chapter.score}
+                          precision={2}
+                          valueStyle={{
+                            fontSize: "1rem",
+                            color: chapter.score >= 75 ? "#3f8600" : "#cf1322",
+                          }}
+                        />
+                      </Flex>
+                    }
+                  >
+                    <SubjectDetail detail={chapter.detail} />
+                    {chapter.note && (
+                      <>
+                        <Divider
+                          orientation="left"
+                          plain
+                          style={{ marginTop: "24px" }}
+                        >
+                          Catatan Guru Chapter Ini
+                        </Divider>
+                        <Paragraph italic>"{chapter.note}"</Paragraph>
+                      </>
+                    )}
+                  </Collapse.Panel>
+                ))}
+              </Collapse>
+            )}
+          </>
+        )}
+
+        {subject.note && (
+          <>
+            <Divider orientation="left" plain>
+              Catatan Umum Guru
+            </Divider>
+            <Paragraph italic>"{subject.note}"</Paragraph>
+          </>
+        )}
+      </Card>
+    </List.Item>
+  );
+};
+
+// ===================================================================
+// PERBAIKAN UTAMA:
+// Variabel `months` dan `monthOpts` dipindahkan ke luar komponen.
+// Ini mencegah mereka dibuat ulang pada setiap render, yang sebelumnya
+// menyebabkan useEffect berjalan terus-menerus dan me-reset pilihan bulan.
+// ===================================================================
+const months = Array.from({ length: 12 }, (_, i) => {
+  return new Date(0, i).toLocaleString("id-ID", { month: "long" });
+});
+const monthOpts = months.map((month) => ({ label: month, value: month }));
+
+const Monthly = () => {
   const [month, setMonth] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedChapter, setSelectedChapter] = useState(null);
@@ -147,6 +257,9 @@ const Monthly = () => {
   const studentId = user?.student_id;
   const periode = user?.periode;
 
+  // PERBAIKAN: Dependensi `months` dihapus dari array.
+  // Karena `months` sekarang menjadi konstanta di luar komponen,
+  // efek ini dijamin hanya akan berjalan sekali saat komponen dimuat.
   useEffect(() => {
     const today = new Date();
     const currentMonthIndex = today.getMonth();
@@ -154,7 +267,7 @@ const Monthly = () => {
       months[currentMonthIndex === 0 ? 11 : currentMonthIndex - 1];
     setMonth(previousMonthName);
     form.setFieldsValue({ month: previousMonthName });
-  }, [form, months]);
+  }, [form]);
 
   const { data, error, isFetching } = useGetMonthlyRecapQuery(
     { studentId, month, periode },
@@ -177,212 +290,180 @@ const Monthly = () => {
     <List
       itemLayout="vertical"
       dataSource={subjects}
-      renderItem={(subject) => (
-        <List.Item key={`${subject.name}-${subject.teacher}`}>
-          <Card>
-            <Flex
-              justify="space-between"
-              align="center"
-              wrap="wrap"
-              gap="small"
-            >
-              <div>
-                <Title level={5} style={{ marginBottom: 0 }}>
-                  {subject.name}
-                </Title>
-                <Text type="secondary">
-                  <UserOutlined /> Guru: {subject.teacher}
-                </Text>
-              </div>
-              <Statistic
-                title="Nilai Akhir Mapel"
-                value={subject.score}
-                precision={2}
-                valueStyle={{
-                  color: subject.score >= 75 ? "#3f8600" : "#cf1322",
-                }}
-                prefix={
-                  subject.score >= 75 ? <RiseOutlined /> : <FallOutlined />
-                }
-              />
-            </Flex>
-
-            {subject.chapters && subject.chapters.length > 0 && (
-              <>
-                <Divider orientation="left" plain>
-                  <BookOutlined /> Chapter Bulan Ini
-                </Divider>
-                {isSmallScreen ? (
-                  <List
-                    dataSource={subject.chapters}
-                    renderItem={(chapter) => (
-                      <List.Item>
-                        <Row
-                          align="middle"
-                          justify="space-between"
-                          style={{ width: "100%" }}
-                        >
-                          <Col xs={24} sm={18}>
-                            <Text strong>{chapter.name}</Text>
-                            <br />
-                            <Text type="secondary">Nilai: {chapter.score}</Text>
-                          </Col>
-                          <Col xs={24} sm={6}>
-                            <Flex justify="end">
-                              <Button
-                                onClick={() => showChapterDetails(chapter)}
-                              >
-                                Detail
-                              </Button>
-                            </Flex>
-                          </Col>
-                        </Row>
-                      </List.Item>
-                    )}
-                  />
-                ) : (
-                  <Collapse
-                    accordion
-                    items={subject.chapters.map((chapter, index) => ({
-                      key: index,
-                      label: (
-                        <Flex
-                          justify="space-between"
-                          align="center"
-                          style={{ width: "100%" }}
-                        >
-                          <Text strong>{chapter.name}</Text>
-                          <Statistic
-                            title="Nilai"
-                            value={chapter.score}
-                            precision={2}
-                            valueStyle={{
-                              fontSize: "1rem",
-                              color:
-                                chapter.score >= 75 ? "#3f8600" : "#cf1322",
-                            }}
-                          />
-                        </Flex>
-                      ),
-                      children: (
-                        <>
-                          <Paragraph italic>
-                            <strong>Catatan Guru:</strong> "{chapter.note}"
-                          </Paragraph>
-                          <Divider plain>Detail Penilaian Chapter</Divider>
-                          <SubjectDetail detail={chapter.detail} />
-                        </>
-                      ),
-                    }))}
-                  />
-                )}
-              </>
-            )}
-          </Card>
-        </List.Item>
+      renderItem={(subject, index) => (
+        <SubjectItem
+          subject={subject}
+          key={subject.id || `${subject.name}-${index}`}
+          isSmallScreen={isSmallScreen}
+          onChapterClick={showChapterDetails}
+        />
       )}
     />
   );
 
+  if (error) {
+    return (
+      <>
+        <Flex vertical gap="middle">
+          <Form form={form} layout="vertical">
+            <Form.Item
+              name="month"
+              label={
+                <Title level={5} style={{ margin: 0 }}>
+                  Pilih Bulan
+                </Title>
+              }
+            >
+              <Select
+                placeholder="Pilih Bulan"
+                onChange={(value) => setMonth(value)}
+                options={monthOpts}
+                style={{ width: isSmallScreen ? "100%" : 300 }}
+              />
+            </Form.Item>
+          </Form>
+
+          <Alert
+            message="Terjadi Kesalahan"
+            description={error?.data?.message || "Gagal memuat data."}
+            type="error"
+            showIcon
+          />
+        </Flex>
+      </>
+    );
+  }
+
   return (
-    <Flex vertical gap="middle">
+    <Flex vertical gap="large">
       <Form form={form} layout="vertical">
         <Form.Item
           name="month"
           label={
-            <Title level={4} style={{ margin: 0 }}>
-              <CalendarOutlined /> Laporan Bulan
+            <Title level={5} style={{ margin: 0 }}>
+              Pilih Bulan
             </Title>
           }
-          rules={[{ required: true }]}
         >
           <Select
-            options={monthOpts}
+            placeholder="Pilih Bulan"
             onChange={(value) => setMonth(value)}
-            style={{ maxWidth: "240px" }}
+            options={monthOpts}
+            style={{ width: isSmallScreen ? "100%" : 300 }}
           />
         </Form.Item>
       </Form>
 
-      {isFetching && <Spin size="large" />}
-      {error && (
-        <Alert
-          message="Error"
-          description="Gagal memuat data laporan bulanan."
-          type="error"
-          showIcon
-        />
+      {isFetching && (
+        <div style={{ textAlign: "center", marginTop: 50 }}>
+          <Spin size="large" />
+        </div>
       )}
 
-      {recapData && (
+      {!isFetching && recapData && (
         <>
-          <Card>
-            <Descriptions
-              title="Data Siswa"
-              bordered
-              column={isSmallScreen ? 1 : 2}
+          <Descriptions bordered column={screens.md ? 2 : 1} size="small">
+            <Descriptions.Item
+              label={
+                <>
+                  <UserOutlined /> Nama Siswa
+                </>
+              }
+              span={screens.md ? 2 : 1}
             >
-              <Descriptions.Item label="Nama">
-                <UserOutlined /> {recapData.name}
-              </Descriptions.Item>
-              <Descriptions.Item label="NIS">{recapData.nis}</Descriptions.Item>
-              <Descriptions.Item label="Kelas">
-                <ReadOutlined /> {recapData.class}
-              </Descriptions.Item>
-              <Descriptions.Item label="Wali Kelas">
-                <TeamOutlined /> {recapData.teacher_homeroom}
-              </Descriptions.Item>
-              <Descriptions.Item label="Homebase">
-                <HomeOutlined /> {recapData.homebase}
-              </Descriptions.Item>
-              <Descriptions.Item label="Periode">
-                <CalendarOutlined /> {recapData.periode}
-              </Descriptions.Item>
-            </Descriptions>
-          </Card>
-
+              <Text strong>
+                {recapData.name} ({recapData.nis})
+              </Text>
+            </Descriptions.Item>
+            <Descriptions.Item
+              label={
+                <>
+                  <HomeOutlined /> Homebase
+                </>
+              }
+            >
+              {recapData.homebase}
+            </Descriptions.Item>
+            <Descriptions.Item
+              label={
+                <>
+                  <ReadOutlined /> Kelas
+                </>
+              }
+            >
+              {recapData.grade} - {recapData.class}
+            </Descriptions.Item>
+            <Descriptions.Item
+              label={
+                <>
+                  <TeamOutlined /> Wali Kelas
+                </>
+              }
+            >
+              {recapData.teacher_homeroom}
+            </Descriptions.Item>
+            <Descriptions.Item
+              label={
+                <>
+                  <CalendarOutlined /> Periode Laporan
+                </>
+              }
+            >
+              <Text strong>
+                {recapData.periode} - {recapData.month}
+              </Text>
+            </Descriptions.Item>
+          </Descriptions>
+          <Divider />
           <Collapse
+            accordion
             defaultActiveKey={["0"]}
+            ghost
             items={recapData.category.map((cat, index) => ({
               key: String(index),
-              label: (
-                <Title level={5} style={{ margin: 0 }}>
-                  {cat.name}
-                </Title>
-              ),
-              children: renderSubjectList(cat.subjects),
+              label: <Title level={5}>{cat.name}</Title>,
+              children:
+                cat.name === "Diniyah" && cat.branch ? (
+                  <Collapse
+                    items={cat.branch.map((branch, branchIndex) => ({
+                      key: String(branchIndex),
+                      label: (
+                        <Flex justify="space-between" style={{ width: "100%" }}>
+                          <Text strong>{branch.name}</Text>
+                          <Tag color="blue">Nilai: {branch.score}</Tag>
+                        </Flex>
+                      ),
+                      children: renderSubjectList(branch.subjects),
+                    }))}
+                  />
+                ) : (
+                  renderSubjectList(cat.subjects)
+                ),
             }))}
           />
         </>
       )}
 
+      <Modal
+        title={
+          <Title level={5}>Detail Penilaian: {selectedChapter?.name}</Title>
+        }
+        open={isModalVisible}
+        onCancel={handleModalClose}
+        footer={[
+          <Button key="back" onClick={handleModalClose}>
+            Tutup
+          </Button>,
+        ]}
+        width={isSmallScreen ? "90vw" : "80vw"}
+      >
+        {selectedChapter && <SubjectDetail detail={selectedChapter.detail} />}
+      </Modal>
+
       {!isFetching && !recapData && month && !error && (
         <Card>
           <Empty description="Data laporan untuk bulan yang dipilih tidak tersedia." />
         </Card>
-      )}
-
-      {selectedChapter && (
-        <Modal
-          title={`Detail Penilaian: ${selectedChapter.name}`}
-          open={isModalVisible}
-          onCancel={handleModalClose}
-          footer={[
-            <Button key="back" onClick={handleModalClose}>
-              Tutup
-            </Button>,
-          ]}
-          width={isSmallScreen ? "100vw" : "80vw"}
-          style={{ top: 20 }}
-        >
-          <div style={{ height: "80vh", overflow: "auto" }}>
-            <Paragraph italic>
-              <strong>Catatan Guru:</strong> "{selectedChapter.note}"
-            </Paragraph>
-            <Divider plain>Detail Penilaian Chapter</Divider>
-            <SubjectDetail detail={selectedChapter.detail} />
-          </div>
-        </Modal>
       )}
     </Flex>
   );

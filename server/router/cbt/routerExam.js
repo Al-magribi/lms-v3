@@ -156,6 +156,7 @@ router.get("/get-exam", authorize("admin", "teacher"), async (req, res) => {
       };
 
       dataQuery = {
+        // PERBAIKAN DI SINI
         text: `SELECT 
 					c_exam.*,
 					u_teachers.name AS teacher_name,
@@ -205,10 +206,10 @@ router.get("/get-exam", authorize("admin", "teacher"), async (req, res) => {
 					) AS classes
 				FROM c_exam
 				LEFT JOIN u_teachers ON u_teachers.id = c_exam.teacher
-				LEFT JOIN c_ebank ON c_ebank.exam = c_exam.id
+				-- LEFT JOIN c_ebank ON c_ebank.exam = c_exam.id -- <<< DIHAPUS
 				WHERE c_exam.homebase = $1 
 				AND (c_exam.name ILIKE $2 OR u_teachers.name ILIKE $2)
-				GROUP BY c_exam.id, u_teachers.name
+				-- GROUP BY c_exam.id, u_teachers.name -- <<< DIHAPUS
 				ORDER BY c_exam.createdat DESC
 				LIMIT $3 OFFSET $4`,
         values: [homebase, `%${search}%`, limit, offset],
@@ -221,6 +222,7 @@ router.get("/get-exam", authorize("admin", "teacher"), async (req, res) => {
       };
 
       dataQuery = {
+        // PERBAIKAN DI SINI
         text: `SELECT 
 					c_exam.*,
 					u_teachers.name AS teacher_name,
@@ -273,7 +275,7 @@ router.get("/get-exam", authorize("admin", "teacher"), async (req, res) => {
 				WHERE c_exam.homebase = $1 
 				AND c_exam.teacher = $2
 				AND (c_exam.name ILIKE $3 OR u_teachers.name ILIKE $3)
-				GROUP BY c_exam.id, u_teachers.name
+				-- GROUP BY c_exam.id, u_teachers.name -- <<< DIHAPUS
 				ORDER BY c_exam.name ASC
 				LIMIT $4 OFFSET $5`,
         values: [homebase, id, `%${search}%`, limit, offset],

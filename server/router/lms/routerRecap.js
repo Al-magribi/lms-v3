@@ -341,7 +341,8 @@ router.get("/monthly-recap", async (req, res) => {
             -- Filter utama: hanya chapter yang punya nilai di bulan ini untuk siswa ini
             WHERE lcc.classid = sc.classid
               AND (att.id IS NOT NULL OR sm.id IS NOT NULL OR f.id IS NOT NULL)
-            GROUP BY lc.id, s.id, t.id, cat.id, b.id, w.id, sc.classid
+            GROUP BY lc.id, s.id, t.id, cat.id, b.id, w.id, sc.classid, lc.subject, s.name,
+                      cat.name, b.name, t.name, lc.title, w.presensi, w.attitude, w.daily
         )
         -- Final SELECT: Mengambil data siswa dan menggabungkan dengan skor chapter
         SELECT

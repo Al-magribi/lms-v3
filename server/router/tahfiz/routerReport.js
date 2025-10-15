@@ -401,8 +401,6 @@ router.get("/get-report/:userid", async (req, res) => {
     const { userid } = req.params;
     const { page = 1, limit = 10 } = req.query;
 
-    console.log(userid);
-
     // Konversi page dan limit ke angka
     const numericLimit = parseInt(limit, 10);
     const numericOffset = (parseInt(page, 10) - 1) * numericLimit;
@@ -1055,8 +1053,6 @@ router.get("/get-student-report", async (req, res) => {
     `;
 
     const studentInfo = await fetchQueryResults(studentQuery, [userid]);
-
-    console.log(studentInfo);
 
     if (studentInfo.length === 0) {
       return res.status(404).json({ message: "Student not found" });

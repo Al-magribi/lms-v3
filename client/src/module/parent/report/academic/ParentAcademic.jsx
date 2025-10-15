@@ -13,10 +13,6 @@ const ParentAcademic = () => {
   ];
   return (
     <MainLayout title={"Laporan Akademik"} levels={["parent"]}>
-      <Typography.Title
-        level={5}
-      >{`Laporan Akademik ${user?.student}`}</Typography.Title>
-
       <Tabs centered defaultActiveKey="1" items={items} />
     </MainLayout>
   );
