@@ -49,11 +49,7 @@ router.get("/get-weighting", authorize("teacher"), async (req, res) => {
     const result = await client.query(query, [teacherid, Number(subjectid)]);
 
     // Jika tidak ada data, kembalikan nilai default yang sesuai
-    const data = result.rows[0] || {
-      presensi: null,
-      attitude: null,
-      daily: null, // Diubah dari formative & summative
-    };
+    const data = result.rows[0];
 
     res.status(200).json(data);
   } catch (error) {

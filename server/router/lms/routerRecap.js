@@ -67,7 +67,7 @@ router.get(
       classid,
       subjectid, // subjectId akan digunakan untuk filter yang lebih akurat
       chapterid,
-      month, // Nama bulan, e.g., "september"
+      month,
       search = "",
       page = 1,
       limit = 10,
@@ -96,7 +96,7 @@ router.get(
       const periode = periodeRes.rows[0].id;
 
       // --- Langkah 2: Siapkan Parameter ---
-      const monthNumber = new Date(`${month} 1, 2000`).getMonth() + 1;
+      const monthNumber = getMonthNumber(month);
       const offset = (parseInt(page) - 1) * parseInt(limit);
       const searchPattern = `%${search}%`;
 
@@ -141,44 +141,53 @@ router.get(
           GROUP BY sl.student_id
         ),
         AttitudeRaw AS (
-          -- Mengambil nilai sikap
+          -- [FIXED] Mengambil nilai sikap dengan filter periode
           SELECT la.student_id, la.rata_rata AS score
           FROM l_attitude la
-          JOIN ChapterInfo ci ON la.teacher_id = ci.teacher_id
           WHERE la.class_id = $2
             AND la.chapter_id = $1
+            AND la.periode_id = $3 -- <<< DITAMBAHKAN: Filter berdasarkan periode aktif
             AND LOWER(la.month) = LOWER($6)
         ),
         DailyRaw AS (
-          -- Mengambil nilai harian (formatif + sumatif)
+          -- [FIXED] Mengambil nilai harian (formatif + sumatif) dengan filter periode
           SELECT student_id, AVG(rata_rata) AS score
           FROM (
             SELECT lf.student_id, lf.rata_rata
-            FROM l_formative lf JOIN ChapterInfo ci ON lf.teacher_id = ci.teacher_id
-            WHERE lf.class_id = $2 AND lf.chapter_id = $1 AND LOWER(lf.month) = LOWER($6)
+            FROM l_formative lf
+            WHERE lf.class_id = $2 AND lf.chapter_id = $1 AND lf.periode_id = $3 AND LOWER(lf.month) = LOWER($6) -- <<< DITAMBAHKAN
             UNION ALL
             SELECT ls.student_id, ls.rata_rata
-            FROM l_summative ls JOIN ChapterInfo ci ON ls.teacher_id = ci.teacher_id
-            WHERE ls.class_id = $2 AND ls.chapter_id = $1 AND LOWER(ls.month) = LOWER($6)
+            FROM l_summative ls
+            WHERE ls.class_id = $2 AND ls.chapter_id = $1 AND ls.periode_id = $3 AND LOWER(ls.month) = LOWER($6) -- <<< DITAMBAHKAN
           ) AS combined_scores
           GROUP BY student_id
         )
         -- --- Final Select: Menggabungkan Semua Data dan Mengaplikasikan Bobot ---
         SELECT
           sl.student_id,
-          sl.student_name AS nama_siswa,
+          sl.student_name,
+          COALESCE(ar.percentage, 0) as attendance_raw,
+          COALESCE(atr.score, 0) as attitude_raw,
+          COALESCE(dr.score, 0) as daily_raw,
           -- Skor kehadiran yang sudah dibobotkan
-          COALESCE(ar.percentage * w.presensi / 100.0, 0) AS kehadiran,
+          COALESCE(ar.percentage * w.presensi / 100.0, 0) AS attendance,
           -- Skor sikap yang sudah dibobotkan
-          COALESCE(atr.score * w.attitude / 100.0, NULL) AS sikap,
+          COALESCE(atr.score * w.attitude / 100.0, 0) AS attitude,
           -- Skor harian yang sudah dibobotkan
-          COALESCE(dr.score * w.daily / 100.0, NULL) AS harian,
+          COALESCE(dr.score * w.daily / 100.0, 0) AS daily,
           -- Nilai akhir gabungan
           (
             COALESCE(ar.percentage * w.presensi / 100.0, 0) +
             COALESCE(atr.score * w.attitude / 100.0, 0) +
             COALESCE(dr.score * w.daily / 100.0, 0)
-          ) AS nilai_akhir
+          ) AS final_score,
+          -- Tambahkan info dari tabel master untuk header
+          (SELECT name FROM a_subject WHERE id = $9) as subject_name,
+          (SELECT title FROM l_chapter WHERE id = $1) as chapter_name,
+          (SELECT name FROM a_class WHERE id = $2) as class_name,
+          (SELECT name FROM u_teachers WHERE id = ci.teacher_id) as teacher_name
+
         FROM StudentList sl
         CROSS JOIN ChapterInfo ci
         LEFT JOIN l_weighting w ON w.teacherid = ci.teacher_id AND w.subjectid = ci.subject_id
@@ -223,17 +232,23 @@ router.get(
       // --- Langkah 4: Format Hasil ---
       const formattedResults = resultsRes.rows.map((row) => ({
         student_id: row.student_id,
-        student_name: row.nama_siswa,
-        attendance: parseFloat(row.kehadiran).toFixed(2),
+        student_name: row.student_name,
+        // Header info
+        subject_name: row.subject_name,
+        chapter_name: row.chapter_name,
+        class_name: row.class_name,
+        teacher_name: row.teacher_name,
+        // Scores
+        attendance: parseFloat(row.attendance).toFixed(2),
         attitude:
-          row.sikap != null
-            ? parseFloat(row.sikap).toFixed(2)
+          row.attitude_raw > 0
+            ? parseFloat(row.attitude).toFixed(2)
             : "Tidak ada nilai",
         daily:
-          row.harian != null
-            ? parseFloat(row.harian).toFixed(2)
+          row.daily_raw > 0
+            ? parseFloat(row.daily).toFixed(2)
             : "Tidak ada nilai",
-        final_score: parseFloat(row.nilai_akhir).toFixed(2),
+        final_score: parseFloat(row.final_score).toFixed(2),
       }));
 
       res.status(200).json({
