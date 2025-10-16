@@ -41,8 +41,15 @@ const Formative = ({
     }
   );
 
-  const [upsertFormative, { isLoading: isSaving }] =
-    useUpsertFormativeMutation();
+  const [
+    upsertFormative,
+    {
+      isLoading: isSaving,
+      isSuccess: upsetSuccess,
+      error: upsertError,
+      data: upsertData,
+    },
+  ] = useUpsertFormativeMutation();
   const [
     bulkUpsertFormative,
     { isLoading: isBulkUpserting, data, error, isSuccess, reset },
@@ -80,6 +87,16 @@ const Formative = ({
       reset();
     }
   }, [data, error, isSuccess]);
+
+  useEffect(() => {
+    if (upsetSuccess) {
+      message.success(upsertData.message);
+    }
+
+    if (upsertError) {
+      message.error(upsertError.data.message);
+    }
+  }, [upsertData, upsertError, upsetSuccess]);
 
   // Handler untuk perubahan input nilai
   const handleScoreChange = (studentId, taskNumber, value) => {

@@ -630,6 +630,7 @@ router.post("/formative", authorize("teacher", "admin"), async (req, res) => {
     const result = await client.query(query, params);
     res.status(200).json({ message: saved, data: result.rows[0] });
   } catch (error) {
+    console.log(error);
     res.status(500).json({ message: error.message });
   } finally {
     client.release();

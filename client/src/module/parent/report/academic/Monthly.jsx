@@ -44,6 +44,8 @@ const SubjectDetail = ({ detail }) => {
   const attitudeDetail = detail?.[1]?.attitude || [];
   const assessmentDetail = detail?.[2] || { summative: [], formative: [] };
 
+  console.log(attendanceDetail);
+
   return (
     <Row gutter={[16, 16]}>
       <Col xs={24} md={12} lg={6}>

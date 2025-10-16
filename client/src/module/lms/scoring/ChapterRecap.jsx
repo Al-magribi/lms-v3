@@ -53,7 +53,6 @@ const ChapterRecap = () => {
   const [debouncedSearch, setDebouncedSearch] = useState(search);
 
   const { user } = useSelector((state) => state.auth);
-  console.log(user);
 
   const [searchParams] = useSearchParams();
   const month = searchParams.get("month");
