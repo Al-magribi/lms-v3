@@ -186,7 +186,6 @@ const FormExam = ({ title, open, onClose, exam }) => {
             onChange={handleTeacherChange}
             allowClear
             showSearch
-            disabled={user?.level === "teacher"}
             filterOption={(input, option) =>
               (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
             }
