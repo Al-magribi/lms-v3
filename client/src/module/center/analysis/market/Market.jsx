@@ -22,8 +22,6 @@ const Market = () => {
 
   const { results = [], totalData, totalPages } = data || {};
 
-  console.log(results);
-
   const handleSearch = (value) => {
     setSearch(value);
     setPage(1);

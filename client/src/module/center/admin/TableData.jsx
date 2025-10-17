@@ -8,6 +8,7 @@ import {
   Flex,
   Popconfirm,
   Button,
+  Modal,
 } from "antd";
 import {
   useDeleteAdminMutation,
@@ -16,10 +17,11 @@ import {
 import Typography from "antd/es/typography/Typography";
 import TableLayout from "../../../components/table/TableLayout";
 import Edit from "../../../components/buttons/Edit";
-import { DeleteOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
 
 const { Search } = Input;
 const { Text } = Typography;
+const { confirm } = Modal;
 
 const TableData = ({ onEdit }) => {
   const [page, setPage] = useState(1);
@@ -46,8 +48,28 @@ const TableData = ({ onEdit }) => {
     onEdit(record);
   };
 
-  const handleDelete = (id) => {
-    deleteAdmin(id);
+  const handleSelect = (record, { key }) => {
+    switch (key) {
+      case "edit":
+        handleEdit(record);
+        break;
+
+      case "delete":
+        confirm({
+          title: `Apakah anda yakin menghapus admin ${record.username} ?`,
+          content: `Penghapusan admin akan menghapus seluruh data yang sudah dibuat, 
+            pasikan anda yaking melakukan tindakan ini!`,
+          okText: "Ya, Saya Yakin",
+          cancelText: "Batalkan",
+          okType: "danger",
+          onOk() {
+            deleteAdmin(record.id);
+          },
+        });
+
+      default:
+        break;
+    }
   };
 
   useEffect(() => {
@@ -100,24 +122,17 @@ const TableData = ({ onEdit }) => {
             items: [
               {
                 key: "edit",
-                label: <Edit onClick={() => handleEdit(record)}>Edit</Edit>,
+                label: "Edit",
+                icon: <EditOutlined />,
               },
               {
                 key: "delete",
-                label: (
-                  <Popconfirm
-                    title="Apakah Anda yakin ingin menghapus data ini?"
-                    okText="Ya"
-                    cancelText="Batal"
-                    onConfirm={() => handleDelete(record.id)}
-                  >
-                    <Button danger icon={<DeleteOutlined />}>
-                      Hapus
-                    </Button>
-                  </Popconfirm>
-                ),
+                label: "Hapus",
+                icon: <DeleteOutlined />,
+                danger: true,
               },
             ],
+            onClick: ({ key }) => handleSelect(record, { key }),
           }}
         >
           Pilihan Aksi

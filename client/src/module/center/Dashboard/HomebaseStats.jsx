@@ -14,8 +14,6 @@ import {
 const HomebaseStats = () => {
   const { data, isLoading } = useGetHomebaseStatsQuery();
 
-  console.log(data);
-
   return (
     <LoadingData isLoading={isLoading}>
       {data?.map((item, i) => (

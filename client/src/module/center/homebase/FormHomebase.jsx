@@ -55,11 +55,12 @@ const FormHomebase = ({ title, open, setOpen, homebase, setHomebase }) => {
       open={open}
       onCancel={handleClose}
       destroyOnHidden
-      footer={[
-        <Cancel disabled={isLoading} key="reset" onClick={handleClose} />,
-        <Save disabled={isLoading} key="add" onClick={() => form.submit()} />,
-      ]}
       style={{ top: 20 }}
+      okText="Simpan"
+      cancelText="Batal"
+      onOk={() => form.submit()}
+      loading={isLoading}
+      confirmLoading={isLoading}
     >
       <Spin tip="Memproses data..." spinning={isLoading}>
         <Form form={form} layout="vertical" onFinish={handleSubmit}>

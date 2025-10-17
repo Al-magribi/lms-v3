@@ -108,22 +108,23 @@ const FormAdmin = ({ title, open, setOpen, admin, setAdmin }) => {
       open={open}
       onCancel={handleClose}
       destroyOnHidden
-      footer={[
-        <Cancel disabled={addLoading} key='reset' onClick={handleClose} />,
-        <Save disabled={addLoading} key='add' onClick={() => form.submit()} />,
-      ]}
+      okText="Simpan"
+      cancelText="Batal"
+      onOk={() => form.submit()}
+      loading={isLoading}
+      confirmLoading={isLoading}
       style={{ top: 20 }}
     >
-      <Spin tip='Memporses data..' spinning={addLoading}>
+      <Spin tip="Memporses data.." spinning={addLoading}>
         <Form
           form={form}
-          layout='vertical'
+          layout="vertical"
           onFinish={handleSubmit}
           validateMessages={validateMessages}
         >
-          <Form.Item name='level' label='Level' rules={[{ required: true }]}>
+          <Form.Item name="level" label="Level" rules={[{ required: true }]}>
             <Select
-              placeholder='Pilih Level'
+              placeholder="Pilih Level"
               onChange={changeLevel}
               options={levels}
               showSearch
@@ -136,9 +137,9 @@ const FormAdmin = ({ title, open, setOpen, admin, setAdmin }) => {
           </Form.Item>
 
           {selectedLevel === "admin" && (
-            <Form.Item name='home' label='Satuan' rules={[{ required: true }]}>
+            <Form.Item name="home" label="Satuan" rules={[{ required: true }]}>
               <Select
-                placeholder='Pilih Satuan'
+                placeholder="Pilih Satuan"
                 options={homebases}
                 loading={isLoading}
                 showSearch
@@ -151,21 +152,21 @@ const FormAdmin = ({ title, open, setOpen, admin, setAdmin }) => {
             </Form.Item>
           )}
 
-          <Form.Item name='name' label='Username' rules={[{ required: true }]}>
-            <Input placeholder='Username' />
+          <Form.Item name="name" label="Username" rules={[{ required: true }]}>
+            <Input placeholder="Username" />
           </Form.Item>
 
           <Form.Item
-            name='email'
-            label='Email'
+            name="email"
+            label="Email"
             rules={[{ required: true, type: "email" }]}
           >
-            <Input placeholder='Email yang aktif' />
+            <Input placeholder="Email yang aktif" />
           </Form.Item>
 
           <Form.Item
-            name='phone'
-            label='Whatsapp'
+            name="phone"
+            label="Whatsapp"
             rules={[
               { required: true, message: "Whatsapp wajib diisi!" },
               {
@@ -174,15 +175,15 @@ const FormAdmin = ({ title, open, setOpen, admin, setAdmin }) => {
               },
             ]}
           >
-            <Input placeholder='62*******' type='tel' />
+            <Input placeholder="62*******" type="tel" />
           </Form.Item>
 
           <Form.Item
-            name='password'
-            label='Password'
+            name="password"
+            label="Password"
             rules={[{ required: true, type: "password" }]}
           >
-            <Input.Password placeholder='Password' />
+            <Input.Password placeholder="Password" />
           </Form.Item>
         </Form>
       </Spin>

@@ -28,6 +28,7 @@ export const ApiDashboard = createApi({
       query: () => "/parent-stats",
       providesTags: ["ParentDash"],
     }),
+
     // Center API
     getCenterBasic: builder.query({
       query: () => "/center-basic-stats",
@@ -37,10 +38,6 @@ export const ApiDashboard = createApi({
     getHomeInfografis: builder.query({
       query: () => "/infografis",
       providesTags: ["HomeInfografis"],
-    }),
-    getCmsDashboard: builder.query({
-      query: () => "/cms-dashboard",
-      providesTags: ["CmsDash"],
     }),
   }),
 });
@@ -58,5 +55,4 @@ export const {
   // Center Api
   useGetCenterBasicQuery,
   useGetHomeInfografisQuery,
-  useGetCmsDashboardQuery,
 } = ApiDashboard;

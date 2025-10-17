@@ -78,9 +78,9 @@ router.post("/add-admin", authorize("center"), async (req, res) => {
     if (level !== "center") {
       const activation = uuidv4();
       const data = await client.query(
-        `INSERT INTO u_admin (name, email, password, level, homebase, phone, activation) 
-        VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-        [name, email, hashedPassword, level, home, phone, activation]
+        `INSERT INTO u_admin (name, email, password, level, homebase, phone, activation, isactive) 
+        VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+        [name, email, hashedPassword, level, home, phone, activation, true]
       );
 
       const url = `${process.env.DOMAIN}/aktivasi-akun/${data.rows[0].activation}`;
