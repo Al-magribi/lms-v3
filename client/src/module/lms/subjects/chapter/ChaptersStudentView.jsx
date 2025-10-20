@@ -76,7 +76,7 @@ const ChaptersStudentView = ({ name, id, onBack }) => {
                       <Button
                         type="link"
                         icon={<DownloadOutlined />}
-                        href={`${API_BASE_URL}${file.file}`}
+                        href={file.file}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
