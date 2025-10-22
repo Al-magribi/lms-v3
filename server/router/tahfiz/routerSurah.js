@@ -195,34 +195,57 @@ router.get("/get-juz", authorize("tahfiz", "student"), async (req, res) => {
   try {
     const { page, limit, search = "" } = req.query;
 
+    // --- Common Table Expression (CTE) ---
+    // CTE ini mengagregasi semua data dari t_juzitems & t_surah terlebih dahulu.
+    // Ini menyelesaikan masalah GROUP BY dan jauh lebih efisien.
+    const agg_cte = `
+      WITH juz_items_agg AS (
+        SELECT
+          ji.juz_id,
+          COALESCE(
+            json_agg(
+              DISTINCT jsonb_build_object(
+                'id', ji.id,
+                'surah_id', s.id,
+                'surah', s.name,
+                'from_ayat', ji.from_ayat,
+                'to_ayat', ji.to_ayat,
+                'lines', ji.lines
+              )
+            ) FILTER (WHERE ji.id IS NOT NULL),
+            '[]'
+          ) AS surah_details,
+          COALESCE(SUM(ji.to_ayat), 0) AS total_ayat_sum,  -- Menjaga logika asli (SUM(to_ayat))
+          COALESCE(SUM(ji.lines), 0) AS total_line_sum
+        FROM t_juzitems AS ji
+        LEFT JOIN t_surah AS s ON ji.surah_id = s.id
+        GROUP BY ji.juz_id
+      )
+    `;
+    // --- Akhir dari CTE ---
+
     let query;
     let values = [];
 
     if (!page || !limit) {
-      query = `SELECT t_juz.*, 
-          COALESCE(
-            json_agg(
-              DISTINCT jsonb_build_object(
-                'id', t_juzitems.id,
-                'surah_id', t_surah.id,
-                'surah', t_surah.name,
-                'from_ayat', t_juzitems.from_ayat,
-                'to_ayat', t_juzitems.to_ayat,
-                'lines', t_juzitems.lines
-              )
-            ) FILTER (WHERE t_juzitems.id IS NOT NULL), '[]'
-          ) AS surah,
-          COALESCE((SELECT SUM(to_ayat) FROM t_juzitems WHERE t_juzitems.juz_id = t_juz.id), 0) AS total_ayat,
-          COALESCE((SELECT SUM(lines) FROM t_juzitems WHERE t_juzitems.juz_id = t_juz.id), 0) AS total_line
+      // Kueri untuk mendapatkan semua data tanpa paginasi
+      query = `
+        ${agg_cte}
+        SELECT 
+          t_juz.*,
+          COALESCE(jia.surah_details, '[]') AS surah,
+          COALESCE(jia.total_ayat_sum, 0) AS total_ayat,
+          COALESCE(jia.total_line_sum, 0) AS total_line
         FROM t_juz
-        LEFT JOIN t_juzitems ON t_juz.id = t_juzitems.juz_id
-        LEFT JOIN t_surah ON t_juzitems.surah_id = t_surah.id
-        GROUP BY t_juz.id
-        ORDER BY CAST(SUBSTRING(t_juz.name FROM 'Juz ([0-9]+)') AS INTEGER) ASC`;
+        LEFT JOIN juz_items_agg AS jia ON t_juz.id = jia.juz_id
+        ORDER BY CAST(SUBSTRING(t_juz.name FROM 'Juz ([0-9]+)') AS INTEGER) ASC
+      `;
+      // Tidak perlu GROUP BY lagi di kueri utama
       const data = await client.query(query);
       return res.json(data.rows);
     } else {
-      // Query to get total data count
+      // --- Logika Paginasi ---
+      // 1. Dapatkan total data untuk paginasi
       const countQuery = `
         SELECT COUNT(*) AS total FROM t_juz
         WHERE LOWER(name) LIKE LOWER($1)
@@ -231,30 +254,21 @@ router.get("/get-juz", authorize("tahfiz", "student"), async (req, res) => {
       const totalData = parseInt(countResult.rows[0].total);
       const totalPages = Math.ceil(totalData / parseInt(limit));
 
+      // 2. Dapatkan data yang dipaginasi
       query = `
-        SELECT t_juz.*, 
-          COALESCE(
-            json_agg(
-              DISTINCT jsonb_build_object(
-                'id', t_juzitems.id,
-                'surah_id', t_surah.id,
-                'surah', t_surah.name,
-                'from_ayat', t_juzitems.from_ayat,
-                'to_ayat', t_juzitems.to_ayat,
-                'lines', t_juzitems.lines
-              )
-            ) FILTER (WHERE t_juzitems.id IS NOT NULL), '[]'
-          ) AS surah,
-          COALESCE((SELECT SUM(to_ayat) FROM t_juzitems WHERE t_juzitems.juz_id = t_juz.id), 0) AS total_ayat,
-          COALESCE((SELECT SUM(lines) FROM t_juzitems WHERE t_juzitems.juz_id = t_juz.id), 0) AS total_line
+        ${agg_cte}
+        SELECT 
+          t_juz.*,
+          COALESCE(jia.surah_details, '[]') AS surah,
+          COALESCE(jia.total_ayat_sum, 0) AS total_ayat,
+          COALESCE(jia.total_line_sum, 0) AS total_line
         FROM t_juz
-        LEFT JOIN t_juzitems ON t_juz.id = t_juzitems.juz_id
-        LEFT JOIN t_surah ON t_juzitems.surah_id = t_surah.id
+        LEFT JOIN juz_items_agg AS jia ON t_juz.id = jia.juz_id
         WHERE LOWER(t_juz.name) LIKE LOWER($1)
-        GROUP BY t_juz.id
         ORDER BY CAST(SUBSTRING(t_juz.name FROM 'Juz ([0-9]+)') AS INTEGER) ASC
         LIMIT $2 OFFSET $3
       `;
+      // Tidak perlu GROUP BY lagi di kueri utama
       values = [
         `%${search}%`,
         parseInt(limit),
