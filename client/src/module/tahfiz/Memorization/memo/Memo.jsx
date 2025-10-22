@@ -34,6 +34,7 @@ const Memo = () => {
       case "add":
         setSearchParams({
           view: "form",
+          periodeId: record.periode_id,
           studentid: record.userid,
           name: record.name.replace(/\s+/g, "-"),
         });

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import {
   Layout,
   Card,
@@ -39,7 +39,8 @@ const search = "";
 
 const FormMemo = ({ name, userid, onBack }) => {
   // 1. HOOKS AND PARAMS
-  const { periodeId } = useParams();
+  const [searchParams] = useSearchParams();
+  const periodeId = searchParams.get("periodeId");
   const formattedName = name ? name.replace(/-/g, " ") : "Student";
 
   // 2. STATE MANAGEMENT
@@ -199,12 +200,6 @@ const FormMemo = ({ name, userid, onBack }) => {
     }));
 
     // --- FIX ENDS HERE ---
-
-    // Validasi tambahan untuk memastikan skor sudah diisi
-    if (categoriesPayload.length === 0) {
-      message.error("Please fill in the assessment scores.");
-      return;
-    }
 
     const submissionData = {
       userid: parseInt(userid),
