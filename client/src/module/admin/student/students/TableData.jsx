@@ -5,13 +5,17 @@ import {
   useDeleteStudentMutation,
   useGetStudentsQuery,
 } from "../../../../service/api/main/ApiStudent";
+import FormUpdate from "./FormUpdate";
 
 const { Text } = Typography;
 
-const TableData = ({ onEdit }) => {
+const TableData = () => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState("");
+
+  const [open, setOpen] = useState(false);
+  const [student, setStudent] = useState("");
 
   const { data, isLoading } = useGetStudentsQuery({ page, limit, search });
 
@@ -32,7 +36,13 @@ const TableData = ({ onEdit }) => {
   };
 
   const handleEdit = (record) => {
-    onEdit(record);
+    setOpen(true);
+    setStudent(record);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    setStudent("");
   };
 
   const handleDelete = (id) => {
@@ -142,17 +152,26 @@ const TableData = ({ onEdit }) => {
   ];
 
   return (
-    <TableLayout
-      onSearch={handleSearch}
-      isLoading={isLoading || delLoading}
-      columns={columns}
-      source={data?.students}
-      rowKey='id'
-      page={page}
-      limit={limit}
-      totalData={data?.totalData}
-      onChange={handleTableChange}
-    />
+    <>
+      <TableLayout
+        onSearch={handleSearch}
+        isLoading={isLoading || delLoading}
+        columns={columns}
+        source={data?.students}
+        rowKey="id"
+        page={page}
+        limit={limit}
+        totalData={data?.totalData}
+        onChange={handleTableChange}
+      />
+
+      <FormUpdate
+        title={`Perbarui data ${student?.name}`}
+        open={open}
+        onClose={handleClose}
+        student={student}
+      />
+    </>
   );
 };
 

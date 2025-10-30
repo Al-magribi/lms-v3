@@ -9,10 +9,10 @@ export const ApiStudent = createApi({
   }),
   tagTypes: ["students"],
   endpoints: (builder) => ({
-    addStudent: builder.mutation({
+    updateStudent: builder.mutation({
       query: (body) => ({
-        url: "/add-student",
-        method: "POST",
+        url: "/update-student",
+        method: "PUT",
         body,
       }),
       invalidatesTags: ["students"],
@@ -85,7 +85,7 @@ export const ApiStudent = createApi({
 });
 
 export const {
-  useAddStudentMutation,
+  useUpdateStudentMutation,
   useGetStudentsQuery,
   useDeleteStudentMutation,
   useChangeStatusMutation,

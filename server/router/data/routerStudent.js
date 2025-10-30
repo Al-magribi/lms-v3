@@ -10,67 +10,32 @@ const remove = "Berhasil dihapus";
 
 const router = express.Router();
 
-router.post("/add-student", authorize("admin"), async (req, res) => {
+router.put("/update-student", authorize("admin"), async (req, res) => {
   const client = await pool.connect();
   try {
-    const { id, entry, nis, name, gender, classid } = req.body;
-    const homebase = req.user.homebase;
-    const password = "12345678";
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const periode = await client.query(
-      `SELECT * FROM a_periode WHERE isactive = true AND homebase = $1`,
-      [homebase]
-    );
-
-    const activePeriode = periode.rows[0].id;
+    const { id, nis, name, gender, classid } = req.body;
 
     await client.query("BEGIN");
 
-    const checkData = await client.query(
-      `SELECT * FROM u_students
-			WHERE homebase = $1 AND nis = $2`,
-      [homebase, nis]
+    await client.query(
+      `UPDATE u_students
+				SET name = $1, nis = $2, gender = $3 WHERE id = $4`,
+      [name, nis, gender, id]
     );
 
-    if (checkData.rowCount > 0 && !id) {
-      await client.query("ROLLBACK");
-      return res.status(400).json({ message: "NIS sudah terdaftar" });
-    }
+    await client.query(
+      `UPDATE cl_students SET classid = $1 WHERE student = $2`,
+      [classid, id]
+    );
 
-    if (id) {
-      await client.query(
-        `UPDATE u_students
-				SET name = $1, nis = $2, gender = $3 WHERE id = $4`,
-        [name, nis, gender, id]
-      );
-
-      await client.query(
-        `UPDATE cl_students SET classid = $1 WHERE student = $2`,
-        [classid, id]
-      );
-    } else {
-      const student = await client.query(
-        `INSERT INTO u_students(entry, nis, name, password, homebase, gender, periode)
-				VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, name`,
-        [entry, nis, name, hashedPassword, homebase, gender, activePeriode]
-      );
-
-      await client.query(
-        `INSERT INTO cl_students(periode, classid, student, student_name, homebase)
-            VALUES($1, $2, $3, $4, $5)`,
-        [
-          activePeriode,
-          classid,
-          student.rows[0].id,
-          student.rows[0].name,
-          homebase,
-        ]
-      );
-    }
+    await client.query(
+      `UPDATE db_student
+      SET name = $1, nis = $2, gender = $3 WHERE id = $4`,
+      [name, nis, gender, id]
+    );
 
     await client.query("COMMIT");
-    res.status(200).json({ message: id ? update : create });
+    res.status(200).json({ message: update });
   } catch (error) {
     await client.query("ROLLBACK");
     console.log(error);

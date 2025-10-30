@@ -289,27 +289,26 @@ router.get("/get-record-memo", async (req, res) => {
   const type = req.query.type;
   const offset = (page - 1) * limit;
 
+  // Definisikan ekspresi tanggal yang konsisten
+  const dateExpression = `DATE(p.createdat AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta')`;
+  const dateExpressionInner = `DATE(p_inner.createdat AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta')`;
+  const dateExpressionScoring = `DATE(s.createdat AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta')`;
+
   const client = await pool.connect();
   try {
-    // ==================================================================
-    // PERBAIKAN: Menggunakan nama kolom yang benar 'cs.periode'
-    // ==================================================================
     const fromAndJoins = `
       FROM t_process p
       JOIN u_students u ON p.userid = u.id
-      
-      -- Menggunakan nama kolom 'periode' yang benar dari tabel cl_students
       JOIN cl_students cs ON u.id = cs.student 
-                          AND cs.periode IN (
-                            SELECT id FROM a_periode WHERE isactive = true
-                          )
-      
+                           AND cs.periode IN (
+                             SELECT id FROM a_periode WHERE isactive = true
+                           )
       LEFT JOIN a_class cl ON cs.classid = cl.id
       LEFT JOIN a_grade g ON cl.grade = g.id
       LEFT JOIN t_type t ON p.type_id = t.id
       LEFT JOIN t_scoring s ON p.userid = s.userid 
                            AND p.type_id = s.type_id 
-                           AND DATE(p.createdat) = DATE(s.createdat)
+                           AND ${dateExpression} = ${dateExpressionScoring}
       LEFT JOIN t_examiner ex ON s.examiner_id = ex.id
     `;
 
@@ -321,10 +320,14 @@ router.get("/get-record-memo", async (req, res) => {
       params.push(parseInt(type));
     }
 
+    // totalQuery tidak perlu diubah, sudah benar dari revisi sebelumnya
     const totalQuery = `
       SELECT COUNT(*) 
       FROM (
-        SELECT DISTINCT p.userid, p.type_id, DATE(p.createdat) 
+        SELECT DISTINCT 
+          p.userid, 
+          p.type_id, 
+          ${dateExpression}
         ${fromAndJoins} 
         ${whereClause}
       ) AS distinct_records
@@ -332,19 +335,50 @@ router.get("/get-record-memo", async (req, res) => {
     const totalResult = await client.query(totalQuery, params);
     const totalData = parseInt(totalResult.rows[0].count, 10);
 
+    // ==================================================================
+    // PERBAIKAN: Menggunakan CTE untuk mengatasi error 'ungrouped column'
+    // ==================================================================
     const paginatedQuery = `
+      -- 1. Definisikan CTE yang berisi hasil pengelompokan
+      WITH grouped_records AS (
+        SELECT 
+          MIN(p.id) as p_id,
+          u.id AS userid,
+          t.id AS type_id,
+          ${dateExpression} AS date, -- Hitung dan beri nama 'date'
+          t.name AS type,
+          u.name,
+          u.nis,
+          g.name AS grade,
+          cl.name AS classname,
+          ex.name AS examiner
+        ${fromAndJoins}
+        ${whereClause}
+        GROUP BY 
+          u.id, 
+          t.id, 
+          ${dateExpression}, -- Kelompokkan berdasarkan ekspresi tanggal
+          t.name,
+          u.name,
+          u.nis,
+          g.name,
+          cl.name,
+          ex.name
+      )
+      -- 2. Query utama sekarang SELECT dari CTE
       SELECT 
-        MIN(p.id) as id,
-        u.id AS userid,
-        t.id AS type_id,
-        DATE(p.createdat AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta') AS date,
-        t.name AS type,
-        u.name,
-        u.nis,
-        g.name AS grade,
-        cl.name AS classname,
-        ex.name AS examiner,
+        gr.p_id as id,
+        gr.userid,
+        gr.type_id,
+        gr.date,
+        gr.type,
+        gr.name,
+        gr.nis,
+        gr.grade,
+        gr.classname,
+        gr.examiner,
         (
+          -- 3. Subquery berkorelasi dengan CTE 'gr'
           SELECT json_agg(juz_agg)
           FROM (
             SELECT
@@ -359,19 +393,18 @@ router.get("/get-record-memo", async (req, res) => {
             FROM t_process p_inner
             JOIN t_surah su ON p_inner.surah_id = su.id
             JOIN t_juz j ON p_inner.juz_id = j.id
-            WHERE p_inner.userid = u.id
-              AND p_inner.type_id = t.id
-              AND DATE(p_inner.createdat) = DATE(p.createdat)
+            WHERE 
+              -- Korelasi ke kolom-kolom dari CTE 'gr', bukan 'p' atau 't'
+              p_inner.userid = gr.userid
+              AND p_inner.type_id = gr.type_id
+              AND ${dateExpressionInner} = gr.date -- Korelasi ke kolom 'date' dari CTE
             GROUP BY j.id, j.name
             ORDER BY j.id
           ) AS juz_agg
         ) AS juzs
-      ${fromAndJoins}
-      ${whereClause}
-      GROUP BY 
-        u.id, g.name, cl.name, ex.name, t.id, p.createdat
+      FROM grouped_records gr -- SELECT from the CTE
       ORDER BY 
-        date DESC
+        gr.date DESC
       LIMIT $${params.length + 1} OFFSET $${params.length + 2}
     `;
 
