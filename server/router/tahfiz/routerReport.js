@@ -2,10 +2,6 @@ import { Router } from "express";
 import { authorize } from "../../middleware/auth.js";
 import { pool } from "../../config/config.js";
 
-const create = "Berhasil disimpan";
-const update = "Berhasil diubah";
-const remove = "Berhasil dihapus";
-
 const router = Router();
 
 const fetchQueryResults = async (query, params = []) => {
@@ -21,267 +17,6 @@ const fetchQueryResults = async (query, params = []) => {
   }
 };
 
-const buildStudentData = async (client, rows) => {
-  const uniqueResults = new Map();
-
-  for (const row of rows) {
-    const dates = await client.query(
-      `SELECT DISTINCT DATE(createdat) AS date FROM t_scoring WHERE userid = $1 AND type_id = $2`,
-      [row.userid, row.type_id]
-    );
-
-    for (const date of dates.rows) {
-      const uniqueKey = `${row.userid}_${date.date}_${row.type_id}`;
-
-      if (!uniqueResults.has(uniqueKey)) {
-        const [surahsResult, categoriesResult, indicatorsResult] =
-          await Promise.all([
-            client.query(
-              `SELECT * FROM t_process
-             INNER JOIN t_surah ON t_process.surah_id = t_surah.id
-             WHERE userid = $1 AND DATE(t_process.createdat) = $2 AND type_id = $3
-             ORDER BY t_surah.id ASC`,
-              [row.userid, date.date, row.type_id]
-            ),
-            client.query(
-              `SELECT 
-              t_scoring.*, 
-              t_categories.name, 
-              DATE(t_scoring.createdat) AS created_date 
-            FROM t_scoring 
-            LEFT JOIN t_categories ON t_scoring.category_id = t_categories.id
-            WHERE t_scoring.indicator_id IS NULL 
-              AND t_scoring.type_id = $1 AND t_scoring.userid = $2 
-              AND DATE(t_scoring.createdat) = $3`,
-              [row.type_id, row.userid, date.date]
-            ),
-            client.query(
-              `SELECT 
-              t_scoring.*, 
-              t_indicators.name, 
-              DATE(t_scoring.createdat) AS created_date 
-            FROM t_scoring 
-            LEFT JOIN t_indicators ON t_scoring.indicator_id = t_indicators.id
-            WHERE t_scoring.indicator_id IS NOT NULL 
-              AND t_scoring.type_id = $1 AND t_scoring.userid = $2 
-              AND DATE(t_scoring.createdat) = $3
-            ORDER BY t_indicators.name ASC`,
-              [row.type_id, row.userid, date.date]
-            ),
-          ]);
-
-        const surahs = surahsResult.rows;
-        const categories = categoriesResult.rows;
-        const indicators = indicatorsResult.rows;
-
-        const scores = categories.map((category) => {
-          const relatedIndicators = indicators.filter(
-            (indi) => indi.category_id === category.category_id
-          );
-
-          return {
-            id: category.id,
-            category_id: category.category_id,
-            category: category.name,
-            poin: Number(category.poin),
-            date: category.created_date,
-            indicators: relatedIndicators.map((indi) => ({
-              id: indi.id,
-              indicator_id: indi.indicator_id,
-              indicator: indi.name,
-              poin: indi.poin,
-            })),
-          };
-        });
-
-        const totalPoints = scores.reduce((acc, score) => acc + score.poin, 0);
-
-        uniqueResults.set(uniqueKey, {
-          userid: row.userid,
-          nis: row.nis,
-          name: row.student_name,
-          grade: row.grade,
-          class: row.class_name,
-          scores,
-          surahs: surahs.map((surah) => ({
-            id: surah.id,
-            surah_id: surah.surah_id,
-            name: surah.name,
-            from_ayat: surah.from_count,
-            to_ayat: surah.to_count,
-            from_line: surah.from_line,
-            to_line: surah.to_line,
-          })),
-          type_id: row.type_id,
-          type: row.type_name,
-          examiner: row.examiner_name,
-          examiner_id: row.examiner_id,
-          totalPoints,
-          date: date.date,
-        });
-      }
-    }
-  }
-
-  return Array.from(uniqueResults.values()).sort(
-    (a, b) => new Date(b.date) - new Date(a.date)
-  );
-};
-
-router.get("/get-all", async (req, res) => {
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 10;
-  const search = req.query.search || "";
-  const type = req.query.type || null;
-  const offset = (page - 1) * limit;
-
-  const client = await pool.connect();
-  try {
-    // JOINs sudah benar dari perbaikan sebelumnya
-    const fromAndJoins = `
-      FROM t_scoring s
-      JOIN u_students u ON s.userid = u.id
-      LEFT JOIN t_type t ON s.type_id = t.id
-      LEFT JOIN t_examiner ex ON s.examiner_id = ex.id
-      LEFT JOIN cl_students cs ON u.id = cs.student
-      LEFT JOIN a_class cl ON cs.classid = cl.id
-      LEFT JOIN a_grade g ON cl.grade = g.id
-    `;
-
-    const params = [`%${search}%`];
-    let whereClause = `WHERE (u.name ILIKE $1 OR u.nis ILIKE $1)`;
-
-    if (type) {
-      whereClause += ` AND s.type_id = $${params.length + 1}`;
-      params.push(type);
-    }
-
-    // Query untuk total data
-    const totalQuery = `SELECT COUNT(DISTINCT (s.userid, s.type_id, DATE(s.createdat))) ${fromAndJoins} ${whereClause}`;
-    const totalResult = await client.query(totalQuery, params);
-    const totalData = parseInt(totalResult.rows[0].count, 10);
-
-    // Query utama untuk mendapatkan grup laporan per halaman
-    const paginatedGroupsQuery = `
-      SELECT DISTINCT 
-        s.userid, 
-        u.name, 
-        u.nis,
-        cl.name as class,
-        g.name as grade,
-        s.type_id, 
-        t.name as type,
-        DATE(s.createdat) AS date,
-        ex.name as examiner
-      ${fromAndJoins}
-      ${whereClause}
-      GROUP BY s.userid, u.name, u.nis, cl.name, g.name, s.type_id, t.name, date, ex.name
-      ORDER BY date DESC
-      LIMIT $${params.length + 1} OFFSET $${params.length + 2}
-    `;
-
-    const paginatedResult = await client.query(paginatedGroupsQuery, [
-      ...params,
-      limit,
-      offset,
-    ]);
-    const reportGroups = paginatedResult.rows;
-
-    if (reportGroups.length === 0) {
-      return res.status(200).json({
-        report: [],
-        totalData: 0,
-        page,
-        limit,
-      });
-    }
-
-    // Mengambil detail (skor dan surah) untuk setiap grup laporan
-    const reportDetailsPromises = reportGroups.map(async (group) => {
-      const queryParams = [group.userid, group.type_id, group.date];
-
-      // ==================================================================
-      // PERBAIKAN FINAL: Menambahkan kolom sc.userid, sc.type_id, dan
-      // sc.category_id ke dalam GROUP BY.
-      // ==================================================================
-      const scoresQuery = client.query(
-        `
-        SELECT 
-          c.id as category_id,
-          c.name as category,
-          sc.poin,
-          (
-            SELECT json_agg(
-              json_build_object(
-                'indicator_id', i.id,
-                'indicator', i.name,
-                'poin', si.poin
-              )
-            )
-            FROM t_scoring si
-            JOIN t_indicators i ON si.indicator_id = i.id
-            WHERE si.userid = sc.userid
-              AND si.type_id = sc.type_id
-              AND DATE(si.createdat) = DATE(sc.createdat)
-              AND si.category_id = sc.category_id
-              AND si.indicator_id IS NOT NULL
-          ) as indicators
-        FROM t_scoring sc
-        JOIN t_categories c ON sc.category_id = c.id
-        WHERE sc.userid = $1 
-          AND sc.type_id = $2 
-          AND DATE(sc.createdat) = $3
-          AND sc.indicator_id IS NULL
-        GROUP BY c.id, c.name, sc.poin, sc.createdat, sc.userid, sc.type_id, sc.category_id
-        ORDER BY sc.createdat
-        `,
-        queryParams
-      );
-      // ==================================================================
-
-      const surahsQuery = client.query(
-        `SELECT 
-          su.name, 
-          p.from_count AS from_ayat,
-          p.to_count AS to_ayat,
-          p.from_line,
-          p.to_line
-         FROM t_process p
-         JOIN t_surah su ON p.surah_id = su.id
-         WHERE p.userid = $1 AND p.type_id = $2 AND DATE(p.createdat) = $3`,
-        queryParams
-      );
-
-      const [scoresResult, surahsResult] = await Promise.all([
-        scoresQuery,
-        surahsQuery,
-      ]);
-
-      return {
-        ...group,
-        date: group.date.toISOString().split("T")[0],
-        scores: scoresResult.rows,
-        surahs: surahsResult.rows,
-        notes: [], // Tetap sebagai array kosong, bisa diisi nanti
-      };
-    });
-
-    const detailedReports = await Promise.all(reportDetailsPromises);
-
-    res.status(200).json({
-      report: detailedReports,
-      totalData,
-      page,
-      limit,
-    });
-  } catch (error) {
-    console.error("Error fetching report:", error);
-    res.status(500).json({ message: "Internal server error" });
-  } finally {
-    client.release();
-  }
-});
-
 router.get("/get-record-memo", async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
@@ -289,134 +24,109 @@ router.get("/get-record-memo", async (req, res) => {
   const type = req.query.type;
   const offset = (page - 1) * limit;
 
-  // Definisikan ekspresi tanggal yang konsisten
-  const dateExpression = `DATE(p.createdat AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta')`;
-  const dateExpressionInner = `DATE(p_inner.createdat AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta')`;
-  const dateExpressionScoring = `DATE(s.createdat AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta')`;
-
   const client = await pool.connect();
   try {
-    const fromAndJoins = `
-      FROM t_process p
-      JOIN u_students u ON p.userid = u.id
-      JOIN cl_students cs ON u.id = cs.student 
-                           AND cs.periode IN (
-                             SELECT id FROM a_periode WHERE isactive = true
-                           )
-      LEFT JOIN a_class cl ON cs.classid = cl.id
-      LEFT JOIN a_grade g ON cl.grade = g.id
-      LEFT JOIN t_type t ON p.type_id = t.id
-      LEFT JOIN t_scoring s ON p.userid = s.userid 
-                           AND p.type_id = s.type_id 
-                           AND ${dateExpression} = ${dateExpressionScoring}
-      LEFT JOIN t_examiner ex ON s.examiner_id = ex.id
-    `;
-
     const params = [`%${search}%`];
-    let whereClause = `WHERE (u.name ILIKE $1 OR u.nis ILIKE $1)`;
+
+    // ==================================================================
+    // PERBAIKAN: Menggunakan alias 'u_inner' dan 'p_inner'
+    // ==================================================================
+    let whereClause = `WHERE (u_inner.name ILIKE $1 OR u_inner.nis ILIKE $1)`;
 
     if (type && !isNaN(parseInt(type))) {
-      whereClause += ` AND p.type_id = $${params.length + 1}`;
+      whereClause += ` AND p_inner.type_id = $${params.length + 1}`;
       params.push(parseInt(type));
     }
+    // ==================================================================
 
-    // totalQuery tidak perlu diubah, sudah benar dari revisi sebelumnya
+    // Query untuk menghitung total siswa yang cocok
     const totalQuery = `
-      SELECT COUNT(*) 
-      FROM (
-        SELECT DISTINCT 
-          p.userid, 
-          p.type_id, 
-          ${dateExpression}
-        ${fromAndJoins} 
-        ${whereClause}
-      ) AS distinct_records
+      SELECT COUNT(DISTINCT p_inner.userid)
+      FROM t_process p_inner
+      JOIN u_students u_inner ON p_inner.userid = u_inner.id
+      JOIN cl_students cs ON u_inner.id = cs.student AND cs.periode IN (SELECT id FROM a_periode WHERE isactive = true)
+      ${whereClause}
     `;
     const totalResult = await client.query(totalQuery, params);
     const totalData = parseInt(totalResult.rows[0].count, 10);
 
-    // ==================================================================
-    // PERBAIKAN: Menggunakan CTE untuk mengatasi error 'ungrouped column'
-    // ==================================================================
-    const paginatedQuery = `
-      -- 1. Definisikan CTE yang berisi hasil pengelompokan
-      WITH grouped_records AS (
-        SELECT 
-          MIN(p.id) as p_id,
-          u.id AS userid,
-          t.id AS type_id,
-          ${dateExpression} AS date, -- Hitung dan beri nama 'date'
-          t.name AS type,
-          u.name,
-          u.nis,
-          g.name AS grade,
-          cl.name AS classname,
-          ex.name AS examiner
-        ${fromAndJoins}
-        ${whereClause}
-        GROUP BY 
-          u.id, 
-          t.id, 
-          ${dateExpression}, -- Kelompokkan berdasarkan ekspresi tanggal
-          t.name,
-          u.name,
-          u.nis,
-          g.name,
-          cl.name,
-          ex.name
-      )
-      -- 2. Query utama sekarang SELECT dari CTE
-      SELECT 
-        gr.p_id as id,
-        gr.userid,
-        gr.type_id,
-        gr.date,
-        gr.type,
-        gr.name,
-        gr.nis,
-        gr.grade,
-        gr.classname,
-        gr.examiner,
+    // Query utama dengan perbaikan (Correlated Subquery)
+    const query = `
+      SELECT
+        u.id as userid,
+        u.name,
+        cl.name as classname,
+        u.nis,
         (
-          -- 3. Subquery berkorelasi dengan CTE 'gr'
-          SELECT json_agg(juz_agg)
+          -- Agregasi Level 1: Mengumpulkan JUZ
+          SELECT json_agg(juz_records ORDER BY juz_records.id)
           FROM (
             SELECT
-              j.id, j.name,
-              json_agg(
-                json_build_object(
-                  'id', su.id, 'name', su.name, 'from_ayat', p_inner.from_count,
-                  'to_ayat', p_inner.to_count, 'from_line', p_inner.from_line,
-                  'to_line', p_inner.to_line
-                ) ORDER BY su.id
-              ) AS verses
-            FROM t_process p_inner
-            JOIN t_surah su ON p_inner.surah_id = su.id
-            JOIN t_juz j ON p_inner.juz_id = j.id
-            WHERE 
-              -- Korelasi ke kolom-kolom dari CTE 'gr', bukan 'p' atau 't'
-              p_inner.userid = gr.userid
-              AND p_inner.type_id = gr.type_id
-              AND ${dateExpressionInner} = gr.date -- Korelasi ke kolom 'date' dari CTE
-            GROUP BY j.id, j.name
-            ORDER BY j.id
-          ) AS juz_agg
-        ) AS juzs
-      FROM grouped_records gr -- SELECT from the CTE
-      ORDER BY 
-        gr.date DESC
-      LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+              j_inner.id,
+              j_inner.name as "JuzName",
+              (
+                -- Agregasi Level 2: Mengumpulkan VERSES (Surah)
+                SELECT json_agg(
+                  json_build_object(
+                    'id', su_inner.id,
+                    'name', su_inner.name,
+                    'from_ayat', p_inner.from_count,
+                    'to_ayat', p_inner.to_count,
+                    'from_line', p_inner.from_line,
+                    'to_line', p_inner.to_line,
+                    'date', DATE(p_inner.createdat),
+                    
+                    -- PERBAIKAN (dari sebelumnya): Correlated Subquery
+                    -- Mengambil nama penguji secara terpisah untuk
+                    -- menghindari duplikasi data.
+                    'examiner', (
+                        SELECT ex.name
+                        FROM t_scoring s_inner
+                        JOIN t_examiner ex ON s_inner.examiner_id = ex.id
+                        WHERE s_inner.userid = p_inner.userid
+                          AND s_inner.type_id = p_inner.type_id
+                          AND DATE(s_inner.createdat) = DATE(p_inner.createdat)
+                          AND s_inner.examiner_id IS NOT NULL
+                        LIMIT 1 -- Menjamin hanya 1 nama penguji
+                    )
+
+                  ) ORDER BY p_inner.createdat DESC, su_inner.id
+                )
+                FROM t_process p_inner -- Mulai dari t_process
+                JOIN t_surah su_inner ON p_inner.surah_id = su_inner.id
+                WHERE p_inner.userid = u.id AND p_inner.juz_id = j_inner.id
+                -- Tidak ada JOIN ke t_scoring di sini
+              ) as verses
+              
+            FROM t_juz j_inner
+            -- Pastikan hanya mengambil Juz yang memiliki data di t_process
+            WHERE j_inner.id IN (SELECT DISTINCT juz_id FROM t_process WHERE userid = u.id)
+            
+          ) as juz_records
+        ) as records
+      FROM (
+        -- Subquery untuk paginasi USER
+        SELECT DISTINCT u_inner.id
+        FROM t_process p_inner
+        JOIN u_students u_inner ON p_inner.userid = u_inner.id
+        JOIN cl_students cs ON u_inner.id = cs.student AND cs.periode IN (SELECT id FROM a_periode WHERE isactive = true)
+        ${whereClause} -- Sekarang merujuk ke 'u_inner' dan 'p_inner'
+        ORDER BY u_inner.id
+        LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+      ) as paginated_users
+      JOIN u_students u ON paginated_users.id = u.id
+      LEFT JOIN cl_students cs ON u.id = cs.student AND cs.periode IN (SELECT id FROM a_periode WHERE isactive = true)
+      LEFT JOIN a_class cl ON cs.classid = cl.id
+      GROUP BY u.id, u.name, cl.name, u.nis
+      ORDER BY u.name ASC
     `;
 
-    const result = await client.query(paginatedQuery, [
-      ...params,
-      limit,
-      offset,
-    ]);
+    const result = await client.query(query, [...params, limit, offset]);
 
     const report = result.rows.map((row) => ({
       ...row,
-      juzs: row.juzs || [],
+      // Pastikan 'records' yang null (jika tidak ada hafalan) menjadi array kosong
+      records: row.records || [],
     }));
 
     res.status(200).json({ report, totalData, page, limit });
@@ -428,201 +138,100 @@ router.get("/get-record-memo", async (req, res) => {
   }
 });
 
-router.get("/get-report/:userid", async (req, res) => {
+router.delete("/delete-juz-report", authorize("tahfiz"), async (req, res) => {
   const client = await pool.connect();
   try {
-    const { userid } = req.params;
-    const { page = 1, limit = 10 } = req.query;
+    const { userid, juzId } = req.query;
 
-    // Konversi page dan limit ke angka
-    const numericLimit = parseInt(limit, 10);
-    const numericOffset = (parseInt(page, 10) - 1) * numericLimit;
-
-    // Main query untuk mendapatkan data siswa berdasarkan userid dengan paginasi
-    const mainQuery = `
-      SELECT
-        us.id AS userid,
-        us.name AS student_name,
-        g.name AS grade,
-        c.name AS class_name,
-        t.name AS type_name,
-        t.id AS type_id,
-        e.name AS examiner_name,
-        e.id AS examiner_id,
-        ts.type_id
-      FROM
-        u_students us
-        INNER JOIN cl_students cs ON us.id = cs.student
-        INNER JOIN a_class c ON cs.classid = c.id
-        INNER JOIN a_grade g ON c.grade = g.id
-        INNER JOIN t_scoring ts ON us.id = ts.userid
-        INNER JOIN t_type t ON ts.type_id = t.id
-        INNER JOIN t_examiner e ON ts.examiner_id = e.id
-      WHERE
-        us.id = $1
-      GROUP BY
-        us.id, us.name, g.name, c.name, t.name, e.name, ts.type_id, t.id, e.name
-      LIMIT ${numericLimit} OFFSET ${numericOffset}
-    `;
-
-    // Count query untuk menghitung total data
-    const countQuery = `
-      SELECT COUNT(*) AS total
-      FROM (
-        SELECT
-          us.id
-        FROM
-          u_students us
-          INNER JOIN cl_students cs ON us.id = cs.student
-          INNER JOIN a_class c ON cs.classid = c.id
-          INNER JOIN a_grade g ON c.grade = g.id
-          INNER JOIN t_scoring ts ON us.id = ts.userid
-          INNER JOIN t_type t ON ts.type_id = t.id
-          INNER JOIN t_examiner e ON ts.examiner_id = e.id
-        WHERE
-          us.id = $1
-        GROUP BY
-          us.id, us.name, g.name, c.name, t.name, e.name, ts.type_id, t.id, e.name
-      ) AS subquery
-    `;
-
-    // Eksekusi query utama
-    const rows = await fetchQueryResults(mainQuery, [userid]);
-
-    if (rows.length === 0) {
-      return res.status(404).json({ message: "Data tidak ditemukan" });
+    if (!userid || !juzId) {
+      return res
+        .status(400)
+        .json({ message: "User ID dan Juz ID diperlukan." });
     }
 
-    // Eksekusi query untuk menghitung total data
-    const countResult = await fetchQueryResults(countQuery, [userid]);
-    const totalData = parseInt(countResult[0]?.total || 0, 10);
-    const totalPages = Math.ceil(totalData / numericLimit);
+    await client.query("BEGIN");
 
-    // Memproses data untuk laporan
-    const report = await buildStudentData(client, rows);
+    // Hapus dari t_scoring yang terkait dengan entri t_process yang akan dihapus
+    await client.query(
+      `DELETE FROM t_scoring
+       WHERE (userid, type_id, DATE(createdat)) IN
+       (SELECT DISTINCT userid, type_id, DATE(createdat) FROM t_process WHERE userid = $1 AND juz_id = $2)`,
+      [userid, juzId]
+    );
 
-    res.status(200).json({
-      report,
-      totalData,
-      totalPages,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: error.message });
-  } finally {
-    client.release();
-  }
-});
+    // Hapus dari t_process
+    const processResult = await client.query(
+      "DELETE FROM t_process WHERE userid = $1 AND juz_id = $2",
+      [userid, juzId]
+    );
 
-router.get("/get-report/:type_id", async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const { type_id } = req.params;
-    const { page, limit, search } = req.query;
-
-    const mainQuery = `
-      SELECT
-        us.id AS userid,
-        us.name AS student_name,
-        g.name AS grade,
-        c.name AS class_name,
-        t.name AS type_name,
-        t.id AS type_id,
-        e.name AS examiner_name,
-        e.id AS examiner_id,
-        ts.type_id
-      FROM
-        u_students us
-        INNER JOIN cl_students cs ON us.id = cs.student
-        INNER JOIN a_class c ON cs.classid = c.id
-        INNER JOIN a_grade g ON c.grade = g.id
-        INNER JOIN t_scoring ts ON us.id = ts.userid
-        INNER JOIN t_type t ON ts.type_id = t.id
-        INNER JOIN t_examiner e ON ts.examiner_id = e.id
-      WHERE
-        ts.type_id = $1
-      GROUP BY
-        us.id, us.name, g.name, c.name, t.name, e.name, ts.type_id, t.id, e.id
-    `;
-
-    const rows = await fetchQueryResults(mainQuery, [type_id]);
-
-    const result = await buildStudentData(client, rows);
-
-    res.status(200).json(result);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: error.message });
-  } finally {
-    client.release();
-  }
-});
-
-router.delete("/delete-report", authorize("tahfiz"), async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const { userid, typeId, createdat } = req.query;
-
-    // Parse the date from M/D/YYYY format
-    let formattedDate;
-    try {
-      const [month, day, year] = createdat.split("/");
-      if (!day || !month || !year) {
-        throw new Error("Invalid date format");
-      }
-      formattedDate = `${year}-${month.padStart(2, "0")}-${day.padStart(
-        2,
-        "0"
-      )}`;
-
-      // Validate the date
-      const date = new Date(formattedDate);
-      if (isNaN(date.getTime())) {
-        throw new Error("Invalid date");
-      }
-    } catch (error) {
-      return res.status(400).json({
-        message: "Invalid date format. Please use M/D/YYYY format.",
-      });
-    }
-
-    // Query untuk menghapus data berdasarkan userid, type_id, dan createdat
-    const deleteScore = `
-        DELETE FROM t_scoring
-        WHERE userid = $1 AND type_id = $2 AND DATE(createdat) = $3
-      `;
-
-    const deleteSurah = `
-        DELETE FROM t_process 
-        WHERE userid = $1 AND type_id = $2 AND DATE(createdat) = $3
-        `;
-
-    const result = await client.query(deleteScore, [
-      userid,
-      typeId,
-      formattedDate,
-    ]);
-    const resultSurah = await client.query(deleteSurah, [
-      userid,
-      typeId,
-      formattedDate,
-    ]);
-
-    // Jika tidak ada data yang dihapus, berikan respons 404
-    if (result.rowCount === 0 && resultSurah.rowCount === 0) {
+    if (processResult.rowCount === 0) {
+      await client.query("ROLLBACK");
       return res
         .status(404)
-        .json({ message: "Data tidak ditemukan atau sudah dihapus." });
+        .json({ message: "Tidak ada data hafalan untuk juz ini." });
     }
 
-    res.status(200).json({
-      message: remove,
-      deletedScores: result.rowCount,
-      deletedSurahs: resultSurah.rowCount,
-    });
+    await client.query("COMMIT");
+    res
+      .status(200)
+      .json({ message: "Semua hafalan dalam juz berhasil dihapus." });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: error.message });
+    await client.query("ROLLBACK");
+    console.error("Gagal menghapus laporan juz:", error);
+    res.status(500).json({ message: "Gagal menghapus laporan juz." });
+  } finally {
+    client.release();
+  }
+});
+
+router.delete("/delete-surah-report", authorize("tahfiz"), async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { userid, surahId, date: dateString } = req.query;
+
+    if (!userid || !surahId || !dateString) {
+      return res
+        .status(400)
+        .json({ message: "User ID, Surah ID, dan Tanggal diperlukan." });
+    }
+
+    // Konversi tanggal ke format YYYY-MM-DD
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return res.status(400).json({ message: "Format tanggal tidak valid." });
+    }
+    const formattedDate = date.toISOString().split("T")[0];
+
+    await client.query("BEGIN");
+
+    // Hapus dari t_process berdasarkan userid, surah_id, dan tanggal
+    const processResult = await client.query(
+      "DELETE FROM t_process WHERE userid = $1 AND surah_id = $2 AND DATE(createdat) = $3",
+      [userid, surahId, formattedDate]
+    );
+
+    // Hapus juga dari t_scoring pada tanggal yang sama jika tidak ada lagi entri di t_process
+    // Ini untuk menjaga konsistensi, mirip dengan logika di /delete-report
+    const remainingProcessEntries = await client.query(
+      "SELECT 1 FROM t_process WHERE userid = $1 AND DATE(createdat) = $2 LIMIT 1",
+      [userid, formattedDate]
+    );
+
+    if (remainingProcessEntries.rowCount === 0) {
+      await client.query(
+        "DELETE FROM t_scoring WHERE userid = $1 AND DATE(createdat) = $2",
+        [userid, formattedDate]
+      );
+    }
+
+    await client.query("COMMIT");
+
+    res.status(200).json({ message: "Hafalan surah berhasil dihapus." });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Gagal menghapus laporan surah:", error);
+    res.status(500).json({ message: "Gagal menghapus laporan surah." });
   } finally {
     client.release();
   }

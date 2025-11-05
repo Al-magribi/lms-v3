@@ -5,39 +5,26 @@ export const ApiReport = createApi({
   baseQuery: fetchBaseQuery({ baseUrl: `/api/report`, credentials: "include" }),
   tagTypes: ["reports"],
   endpoints: (builder) => ({
-    getReport: builder.query({
-      query: ({ page, limit, search, type }) => ({
-        url: "/get-all",
-        method: "GET",
-        params: { page, limit, search, type },
-      }),
-      providesTags: ["reports"],
-    }),
-    deleteReport: builder.mutation({
-      query: ({ userid, typeId, createdat }) => ({
-        url: `/delete-report`,
-        params: { userid, typeId, createdat },
+    deleteJuzReport: builder.mutation({
+      query: ({ userid, juzId }) => ({
+        url: "/delete-juz-report",
         method: "DELETE",
+        params: { userid, juzId },
       }),
       invalidatesTags: ["reports"],
     }),
-    StudentReport: builder.query({
-      query: (nis) => ({
-        url: `/get-report/${nis}`,
-        method: "GET",
+    deleteSurahReport: builder.mutation({
+      query: ({ userid, surahId, date }) => ({
+        url: "/delete-surah-report",
+        method: "DELETE",
+        params: { userid, surahId, date },
       }),
-      providesTags: ["reports"],
+      invalidatesTags: ["reports"],
     }),
+
     getAchievement: builder.query({
       query: () => ({
         url: "/get-report-target",
-        method: "GET",
-      }),
-      providesTags: ["reports"],
-    }),
-    getReportDashboard: builder.query({
-      query: () => ({
-        url: "/get-report-dashboard",
         method: "GET",
       }),
       providesTags: ["reports"],
@@ -62,11 +49,9 @@ export const ApiReport = createApi({
 });
 
 export const {
-  useGetReportQuery,
-  useDeleteReportMutation,
-  useStudentReportQuery,
+  useDeleteJuzReportMutation,
+  useDeleteSurahReportMutation,
   useGetAchievementQuery,
-  useGetReportDashboardQuery,
   useGetStudentReportQuery,
   useGetRecordMemoQuery,
 } = ApiReport;

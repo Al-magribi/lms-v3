@@ -293,10 +293,6 @@ router.post(
         periode_id,
       ]);
 
-      console.log(
-        `Found ${existingRecords.rows.length} existing records for this combination`
-      );
-
       // Use a more robust approach with DELETE and INSERT to avoid constraint issues
       const deleteQuery = `
         DELETE FROM l_attitude 
@@ -371,53 +367,10 @@ router.post(
             catatan && catatan !== "" ? catatan : null,
           ];
 
-          console.log(
-            `Processing student ${nis} (ID: ${student_id}) with values:`,
-            {
-              kinerja: kinerja && kinerja !== "" ? Number(kinerja) : null,
-              kedisiplinan:
-                kedisiplinan && kedisiplinan !== ""
-                  ? Number(kedisiplinan)
-                  : null,
-              keaktifan:
-                keaktifan && keaktifan !== "" ? Number(keaktifan) : null,
-              percayaDiri:
-                percayaDiri && percayaDiri !== "" ? Number(percayaDiri) : null,
-              catatan: catatan && catatan !== "" ? catatan : null,
-            }
-          );
-
           // Check if this student already has a record for this combination
           const existingRecord = existingRecords.rows.find(
             (record) => record.student_id === student_id
           );
-          if (existingRecord) {
-            console.log(`Student ${nis} has existing record:`, {
-              existing: {
-                kinerja: existingRecord.kinerja,
-                kedisiplinan: existingRecord.kedisiplinan,
-                keaktifan: existingRecord.keaktifan,
-                percaya_diri: existingRecord.percaya_diri,
-                catatan_guru: existingRecord.catatan_guru,
-              },
-              new: {
-                kinerja: kinerja && kinerja !== "" ? Number(kinerja) : null,
-                kedisiplinan:
-                  kedisiplinan && kedisiplinan !== ""
-                    ? Number(kedisiplinan)
-                    : null,
-                keaktifan:
-                  keaktifan && keaktifan !== "" ? Number(keaktifan) : null,
-                percaya_diri:
-                  percayaDiri && percayaDiri !== ""
-                    ? Number(percayaDiri)
-                    : null,
-                catatan_guru: catatan && catatan !== "" ? catatan : null,
-              },
-            });
-          } else {
-            console.log(`Student ${nis} will create new record`);
-          }
 
           // First delete any existing record for this combination
           await client.query(deleteQuery, [
@@ -431,10 +384,7 @@ router.post(
 
           // Then insert the new record
           const result = await client.query(insertQuery, params);
-          console.log(
-            `Row ${i + 1}: Successfully processed student ${nis}`,
-            result.rows[0]
-          );
+
           successCount++;
         } catch (error) {
           errorCount++;
@@ -489,10 +439,6 @@ router.post(
         Number(semester),
         periode_id,
       ]);
-
-      console.log(
-        `After upload: ${verifyResult.rows[0].total_records} total records for this combination`
-      );
 
       const message = `Berhasil mengupload ${successCount} data${
         errorCount > 0 ? `, ${errorCount} error` : ""

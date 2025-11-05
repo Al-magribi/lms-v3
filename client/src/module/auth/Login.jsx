@@ -61,7 +61,14 @@ const Login = () => {
   };
 
   const handleSubmit = (value) => {
-    signin(value);
+    const trimmedValues = {
+      ...value,
+      username: value.username?.trim(),
+      email: value.email?.trim(),
+      nis: value.nis?.trim(),
+      password: value.password?.trim(),
+    };
+    signin(trimmedValues);
   };
 
   useEffect(() => {
