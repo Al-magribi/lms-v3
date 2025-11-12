@@ -11,7 +11,6 @@ import {
 } from "antd";
 import React, { useState, useEffect } from "react";
 import { useGetCompletionQuery } from "../../../../service/api/lms/ApiScore";
-import { CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
 import { useGetCategoriesQuery } from "../../../../service/api/main/ApiSubject";
 
 const months = [
@@ -81,21 +80,21 @@ const Report = () => {
       dataIndex: "present",
       key: "present",
       render: (p) =>
-        p ? <Tag color='success'>Sudah</Tag> : <Tag color='error'>Belum</Tag>,
+        p ? <Tag color="success">Sudah</Tag> : <Tag color="error">Belum</Tag>,
     },
     {
       title: "Sumatif",
       dataIndex: "summative",
       key: "summative",
       render: (s) =>
-        s ? <Tag color='success'>Sudah</Tag> : <Tag color='error'>Belum</Tag>,
+        s ? <Tag color="success">Sudah</Tag> : <Tag color="error">Belum</Tag>,
     },
     {
       title: "Formatif",
       dataIndex: "formative",
       key: "formative",
       render: (f) =>
-        f ? <Tag color='success'>Sudah</Tag> : <Tag color='error'>Belum</Tag>,
+        f ? <Tag color="success">Sudah</Tag> : <Tag color="error">Belum</Tag>,
     },
   ];
 
@@ -108,21 +107,21 @@ const Report = () => {
   const isQuerySkipped = !month;
 
   return (
-    <Flex vertical gap='large'>
-      <Flex align='center' justify='space-between'>
+    <Flex vertical gap="large">
+      <Flex align="center" justify="space-between">
         <Typography.Title style={{ margin: 0 }} level={5}>
           Statistik Laporan Bulanan
         </Typography.Title>
         <Space>
           <Input.Search
-            placeholder='Cari Guru ...'
+            placeholder="Cari Guru ..."
             onChange={(e) => setSearch(e.target.value)}
             value={search}
             allowClear
           />
           <Select
             style={{ width: 200 }}
-            placeholder='Pilih Kategori'
+            placeholder="Pilih Kategori"
             options={catOpts}
             onChange={handleCategoryChange}
             allowClear
@@ -138,7 +137,7 @@ const Report = () => {
             style={{ width: 200 }}
             showSearch
             allowClear
-            placeholder='Pilih Bulan'
+            placeholder="Pilih Bulan"
             options={monthOpt}
             onChange={handleMonthChange}
             value={month}
@@ -152,20 +151,20 @@ const Report = () => {
       </Flex>
 
       {isFetching && !isQuerySkipped && (
-        <Flex justify='center'>
+        <Flex justify="center">
           <Spin />
         </Flex>
       )}
       {isError && (
-        <Typography.Text type='danger'>Gagal memuat data.</Typography.Text>
+        <Typography.Text type="danger">Gagal memuat data.</Typography.Text>
       )}
       {isQuerySkipped && (
-        <Typography.Text type='secondary'>Pilih bulan.</Typography.Text>
+        <Typography.Text type="secondary">Pilih bulan.</Typography.Text>
       )}
 
       {!isQuerySkipped && !isError && (
-        <Flex vertical gap='large'>
-          <Flex align='center' gap='large'>
+        <Flex vertical gap="large">
+          <Flex align="center" gap="large">
             <Typography.Text>Kelengkapan Nilai (Halaman ini):</Typography.Text>
             <Progress percent={completeness} style={{ flex: 1 }} />
           </Flex>
@@ -174,7 +173,7 @@ const Report = () => {
           <Table
             dataSource={statistics}
             columns={columns}
-            rowKey='teacher'
+            rowKey="teacher"
             bordered
             loading={isFetching}
             pagination={{

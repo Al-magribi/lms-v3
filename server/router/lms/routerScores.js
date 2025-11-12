@@ -1278,394 +1278,405 @@ router.get(
   }
 );
 
-// ==========================
-// Parent Monthly Reports
-// ==========================
-
-// Get student's monthly report for parent
-router.get("/parent-monthly-report", authorize("parent"), async (req, res) => {
+router.get("/teacher-completion", authorize("admin"), async (req, res) => {
   const client = await pool.connect();
   try {
-    const { month, semester } = req.query;
-    const parentId = req.user.id;
+    let { month, page = 1, limit = 5, search = "", categoryId } = req.query;
 
-    if (!month || !semester) {
-      return res.status(400).json({ message: "Missing required parameters" });
+    // Sanitasi input
+    if (categoryId === "null" || categoryId === "undefined" || !categoryId) {
+      categoryId = null;
+    }
+    if (!month) {
+      return res.status(400).json({ message: "Month parameter is required" });
     }
 
-    // Get student info from parent
-    const studentQuery = `
-      SELECT 
-        us.id as student_id,
-        us.name as student_name,
-        us.nis,
-        ac.id as class_id,
-        ac.name as class_name,
-        ag.name as grade_name,
-        ap.name as periode_name,
-        ut.name as homeroom_teacher,
-        ah.id as homebase_id,
-        ah.name as homebase_name
-      FROM u_parents up
-      JOIN u_students us ON up.studentid = us.id
-      JOIN cl_students cs ON us.id = cs.student
-      JOIN a_class ac ON cs.classid = ac.id
-      JOIN a_grade ag ON ac.grade = ag.id
-      JOIN a_periode ap ON cs.periode = ap.id
-      JOIN a_homebase ah ON us.homebase = ah.id
-      LEFT JOIN u_teachers ut ON ac.id = ut.class
-      WHERE up.id = $1 AND ap.isactive = true
-    `;
+    const homebase = req.user.homebase;
+    const periodeid = await getActivePeriode(client, homebase);
+    const monthNumber = getMonthNumber(month);
+    const semester = monthNumber >= 7 || monthNumber <= 1 ? 1 : 2;
 
-    const studentResult = await client.query(studentQuery, [parentId]);
-    if (studentResult.rows.length === 0) {
-      return res.status(404).json({ message: "Student not found" });
-    }
-
-    const student = studentResult.rows[0];
-
-    if (!student.homebase_id) {
-      return res.status(400).json({ message: "Student homebase not found" });
-    }
-
-    const periodeId = await getActivePeriode(client, student.homebase_id);
-
-    if (!periodeId) {
+    if (!periodeid) {
       return res.status(400).json({ message: "No active periode found" });
     }
 
-    // Get all subjects for the student's class
-    const subjectsQuery = `
-      SELECT DISTINCT 
-        s.id as subject_id,
-        s.name as subject_name,
-        s.cover as subject_cover,
-        ut.name as teacher_name
-      FROM a_subject s
-      JOIN at_subject ats ON s.id = ats.subject
-      JOIN u_teachers ut ON ats.teacher = ut.id
-      JOIN at_class atc ON ut.id = atc.teacher_id
-      WHERE atc.class_id = $1 AND s.homebase = $2
-      ORDER BY s.name
-    `;
+    const offset = (page - 1) * limit;
 
-    const subjectsResult = await client.query(subjectsQuery, [
-      student.class_id,
-      student.homebase_id,
+    // 1. Query untuk mendapatkan list Guru yang DIPAGINASI dan total count
+    const teacherListQuery = `
+        WITH filtered_teachers AS (
+          SELECT DISTINCT ut.id, ut.name
+          FROM u_teachers ut
+          JOIN at_subject ats ON ut.id = ats.teacher
+          JOIN a_subject s ON ats.subject = s.id
+          WHERE s.homebase = $1 
+            AND ut.name ILIKE $2
+            AND ($3::INTEGER IS NULL OR s.categoryid = $3::INTEGER)
+        ),
+        total_count AS (
+            SELECT COUNT(*) as total FROM filtered_teachers
+        )
+        SELECT 
+            t.id as teacher_id,
+            t.name as teacher_name,
+            (SELECT total FROM total_count) as total_records
+        FROM filtered_teachers t
+        ORDER BY t.name
+        LIMIT $4 OFFSET $5;
+      `;
+    const teacherListParams = [
+      homebase, // $1
+      `%${search}%`, // $2
+      categoryId, // $3
+      limit, // $4
+      offset, // $5
+    ];
+    const teacherListResult = await client.query(
+      teacherListQuery,
+      teacherListParams
+    );
+    const teachers = teacherListResult.rows; // <-- Ini adalah guru yang dipaginasi
+
+    if (teachers.length === 0) {
+      return res.status(200).json({
+        statistics: [],
+        completeness: "0.00%",
+        pagination: {
+          total: 0,
+          page: parseInt(page),
+          limit: parseInt(limit),
+        },
+      });
+    }
+
+    const totalRecords = teachers[0].total_records;
+
+    // 2. Query untuk mendapatkan SEMUA guru yang terfilter (hanya ID)
+    const allTeachersQuery = `
+        SELECT DISTINCT ut.id as teacher_id
+        FROM u_teachers ut
+        JOIN at_subject ats ON ut.id = ats.teacher
+        JOIN a_subject s ON ats.subject = s.id
+        WHERE s.homebase = $1 
+          AND ut.name ILIKE $2
+          AND ($3::INTEGER IS NULL OR s.categoryid = $3::INTEGER);
+      `;
+    const allTeachersResult = await client.query(allTeachersQuery, [
+      homebase, // $1
+      `%${search}%`, // $2
+      categoryId, // $3
     ]);
+    const allTeachers = allTeachersResult.rows; // <-- Ini SEMUA guru
 
-    let subjects = subjectsResult.rows;
+    // Siapkan variabel untuk GLOBAL stats dan Paged stats
+    let globalCompletedTasks = 0;
+    let globalTotalTasks = 0;
 
-    // Fallback: if no subjects found, get all subjects from homebase
-    if (subjects.length === 0) {
-      const fallbackSubjectsQuery = `
-        SELECT DISTINCT 
-          s.id as subject_id,
-          s.name as subject_name,
-          s.cover as subject_cover,
-          'Guru Mata Pelajaran' as teacher_name
-        FROM a_subject s
-        WHERE s.homebase = $1
-        ORDER BY s.name
-      `;
+    // Map untuk menampung stats HANYA untuk guru yang dipaginasi
+    const pagedTeacherStats = new Map();
+    // Set untuk mengecek guru mana yang perlu dibuatkan stats detail
+    const pagedTeacherIds = new Set(teachers.map((t) => t.teacher_id));
 
-      const fallbackResult = await client.query(fallbackSubjectsQuery, [
-        student.homebase_id,
-      ]);
-      subjects = fallbackResult.rows;
-    }
+    // 3. Loop melalui SEMUA guru untuk kalkulasi global
+    for (const teacherRef of allTeachers) {
+      const currentTeacherId = teacherRef.teacher_id;
+      // Cek apakah guru ini ada di page ini
+      const isPagedTeacher = pagedTeacherIds.has(currentTeacherId);
 
-    const reportData = [];
-
-    // Get data for each subject
-    for (const subject of subjects) {
-      // Get attitude data
-      const attitudeQuery = `
-        SELECT 
-          kinerja,
-          kedisiplinan,
-          keaktifan,
-          percaya_diri,
-          catatan_guru,
-          rata_rata
-        FROM l_attitude
-        WHERE student_id = $1 
-          AND subject_id = $2 
-          AND month = $3 
-          AND semester = $4 
-          AND periode_id = $5
-      `;
-
-      const attitudeResult = await client.query(attitudeQuery, [
-        student.student_id,
-        subject.subject_id,
-        month,
-        semester,
-        periodeId,
-      ]);
-
-      // Get chapter/topic data and chapter_id first
-      const chapterQuery = `
-        SELECT 
-          lc.id as chapter_id,
-          lc.title as topic,
-          lc.target as target_description
-        FROM l_chapter lc
-        WHERE lc.subject = $1
-        ORDER BY lc.order_number
-        LIMIT 1
-      `;
-
-      const chapterResult = await client.query(chapterQuery, [
-        subject.subject_id,
-      ]);
-
-      // Get formative data - try to find any formative scores for this subject
-      let formativeResult;
-
-      // First, try to get any formative scores for this subject regardless of chapter
-      const formativeQueryAny = `
-        SELECT 
-          f_1, f_2, f_3, f_4, f_5, f_6, f_7, f_8,
-          rata_rata
-        FROM l_formative
-        WHERE student_id = $1 
-          AND subject_id = $2 
-          AND month = $3 
-          AND semester = $4 
-          AND periode_id = $5
-        ORDER BY chapter_id
-        LIMIT 1
-      `;
-
-      formativeResult = await client.query(formativeQueryAny, [
-        student.student_id,
-        subject.subject_id,
-        month,
-        semester,
-        periodeId,
-      ]);
-
-      // If we found formative data, also try with specific chapter_id for better accuracy
-      if (
-        formativeResult.rows.length === 0 &&
-        chapterResult.rows[0] &&
-        chapterResult.rows[0].chapter_id
-      ) {
-        const formativeQueryWithChapter = `
+      // Query untuk mendapatkan semua kelas, mapel, chapter
+      const classesQuery = `
           SELECT 
-            f_1, f_2, f_3, f_4, f_5, f_6, f_7, f_8,
-            rata_rata
-          FROM l_formative
-          WHERE student_id = $1 
-            AND subject_id = $2 
-            AND chapter_id = $3
-            AND month = $4 
-            AND semester = $5 
-            AND periode_id = $6
+              ac.id AS class_id, ac.name AS class_name,
+              ach.id AS chapter_id, ach.title AS chapter_title,
+              s.id AS subject_id, s.name AS subject_name
+          FROM a_class ac
+          JOIN l_cclass lcc ON ac.id = lcc.classid
+          JOIN l_chapter ach ON lcc.chapter = ach.id
+          JOIN a_subject s ON ach.subject = s.id
+          WHERE ach.teacher = $1 AND s.homebase = $2
+            AND ($3::INTEGER IS NULL OR s.categoryid = $3::INTEGER)
+            AND EXISTS (
+                SELECT 1 FROM l_attitude att WHERE att.chapter_id = ach.id AND att.class_id = ac.id AND att.month = $4
+                UNION ALL
+                SELECT 1 FROM l_formative f WHERE f.chapter_id = ach.id AND f.class_id = ac.id AND f.month = $4
+                UNION ALL
+                SELECT 1 FROM l_summative sum WHERE sum.chapter_id = ach.id AND sum.class_id = ac.id AND sum.month = $4
+            )
+          ORDER BY s.name, ac.name, ach.order_number;
         `;
+      const classesResult = await client.query(classesQuery, [
+        currentTeacherId, // $1
+        homebase, // $2
+        categoryId, // $3
+        month, // $4
+      ]);
+      const teacherClasses = classesResult.rows;
 
-        formativeResult = await client.query(formativeQueryWithChapter, [
-          student.student_id,
-          subject.subject_id,
-          chapterResult.rows[0].chapter_id,
-          month,
-          semester,
-          periodeId,
-        ]);
+      // --- PERBAIKAN DIMULAI DI SINI ---
+      if (isPagedTeacher && teacherClasses.length === 0) {
+        // Guru ini ada di page ini, TAPI tidak punya data/chapter di bulan ini.
+        // Kita harus tetap menampilkannya di list dengan data kosong.
+        const teacherName = teachers.find(
+          (t) => t.teacher_id === currentTeacherId
+        ).teacher_name;
+
+        pagedTeacherStats.set(currentTeacherId, {
+          name: teacherName,
+          subjects: [], // Kirim array kosong
+        });
+
+        // Karena tidak ada 'teacherClasses', tidak ada yang perlu dihitung
+        // untuk global stats dari guru ini.
+        continue; // Lanjut ke guru berikutnya
       }
 
-      // Get summative data
-      const summativeQuery = `
-        SELECT 
-          oral,
-          written,
-          project,
-          performance,
-          rata_rata
-        FROM l_summative
-        WHERE student_id = $1 
-          AND subject_id = $2 
-          AND month = $3 
-          AND semester = $4 
-          AND periode_id = $5
-      `;
-
-      const summativeResult = await client.query(summativeQuery, [
-        student.student_id,
-        subject.subject_id,
-        month,
-        semester,
-        periodeId,
-      ]);
-
-      // Get attendance data
-      const attendanceQuery = `
-        SELECT 
-          COUNT(CASE WHEN note = 'Hadir' THEN 1 END) as hadir,
-          COUNT(CASE WHEN note = 'Sakit' THEN 1 END) as sakit,
-          COUNT(CASE WHEN note = 'Ijin' THEN 1 END) as ijin,
-          COUNT(CASE WHEN note = 'Alpa' THEN 1 END) as alpa,
-          COUNT(*) as total
-        FROM l_attendance
-        WHERE studentid = $1 
-          AND subjectid = $2 
-          AND EXTRACT(MONTH FROM day_date) = $3
-          AND periode = $4
-      `;
-
-      const attendanceResult = await client.query(attendanceQuery, [
-        student.student_id,
-        subject.subject_id,
-        getMonthNumber(month),
-        periodeId,
-      ]);
-
-      const attitude = attitudeResult.rows[0] || null;
-      const formative = formativeResult.rows[0] || null;
-      const summative = summativeResult.rows[0] || null;
-
-      // Only include subjects that have at least one type of score
-      const hasAttitudeScore =
-        attitude &&
-        (attitude.kinerja !== null ||
-          attitude.kedisiplinan !== null ||
-          attitude.keaktifan !== null ||
-          attitude.percaya_diri !== null);
-
-      const hasFormativeScore =
-        formative &&
-        (formative.f_1 !== null ||
-          formative.f_2 !== null ||
-          formative.f_3 !== null ||
-          formative.f_4 !== null ||
-          formative.f_5 !== null ||
-          formative.f_6 !== null ||
-          formative.f_7 !== null ||
-          formative.f_8 !== null);
-
-      const hasSummativeScore =
-        summative &&
-        (summative.oral !== null ||
-          summative.written !== null ||
-          summative.project !== null ||
-          summative.performance !== null);
-
-      // Only add subject if it has at least one type of score
-      if (hasAttitudeScore || hasFormativeScore || hasSummativeScore) {
-        const subjectData = {
-          subject_id: subject.subject_id,
-          subject_name: subject.subject_name,
-          subject_cover: subject.subject_cover,
-          teacher_name: subject.teacher_name,
-          attitude: attitude,
-          formative: formative,
-          summative: summative,
-          attendance: attendanceResult.rows[0] || null,
-          chapter: chapterResult.rows[0] || null,
-        };
-
-        reportData.push(subjectData);
+      if (teacherClasses.length === 0) {
+        // Guru ini TIDAK di page ini, dan tidak punya data.
+        // Lanjut saja.
+        continue;
       }
-    }
+      // --- AKHIR PERBAIKAN ---
 
-    const response = {
-      report_period: {
-        month: month,
-        semester: semester,
-        academic_year: `${new Date().getFullYear()}/${
-          new Date().getFullYear() + 1
-        }`,
+      // Map untuk mengelompokkan data: Subject ID -> Class ID -> Chapters
+      const teacherSubjectsMap = new Map();
+      teacherClasses.forEach((c) => {
+        if (!teacherSubjectsMap.has(c.subject_id)) {
+          teacherSubjectsMap.set(c.subject_id, {
+            id: c.subject_id,
+            name: c.subject_name,
+            detailsMap: new Map(),
+          });
+        }
+        const subjectGroup = teacherSubjectsMap.get(c.subject_id);
+        if (!subjectGroup.detailsMap.has(c.class_id)) {
+          subjectGroup.detailsMap.set(c.class_id, {
+            class_id: c.class_id,
+            class_name: c.class_name,
+            chapters: [],
+          });
+        }
+        const classGroup = subjectGroup.detailsMap.get(c.class_id);
+        if (!classGroup.chapters.some((ch) => ch.id === c.chapter_id)) {
+          classGroup.chapters.push({
+            id: c.chapter_id,
+            name: c.chapter_title,
+          });
+        }
+      });
+
+      // Variabel-variabel ini HANYA diisi jika isPagedTeacher
+      let teacherSubjects = [];
+
+      // Loop melalui Mapel (Subjects)
+      for (const subjectGroup of teacherSubjectsMap.values()) {
+        const subjectDetails = []; // Hanya diisi jika isPagedTeacher
+        const classGroups = Array.from(subjectGroup.detailsMap.values());
+
+        // Loop melalui Kelas (Classes) untuk Subject ini
+        for (const group of classGroups) {
+          if (group.chapters.length === 0) continue;
+
+          const classSubjectName = `${group.class_name} (${month} - Semester ${semester})`;
+
+          const allStudentsQuery = `
+              SELECT us.id, us.name
+              FROM cl_students cs
+              JOIN u_students us ON cs.student = us.id
+              WHERE cs.classid = $1 AND cs.periode = $2
+            `;
+          const allStudentsResult = await client.query(allStudentsQuery, [
+            group.class_id,
+            periodeid,
+          ]);
+          const allStudents = allStudentsResult.rows;
+          const totalStudents = allStudents.length;
+
+          if (totalStudents === 0) {
+            continue;
+          }
+
+          const currentChapterIds = group.chapters.map((ch) => ch.id);
+
+          const filledRecordsQuery = `
+              SELECT 
+                  'attitude' as type, lat.student_id, lat.chapter_id, us.name as student_name
+              FROM l_attitude lat 
+              JOIN u_students us ON lat.student_id = us.id
+              WHERE lat.class_id = $7 AND lat.subject_id = $2 AND lat.teacher_id = $1 AND lat.periode_id = $4
+              AND lat.chapter_id = ANY($6::INT[])
+              AND lat.semester = $5 AND lat.month = $3::VARCHAR
+              AND lat.rata_rata IS NOT NULL
+              
+              UNION ALL
+              
+              SELECT 
+                  'formative' as type, lf.student_id, lf.chapter_id, us.name as student_name
+              FROM l_formative lf
+              JOIN u_students us ON lf.student_id = us.id
+              WHERE lf.class_id = $7 AND lf.subject_id = $2 AND lf.teacher_id = $1 AND lf.periode_id = $4
+              AND lf.chapter_id = ANY($6::INT[])
+              AND lf.semester = $5 AND lf.month = $3::VARCHAR
+              AND lf.rata_rata IS NOT NULL
+              
+              UNION ALL
+              
+              SELECT 
+                  'summative' as type, ls.student_id, ls.chapter_id, us.name as student_name
+              FROM l_summative ls
+              JOIN u_students us ON ls.student_id = us.id
+              WHERE ls.class_id = $7 AND ls.subject_id = $2 AND ls.teacher_id = $1 AND ls.periode_id = $4
+              AND ls.chapter_id = ANY($6::INT[])
+              AND ls.semester = $5 AND ls.month = $3::VARCHAR
+              AND ls.rata_rata IS NOT NULL;
+            `;
+          const filledRecordsResult = await client.query(filledRecordsQuery, [
+            currentTeacherId, // $1
+            subjectGroup.id, // $2
+            month, // $3
+            periodeid, // $4
+            semester, // $5
+            currentChapterIds.map(String), // $6
+            group.class_id, // $7
+          ]);
+          const filledRecords = filledRecordsResult.rows;
+
+          const classChapters = []; // Hanya diisi jika isPagedTeacher
+
+          // Loop melalui setiap Chapter
+          for (const chapter of group.chapters) {
+            const chapterStats = {
+              name: chapter.name,
+              details: [{}],
+            };
+
+            let chapterTotalDone = 0;
+            const totalExpectedChapterRecords = totalStudents;
+
+            const processScoreForChapter = (type) => {
+              const chapterRecords = filledRecords.filter(
+                (r) => r.type === type && r.chapter_id === chapter.id
+              );
+              const doneRecordsCount = chapterRecords.length;
+              const undoneRecordsCount =
+                totalExpectedChapterRecords - doneRecordsCount;
+              const doneStudentIds = new Set(
+                chapterRecords.map((r) => r.student_id)
+              );
+              const doneStudents = chapterRecords.map((r) => ({
+                student: r.student_name,
+              }));
+              const undoneStudents = allStudents
+                .filter((s) => !doneStudentIds.has(s.id))
+                .map((s) => ({ student: s.name }));
+              return {
+                done: doneRecordsCount,
+                undone: undoneRecordsCount,
+                detail: { done: doneStudents, undone: undoneStudents },
+                totalDone: doneRecordsCount,
+              };
+            };
+
+            // --- KALKULASI GLOBAL ---
+            const attitudeDetails = processScoreForChapter("attitude");
+            chapterTotalDone += attitudeDetails.totalDone;
+            globalTotalTasks += totalExpectedChapterRecords;
+
+            const formativeDetails = processScoreForChapter("formative");
+            chapterTotalDone += formativeDetails.totalDone;
+            globalTotalTasks += totalExpectedChapterRecords;
+
+            const summativeDetails = processScoreForChapter("summative");
+            chapterTotalDone += summativeDetails.totalDone;
+            globalTotalTasks += totalExpectedChapterRecords;
+
+            globalCompletedTasks += chapterTotalDone;
+
+            // --- PEMBUATAN STATS DETAIL ---
+            if (isPagedTeacher) {
+              chapterStats.details[0].attitude = [
+                {
+                  done: attitudeDetails.done,
+                  undone: attitudeDetails.undone,
+                  detail: attitudeDetails.detail,
+                },
+              ];
+              chapterStats.details[0].formative = [
+                {
+                  done: formativeDetails.done,
+                  undone: formativeDetails.undone,
+                  detail: formativeDetails.detail,
+                },
+              ];
+              chapterStats.details[0].summative = [
+                {
+                  done: summativeDetails.done,
+                  undone: summativeDetails.undone,
+                  detail: summativeDetails.detail,
+                },
+              ];
+              classChapters.push(chapterStats);
+            }
+          } // End Chapter Loop
+
+          if (isPagedTeacher && classChapters.length > 0) {
+            subjectDetails.push({
+              classes: classSubjectName,
+              chapters: classChapters,
+            });
+          }
+        } // End Class Loop
+
+        if (isPagedTeacher && subjectDetails.length > 0) {
+          teacherSubjects.push({
+            name: subjectGroup.name,
+            details: subjectDetails,
+          });
+        }
+      } // End Subject Loop
+
+      // Simpan stats guru yang dipaginasi ke Map
+      if (isPagedTeacher) {
+        const teacherName = teachers.find(
+          (t) => t.teacher_id === currentTeacherId
+        ).teacher_name;
+
+        // Hanya set jika belum diset oleh 'PERBAIKAN' di atas
+        if (!pagedTeacherStats.has(currentTeacherId)) {
+          pagedTeacherStats.set(currentTeacherId, {
+            name: teacherName,
+            subjects: teacherSubjects,
+          });
+        }
+      }
+    } // End SEMUA Teacher Loop
+
+    // 5. Hitung total komplitasi (Completeness) GLOBAL
+    const completenessPercentage =
+      globalTotalTasks > 0
+        ? (globalCompletedTasks / globalTotalTasks) * 100
+        : 0;
+    const completeness = `${completenessPercentage.toFixed(2)}%`;
+
+    // 6. Bangun array statistics Paginasi dalam urutan yang benar
+    //    Kita HAPUS .filter(Boolean) agar guru dengan data kosong tetap tampil
+    const statistics = teachers.map((t) => pagedTeacherStats.get(t.teacher_id));
+
+    // 7. Kirim respons
+    res.status(200).json({
+      statistics: statistics, // <-- Data Paginasi
+      completeness: completeness, // <-- Data Global
+      pagination: {
+        total: parseInt(totalRecords),
+        page: parseInt(page),
+        limit: parseInt(limit),
       },
-      subjects: reportData,
-    };
-
-    res.status(200).json(response);
+    });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     res.status(500).json({ message: error.message });
   } finally {
     client.release();
   }
 });
-
-// Get available months for parent
-router.get(
-  "/parent-available-months",
-  authorize("parent"),
-  async (req, res) => {
-    const client = await pool.connect();
-    try {
-      const parentId = req.user.id;
-
-      // Get student info from parent
-      const studentQuery = `
-        SELECT 
-          us.id as student_id,
-          ah.id as homebase_id,
-          ah.name as homebase_name
-        FROM u_parents up
-        JOIN u_students us ON up.studentid = us.id
-        JOIN a_homebase ah ON us.homebase = ah.id
-        WHERE up.id = $1
-      `;
-
-      const studentResult = await client.query(studentQuery, [parentId]);
-      if (studentResult.rows.length === 0) {
-        return res.status(404).json({ message: "Student not found" });
-      }
-
-      const student = studentResult.rows[0];
-
-      if (!student.homebase_id) {
-        return res.status(400).json({ message: "Student homebase not found" });
-      }
-
-      const periodeId = await getActivePeriode(client, student.homebase_id);
-
-      if (!periodeId) {
-        return res.status(400).json({ message: "No active periode found" });
-      }
-
-      // Get available months from attitude table
-      const monthsQuery = `
-      SELECT month, semester FROM (
-        SELECT DISTINCT 
-          month,
-          semester
-        FROM l_attitude
-        WHERE student_id = $1 AND periode_id = $2
-      ) subquery
-      ORDER BY semester, 
-        CASE month
-          WHEN 'Januari' THEN 1
-          WHEN 'Februari' THEN 2
-          WHEN 'Maret' THEN 3
-          WHEN 'April' THEN 4
-          WHEN 'Mei' THEN 5
-          WHEN 'Juni' THEN 6
-          WHEN 'Juli' THEN 7
-          WHEN 'Agustus' THEN 8
-          WHEN 'September' THEN 9
-          WHEN 'Oktober' THEN 10
-          WHEN 'November' THEN 11
-          WHEN 'Desember' THEN 12
-        END
-    `;
-
-      const monthsResult = await client.query(monthsQuery, [
-        student.student_id,
-        periodeId,
-      ]);
-
-      res.status(200).json(monthsResult.rows);
-    } catch (error) {
-      console.log(error);
-      res.status(500).json({ message: error.message });
-    } finally {
-      client.release();
-    }
-  }
-);
 
 export default router;

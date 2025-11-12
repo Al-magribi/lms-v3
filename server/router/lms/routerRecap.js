@@ -262,7 +262,6 @@ router.get("/chapter-final-score", authorize("teacher"), async (req, res) => {
 });
 
 // Rekap Nilai VIEW Orang Tua
-
 router.get("/monthly-recap", async (req, res) => {
   const client = await pool.connect();
   try {

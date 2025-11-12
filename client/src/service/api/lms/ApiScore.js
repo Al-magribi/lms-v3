@@ -365,20 +365,12 @@ export const ApiScore = createApi({
       }),
     }),
 
-    // Parent Monthly Reports
-    getParentMonthlyReport: builder.query({
-      query: ({ month, semester }) => ({
-        url: "/parent-monthly-report",
-        params: { month, semester },
+    getNewCompletion: builder.query({
+      query: ({ month, page, limit, search, categoryId }) => ({
+        url: "/teacher-completion",
+        params: { month, page, limit, search, categoryId },
+        method: "GET",
       }),
-      providesTags: ["parent-reports"],
-    }),
-
-    getParentAvailableMonths: builder.query({
-      query: () => ({
-        url: "/parent-available-months",
-      }),
-      providesTags: ["parent-months"],
     }),
   }),
 });
@@ -415,6 +407,5 @@ export const {
   useGetRecapQuery,
   useExportReportMutation,
   useGetCompletionQuery,
-  useGetParentMonthlyReportQuery,
-  useGetParentAvailableMonthsQuery,
+  useGetNewCompletionQuery, // Baru
 } = ApiScore;
