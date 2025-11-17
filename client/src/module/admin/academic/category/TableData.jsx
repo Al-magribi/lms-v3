@@ -1,26 +1,42 @@
 import { useEffect, useState } from "react";
 import {
+  useDeleteBranchMutation,
   useDeleteCategoryMutation,
   useGetCategoriesQuery,
 } from "../../../../service/api/main/ApiSubject";
-import { Dropdown, Modal, Tag, Tooltip, message } from "antd";
+import {
+  Dropdown,
+  Modal,
+  Space,
+  Tag,
+  Tooltip,
+  Typography,
+  message,
+} from "antd";
 import {
   DeleteOutlined,
   EditOutlined,
   ExclamationCircleFilled,
   FileAddOutlined,
+  SettingOutlined,
 } from "@ant-design/icons";
 import TableLayout from "../../../../components/table/TableLayout";
 import FormBranch from "./FormBranch";
+import SettingBranch from "./SettingBranch";
 
 const { confirm } = Modal;
+const { Text } = Typography;
 
 const TableData = ({ onEdit }) => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState("");
+
   const [open, setOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
+
+  const [openSetting, setOpenSetting] = useState(false);
+
   const [category, setCategory] = useState("");
   const [branch, setBranch] = useState("");
 
@@ -29,6 +45,16 @@ const TableData = ({ onEdit }) => {
     deleteCategory,
     { data: delMessage, isLoading: delLoading, isSuccess, error },
   ] = useDeleteCategoryMutation();
+
+  const [
+    deleteBranch,
+    {
+      data: delBranchMessage,
+      isLoading: delBranchLoading,
+      isSuccess: delBranchSuccess,
+      error: delBranchError,
+    },
+  ] = useDeleteBranchMutation();
 
   // Functions
 
@@ -44,6 +70,18 @@ const TableData = ({ onEdit }) => {
 
   const handleEdit = (record) => {
     onEdit(record);
+  };
+
+  const handleSetting = (record) => {
+    // setBranch(record);
+    // setOpenSetting(true);
+
+    message.info("Dalam Pengembangan");
+  };
+
+  const handleCloseSetting = () => {
+    setBranch("");
+    setOpenSetting(false);
   };
 
   const handleDelete = (id) => {
@@ -63,8 +101,26 @@ const TableData = ({ onEdit }) => {
     });
   };
 
+  const handleDeleteBranch = (id) => {
+    confirm({
+      title: "Apakah anda yakin menghapus data ini?",
+      icon: <ExclamationCircleFilled />,
+      content: "Data yang dihapus tidak bisa dikembalikan",
+      okText: "Ya, Hapus",
+      okType: "danger",
+      cancelText: "Batal",
+      onOk() {
+        deleteBranch(id);
+      },
+      onCancel() {
+        message.warning("Aksi dibatalkan");
+      },
+    });
+  };
+
   const handleClose = () => {
     setCategory("");
+    setBranch("");
     setOpen(false);
     setIsEdit(false);
   };
@@ -103,6 +159,15 @@ const TableData = ({ onEdit }) => {
     }
   }, [delMessage, isSuccess, error]);
 
+  useEffect(() => {
+    if (delBranchSuccess) {
+      message.success(delBranchMessage.message);
+    }
+    if (delBranchError) {
+      message.error(error.data.message);
+    }
+  }, [delBranchMessage, delBranchSuccess, delBranchError]);
+
   const columns = [
     {
       title: "No",
@@ -122,10 +187,25 @@ const TableData = ({ onEdit }) => {
             // Tampilkan nama branch di dalam Tag
             // Berikan 'key' unik untuk setiap item dalam map
             <Tag color="blue" key={item.id}>
-              {item.name}{" "}
-              <Tooltip title={`Edit rumpun ${item.name}`}>
-                <EditOutlined onClick={() => handleEditBranch(item, record)} />
-              </Tooltip>
+              <Space size="middle">
+                <Text>{item.name}</Text>
+                <Tooltip title={`Edit rumpun ${item.name}`}>
+                  <EditOutlined
+                    onClick={() => handleEditBranch(item, record)}
+                  />
+                </Tooltip>
+
+                <Tooltip title={`Pengaturan rumpun ${item.name}`}>
+                  <SettingOutlined onClick={() => handleSetting(item)} />
+                </Tooltip>
+
+                <Tooltip title={`Hapus rumpun ${item.name}`}>
+                  <DeleteOutlined
+                    style={{ color: "red" }}
+                    onClick={() => handleDeleteBranch(item.id)}
+                  />
+                </Tooltip>
+              </Space>
             </Tag>
           ))}
         </>
@@ -168,7 +248,7 @@ const TableData = ({ onEdit }) => {
     <>
       <TableLayout
         onSearch={handleSearch}
-        isLoading={isLoading || delLoading}
+        isLoading={isLoading || delLoading || delBranchLoading}
         columns={columns}
         source={data?.categories}
         rowKey="id"
@@ -188,6 +268,13 @@ const TableData = ({ onEdit }) => {
         onClose={handleClose}
         categoryid={category.id}
         branch={branch}
+      />
+
+      <SettingBranch
+        title={`Pengaturan rumpun ${branch.name}`}
+        open={openSetting}
+        onClose={handleCloseSetting}
+        id={branch.id}
       />
     </>
   );

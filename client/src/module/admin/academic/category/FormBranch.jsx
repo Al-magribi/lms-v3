@@ -42,6 +42,7 @@ const FormBranch = ({ open, onClose, branch, title, categoryid }) => {
       message.success(data.message);
       handleClose();
       reset();
+      form.resetFields();
     }
 
     if (error) {

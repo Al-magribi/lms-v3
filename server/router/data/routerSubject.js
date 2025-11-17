@@ -671,54 +671,132 @@ router.delete("/delete-category", authorize("admin"), async (req, res) => {
 });
 
 // ================ BRANCH ENDPOINTS ==========================
-// GET
-router.get("/get-branches", authorize("admin"), async (req, res) => {
-  let client;
+
+// Menyimpan data bobot setiap pelajaran
+// Asumsi Anda sudah memiliki 'router' dan 'pool' dan 'authorize'
+// const express = require('express');
+// const router = express.Router();
+// const pool = require('../db'); // atau lokasi pool Anda
+// const authorize = require('../middleware/authorize'); // atau lokasi middleware Anda
+
+router.put("/update-weights", authorize("admin"), async (req, res) => {
+  // 1. Ambil array 'subjects' dari body request
+  const { subjects } = req.body;
+
+  // 2. Validasi Sederhana di Server
+  if (!subjects || !Array.isArray(subjects) || subjects.length === 0) {
+    return res
+      .status(400)
+      .json({ message: "Data mata pelajaran (subjects) tidak valid." });
+  }
+
+  // 3. Validasi Total Bobot (SANGAT PENTING)
+  //    Jangan pernah percaya frontend. Selalu validasi ulang di backend.
+  const totalWeight = subjects.reduce(
+    (acc, s) => acc + (Number(s.weight) || 0),
+    0
+  );
+
+  if (totalWeight !== 100) {
+    return res
+      .status(400)
+      .json({ message: `Total bobot harus 100. Saat ini: ${totalWeight}` });
+  }
+
+  // 4. Dapatkan koneksi client dari pool
+  const client = await pool.connect();
+
   try {
-    client = await pool.connect();
-    const { page, limit, search, categoryid } = req.query;
-    const { homebase } = req.user;
+    // 5. Mulai Transaksi
+    //    Ini memastikan SEMUA update berhasil, atau TIDAK SAMA SEKALI.
+    //    Jika satu query gagal, semua akan dibatalkan (rollback).
+    await client.query("BEGIN");
 
-    let queryParams = [homebase, categoryid];
-    let baseQuery = `FROM a_branch WHERE homebase = $1 AND categoryid = $2`;
-    let searchQuery = "";
+    // 6. Buat array 'promises' untuk semua query update
+    const updatePromises = subjects.map((subject) => {
+      // Validasi tipe data sebelum mengirim ke DB
+      const weight = Number(subject.weight);
+      const id = Number(subject.subject_id);
 
-    if (search) {
-      queryParams.push(`%${search}%`);
-      searchQuery = ` AND name ILIKE $${queryParams.length}`;
-    }
+      if (isNaN(weight) || isNaN(id)) {
+        throw new Error("ID atau bobot mata pelajaran tidak valid.");
+      }
 
-    const totalDataQuery = `SELECT COUNT(*) ${baseQuery}${searchQuery}`;
-    const totalDataResult = await client.query(totalDataQuery, queryParams);
-    const totalData = parseInt(totalDataResult.rows[0].count, 10);
+      const query = `
+        UPDATE a_subject
+        SET weight = $1
+        WHERE id = $2
+      `;
+      // PENTING:
+      // constraint CHECK(0-100) di DB Anda akan bekerja di sini.
+      // Jika frontend mengirim 101, query ini akan error
+      // dan 'catch' block akan menangkapnya, lalu me-ROLLBACK.
+      return client.query(query, [weight, id]);
+    });
 
-    let dataQuery = `SELECT * ${baseQuery}${searchQuery} ORDER BY createdat DESC`;
+    // 7. Eksekusi semua 'promises' update secara paralel
+    await Promise.all(updatePromises);
 
-    if (page && limit) {
-      const offset = (parseInt(page, 10) - 1) * parseInt(limit, 10);
-      queryParams.push(parseInt(limit, 10), offset);
-      dataQuery += ` LIMIT $${queryParams.length - 1} OFFSET $${
-        queryParams.length
-      }`;
+    // 8. Jika semua berhasil, 'commit' transaksinya
+    await client.query("COMMIT");
 
-      const dataResult = await client.query(dataQuery, queryParams);
-
-      res.status(200).json({
-        totalData: totalData,
-        totalPages: limit ? Math.ceil(totalData / parseInt(limit, 10)) : 1,
-        branches: dataResult.rows,
-      });
-    } else {
-      const dataResult = await client.query(dataQuery, queryParams);
-      const branches = dataResult.rows;
-
-      res.status(200).json(branches);
-    }
+    res.status(200).json({ message: "Pembobotan berhasil diperbarui." });
   } catch (error) {
-    console.error("Error fetching branches:", error);
-    res.status(500).json({ message: error.message });
+    // 9. Jika terjadi ERROR (data tidak valid, constraint gagal, dll)
+    //    'rollback' semua perubahan yang sudah terjadi.
+    await client.query("ROLLBACK");
+    console.log(error);
+    res.status(500).json({ message: `Server Error: ${error.message}` });
   } finally {
-    if (client) client.release();
+    // 10. SELALU lepaskan client kembali ke pool
+    client.release();
+  }
+});
+
+// Menampilkan daftar pelajaran sesuai dengan rumpun
+router.get("/get-subject-branches", authorize("admin"), async (req, res) => {
+  try {
+    const client = await pool.connect();
+
+    // Mengambil id branch dari query parameter
+    const { id } = req.query;
+
+    if (!id) {
+      return res.status(400).json({ message: "Branch ID (id) diperlukan" });
+    }
+
+    console.log(`Mencari mata pelajaran untuk branch ID: ${id}`);
+
+    // Query ini diubah untuk mengambil data dari a_subject
+    // dan menggabungkannya dengan a_category dan a_branch
+    const data = await client.query(
+      `
+      SELECT 
+        s.id AS subject_id,
+        s.name AS subject_name,
+        s.weight AS subject_weight,
+        s.cover,
+        c.name AS category_name,
+        b.name AS branch_name
+      FROM 
+        a_subject AS s
+      LEFT JOIN 
+        a_category AS c ON s.categoryid = c.id
+      LEFT JOIN 
+        a_branch AS b ON s.branchid = b.id
+      WHERE 
+        s.branchid = $1
+      `,
+      [id]
+    );
+
+    // Selalu baik untuk me-release client setelah selesai
+    client.release();
+
+    res.status(200).json(data.rows);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
   }
 });
 
@@ -777,13 +855,12 @@ router.delete("/delete-branch", authorize("admin"), async (req, res) => {
   try {
     client = await pool.connect();
     const { id } = req.query;
-    const { homebase } = req.user;
 
     const deleteQuery = `
             DELETE FROM a_branch 
-            WHERE id = $1 AND homebase = $2`;
+            WHERE id = $1`;
 
-    const result = await client.query(deleteQuery, [id, homebase]);
+    const result = await client.query(deleteQuery, [id]);
 
     if (result.rowCount === 0) {
       return res.status(404).json({ message: "Data tidak ditemukan" });

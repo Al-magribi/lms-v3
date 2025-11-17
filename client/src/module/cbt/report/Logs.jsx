@@ -7,6 +7,7 @@ import {
 } from "../../../service/api/log/ApiLog";
 import TableLayout from "../../../components/table/TableLayout";
 import { Dropdown, Modal, Tag, message, Checkbox, Select, Space } from "antd";
+import AnswerSheet from "./AnswerSheet";
 
 const { confirm } = Modal;
 
@@ -14,8 +15,12 @@ const Logs = ({ examid, classid, tableRef, syncTrigger }) => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState("");
+
   const [autoRefetchEnabled, setAutoRefetchEnabled] = useState(false);
   const [refetchInterval, setRefetchInterval] = useState(300000); // Default 5 menit (dalam ms)
+
+  const [open, setOpen] = useState(false);
+  const [detail, setDetail] = useState("");
 
   const {
     data,
@@ -28,8 +33,6 @@ const Logs = ({ examid, classid, tableRef, syncTrigger }) => {
     exam: examid,
     classid,
   });
-
-  console.log(data);
 
   const [finishCbt, { isLoading: finishLoading }] = useFinishCbtMutation();
   const [rejoinExam, { isLoading: rejoingLoading }] = useRejoinExamMutation();
@@ -70,10 +73,20 @@ const Logs = ({ examid, classid, tableRef, syncTrigger }) => {
     setPage(1);
   };
 
+  const handleOpen = (record) => {
+    setOpen(true);
+    setDetail(record);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    setDetail("");
+  };
+
   const handleSelect = (record, { key }) => {
     switch (key) {
       case "detail":
-        message.info("detail");
+        handleOpen(record);
         break;
 
       case "allow":
@@ -179,7 +192,7 @@ const Logs = ({ examid, classid, tableRef, syncTrigger }) => {
       dataIndex: "createdat",
       key: "createdat",
       render: (text) => (
-        <Tag color='volcano'>{text && new Date(text).toLocaleString()}</Tag>
+        <Tag color="volcano">{text && new Date(text).toLocaleString()}</Tag>
       ),
     },
     {
@@ -187,11 +200,11 @@ const Logs = ({ examid, classid, tableRef, syncTrigger }) => {
       key: "status",
       render: (record) =>
         record.ispenalty ? (
-          <Tag color='red'>Melanggar</Tag>
+          <Tag color="red">Melanggar</Tag>
         ) : record.isdone ? (
-          <Tag color='green'>Selesai</Tag>
+          <Tag color="green">Selesai</Tag>
         ) : record.isactive ? (
-          <Tag color='blue'>Mengerjakan</Tag>
+          <Tag color="blue">Mengerjakan</Tag>
         ) : (
           <Tag>Belum Masuk</Tag>
         ),
@@ -258,15 +271,19 @@ const Logs = ({ examid, classid, tableRef, syncTrigger }) => {
       <TableLayout
         tableRef={tableRef}
         onSearch={handleSearch}
-        isLoading={isLoading || rejoingLoading || finishLoading || retakeLoading}
+        isLoading={
+          isLoading || rejoingLoading || finishLoading || retakeLoading
+        }
         columns={columns}
         source={data?.result}
-        rowKey='student_id'
+        rowKey="student_id"
         page={page}
         limit={limit}
         totalData={data?.totalData}
         onChange={handleTableChange}
       />
+
+      <AnswerSheet open={open} onClose={handleClose} detail={detail} />
     </>
   );
 };

@@ -304,12 +304,12 @@ const Room = () => {
   return (
     <Layout ref={layoutRef} style={{ minHeight: "100vh" }}>
       <Modal
-        title='Mode Ujian Layar Penuh'
+        title="Mode Ujian Layar Penuh"
         open={isExamStarted && !isInFullScreen}
         closable={false}
         maskClosable={false}
         footer={[
-          <Button key='enter' type='primary' onClick={requestFullScreen}>
+          <Button key="enter" type="primary" onClick={requestFullScreen}>
             Masuk Layar Penuh & Mulai Ujian
           </Button>,
         ]}
@@ -319,7 +319,7 @@ const Room = () => {
           penuh (fullscreen) selama mengerjakan soal.
         </Text>
         <br />
-        <Text type='danger'>
+        <Text type="danger">
           Keluar dari mode layar penuh akan dianggap sebagai pelanggaran dan
           ujian Anda akan dihentikan secara otomatis.
         </Text>
@@ -347,8 +347,8 @@ const Room = () => {
       <Layout>
         <Sider
           width={280}
-          breakpoint='lg'
-          collapsedWidth='0'
+          breakpoint="lg"
+          collapsedWidth="0"
           trigger={null}
           style={{
             overflow: "auto",
@@ -362,8 +362,8 @@ const Room = () => {
         </Sider>
 
         <Drawer
-          title='Navigasi Soal'
-          placement='left'
+          title="Navigasi Soal"
+          placement="left"
           onClose={() => setDrawerVisible(false)}
           open={drawerVisible}
           getContainer={false}

@@ -8,6 +8,7 @@ export const ApiSubject = createApi({
   }),
   tagTypes: ["Subjects", "category", "branch"],
   endpoints: (builder) => ({
+    // mata pelajaran
     getSubject: builder.query({
       query: ({ page, limit, search }) => ({
         url: `/get-subjects`,
@@ -41,6 +42,16 @@ export const ApiSubject = createApi({
       invalidatesTags: ["Subjects"],
     }),
 
+    // Pembobotan untuk penilaian rumpun
+    updateWeights: builder.mutation({
+      query: (body) => ({
+        url: "/update-weights",
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["Subjects"],
+    }),
+
     // Category
     getCategories: builder.query({
       query: ({ page, limit, search }) => ({
@@ -69,13 +80,14 @@ export const ApiSubject = createApi({
 
     // Branch
     getBranches: builder.query({
-      query: ({ page, limit, search }) => ({
-        url: "/get-branches",
-        params: { page, limit, search },
+      query: ({ id }) => ({
+        url: "/get-subject-branches",
+        params: { id },
         method: "GET",
       }),
       providesTags: ["branch"],
     }),
+
     saveBranch: builder.mutation({
       query: (body) => ({
         url: "/add-branch",
@@ -84,25 +96,32 @@ export const ApiSubject = createApi({
       }),
       invalidatesTags: ["category"],
     }),
+
     deleteBranch: builder.mutation({
       query: (id) => ({
         url: "/delete-branch",
         params: { id },
         method: "DELETE",
       }),
-      invalidatesTags: ["branch"],
+      invalidatesTags: ["category", "branch"],
     }),
   }),
 });
 
 export const {
+  // Mapel
   useGetSubjectQuery,
   useAddSubjectMutation,
   useDeleteSubjectMutation,
   useUploadSubjectsMutation,
+  useUpdateWeightsMutation,
+
+  // Category
   useGetCategoriesQuery,
   useSaveCategoryMutation,
   useDeleteCategoryMutation,
+
+  // Branches
   useGetBranchesQuery,
   useSaveBranchMutation,
   useDeleteBranchMutation,

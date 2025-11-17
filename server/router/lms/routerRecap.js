@@ -262,6 +262,349 @@ router.get("/chapter-final-score", authorize("teacher"), async (req, res) => {
 });
 
 // Rekap Nilai VIEW Orang Tua
+// router.get("/monthly-recap", async (req, res) => {
+//   const client = await pool.connect();
+//   try {
+//     const { studentId, month, periode } = req.query;
+
+//     if (!studentId || !month || !periode) {
+//       return res.status(400).json({
+//         message: "Parameter studentId, month, dan periode wajib diisi.",
+//       });
+//     }
+
+//     const monthNumber = getMonthNumber(month);
+//     if (monthNumber === 0) {
+//       return res.status(400).json({ message: "Nama bulan tidak valid." });
+//     }
+
+//     const query = `
+//       WITH StudentClass AS (
+//         SELECT classid FROM cl_students WHERE student = $1 AND periode = $2
+//       ),
+//       DailyScores AS (
+//         SELECT
+//           chapter_id,
+//           AVG(score) AS avg_score
+//         FROM (
+//           SELECT chapter_id, UNNEST(ARRAY[f_1, f_2, f_3, f_4, f_5, f_6, f_7, f_8]) AS score
+//           FROM l_formative
+//           WHERE student_id = $1 AND periode_id = $2 AND month = $4
+//           UNION ALL
+//           SELECT chapter_id, UNNEST(ARRAY[oral, written, project, performance]) AS score
+//           FROM l_summative
+//           WHERE student_id = $1 AND periode_id = $2 AND month = $4
+//         ) individual_scores
+//         WHERE score IS NOT NULL
+//         GROUP BY chapter_id
+//       ),
+//       AttitudeScores AS (
+//           SELECT
+//               chapter_id,
+//               (COALESCE(kinerja, 0) + COALESCE(kedisiplinan, 0) + COALESCE(keaktifan, 0) + COALESCE(percaya_diri, 0)) / 4.0 AS avg_score,
+//               kinerja,
+//               kedisiplinan,
+//               keaktifan,
+//               percaya_diri,
+//               catatan_guru
+//           FROM l_attitude
+//           WHERE student_id = $1 AND periode_id = $2 AND month = $4
+//       ),
+//       ChapterScores AS (
+//         SELECT
+//           lc.subject AS subject_id,
+//           s.name AS subject_name,
+//           s.weight AS subject_weight, -- [PERBAIKAN 1] Ambil bobot mata pelajaran
+//           cat.name AS category_name,
+//           b.name AS branch_name,
+//           t.name AS teacher_name,
+//           lc.id AS chapter_id,
+//           lc.title AS chapter_name,
+//           w.presensi,
+//           w.attitude,
+//           w.daily,
+//           TRUNC(
+//             (COUNT(DISTINCT attd.id) FILTER (WHERE attd.note = 'Hadir')) * 100.0 /
+//             NULLIF((SELECT COUNT(DISTINCT day_date) FROM l_attendance
+//                     WHERE subjectid = lc.subject AND classid = sc.classid AND periode = $2 AND EXTRACT(MONTH FROM day_date) = $3), 0)
+//           , 0) AS attendance_percentage,
+//           COUNT(DISTINCT attd.id) FILTER (WHERE attd.note = 'Hadir') AS hadir,
+//           COUNT(DISTINCT attd.id) FILTER (WHERE attd.note = 'Sakit') AS sakit,
+//           COUNT(DISTINCT attd.id) FILTER (WHERE attd.note = 'Izin') AS ijin,
+//           COUNT(DISTINCT attd.id) FILTER (WHERE attd.note = 'Alpa') AS alpa,
+//           COALESCE(ats.avg_score, 0) AS avg_attitude,
+//           COALESCE(ats.kinerja, 0) AS kinerja,
+//           COALESCE(ats.kedisiplinan, 0) AS kedisiplinan,
+//           COALESCE(ats.keaktifan, 0) AS keaktifan,
+//           COALESCE(ats.percaya_diri, 0) AS percaya_diri,
+//           ats.catatan_guru as note,
+//           COALESCE(ds.avg_score, 0) AS avg_daily_score,
+//           COALESCE(AVG(sm.oral), 0) AS oral,
+//           COALESCE(AVG(sm.written), 0) AS written,
+//           COALESCE(AVG(sm.project), 0) AS project,
+//           COALESCE(AVG(sm.performance), 0) AS performance,
+//           jsonb_agg(DISTINCT f.rata_rata) FILTER (WHERE f.rata_rata IS NOT NULL) AS formative_scores
+//         FROM l_chapter lc
+//         JOIN l_cclass lcc ON lc.id = lcc.chapter
+//         JOIN a_subject s ON lc.subject = s.id
+//         JOIN u_teachers t ON lc.teacher = t.id
+//         JOIN StudentClass sc ON lcc.classid = sc.classid
+//         LEFT JOIN a_category cat ON s.categoryid = cat.id
+//         LEFT JOIN a_branch b ON s.branchid = b.id
+//         LEFT JOIN l_weighting w ON lc.teacher = w.teacherid AND s.id = w.subjectid
+//         LEFT JOIN l_attendance attd ON s.id = attd.subjectid AND attd.studentid = $1 AND attd.periode = $2 AND EXTRACT(MONTH FROM attd.day_date) = $3
+//         LEFT JOIN AttitudeScores ats ON lc.id = ats.chapter_id
+//         LEFT JOIN DailyScores ds ON lc.id = ds.chapter_id
+//         LEFT JOIN l_summative sm ON lc.id = sm.chapter_id AND sm.student_id = $1 AND sm.periode_id = $2 AND sm.month = $4
+//         LEFT JOIN l_formative f ON lc.id = f.chapter_id AND f.student_id = $1 AND f.periode_id = $2 AND f.month = $4
+//         WHERE lcc.classid = sc.classid
+//           AND (ats.chapter_id IS NOT NULL OR ds.chapter_id IS NOT NULL)
+//         -- [PERBAIKAN FINAL] Melengkapi klausa GROUP BY dengan lc.subject
+//         GROUP BY
+//             lc.subject, -- Penyebab error sebelumnya
+//             lc.id, s.id, t.id, cat.id, b.id, w.id, sc.classid,
+//             s.name, s.weight, cat.name, b.name, t.name, lc.title, -- [PERBAIKAN 2] Tambahkan s.weight di GROUP BY
+//             s.name, cat.name, b.name, t.name, lc.title,
+//             w.presensi, w.attitude, w.daily,
+//             ats.avg_score, ats.kinerja, ats.kedisiplinan, ats.keaktifan, ats.percaya_diri, ats.catatan_guru,
+//             ds.avg_score
+//       )
+//       SELECT
+//         s.nis, s.name AS student_name, hb.name AS homebase_name, p.name AS periode_name,
+//         g.name AS grade_name, c.name AS class_name, th.name AS teacher_homeroom,
+//         cs.*
+//       FROM u_students s
+//       JOIN cl_students cl ON s.id = cl.student
+//       JOIN a_periode p ON cl.periode = p.id
+//       JOIN a_class c ON cl.classid = c.id
+//       JOIN a_homebase hb ON c.homebase = hb.id
+//       JOIN a_grade g ON c.grade = g.id
+//       LEFT JOIN u_teachers th ON c.id = th.class AND th.homeroom = TRUE
+//       LEFT JOIN ChapterScores cs ON 1=1
+//       WHERE s.id = $1 AND cl.periode = $2;
+//     `;
+
+//     const { rows } = await client.query(query, [
+//       studentId,
+//       periode,
+//       monthNumber,
+//       month,
+//     ]);
+
+//     if (rows.length === 0 || !rows[0].subject_id) {
+//       const studentInfoQuery = await client.query(
+//         `
+//         SELECT s.nis, s.name AS student_name, hb.name AS homebase_name, p.name AS periode_name,
+//                g.name AS grade_name, c.name AS class_name, th.name AS teacher_homeroom
+//         FROM u_students s
+//         JOIN cl_students cl ON s.id = cl.student
+//         JOIN a_periode p ON cl.periode = p.id
+//         JOIN a_class c ON cl.classid = c.id
+//         JOIN a_homebase hb ON c.homebase = hb.id
+//         JOIN a_grade g ON c.grade = g.id
+//         LEFT JOIN u_teachers th ON c.id = th.class AND th.homeroom = TRUE
+//         WHERE s.id = $1 AND cl.periode = $2;
+//       `,
+//         [studentId, periode]
+//       );
+
+//       if (studentInfoQuery.rows.length === 0) {
+//         return res.status(404).json({ message: "Data siswa tidak ditemukan." });
+//       }
+
+//       const studentData = studentInfoQuery.rows[0];
+//       const response = {
+//         month: month,
+//         nis: studentData.nis,
+//         name: studentData.student_name,
+//         homebase: studentData.homebase_name,
+//         periode: studentData.periode_name,
+//         grade: studentData.grade_name,
+//         class: studentData.class_name,
+//         teacher_homeroom: studentData.teacher_homeroom || "-",
+//         category: [],
+//       };
+//       return res.status(200).json(response);
+//     }
+
+//     const studentInfo = {
+//       month: month,
+//       nis: rows[0].nis,
+//       name: rows[0].student_name,
+//       homebase: rows[0].homebase_name,
+//       periode: rows[0].periode_name,
+//       grade: rows[0].grade_name,
+//       class: rows[0].class_name,
+//       teacher_homeroom: rows[0].teacher_homeroom || "-",
+//     };
+
+//     const subjectsMap = new Map();
+
+//     for (const row of rows) {
+//       if (!row.subject_id) continue;
+
+//       const attendanceFinal =
+//         (Number(row.attendance_percentage) * Number(row.presensi || 0)) / 100;
+//       const attitudeFinal =
+//         (Number(row.avg_attitude) * Number(row.attitude || 0)) / 100;
+//       const dailyFinal =
+//         (Number(row.avg_daily_score) * Number(row.daily || 0)) / 100;
+//       const chapterScore = attendanceFinal + attitudeFinal + dailyFinal;
+
+//       const chapterData = {
+//         id: row.chapter_id,
+//         name: row.chapter_name,
+//         score: parseFloat(chapterScore.toFixed(2)),
+//         note: row.note || null,
+//         detail: [
+//           {
+//             attendance: [
+//               { Hadir: Number(row.hadir || 0) },
+//               { Sakit: Number(row.sakit || 0) },
+//               { Ijin: Number(row.ijin || 0) },
+//               { Alpa: Number(row.alpa || 0) },
+//               {
+//                 presentase: parseFloat(
+//                   Number(row.attendance_percentage || 0).toFixed(2)
+//                 ),
+//               },
+//             ],
+//           },
+//           {
+//             attitude: [
+//               { kinerja: parseFloat(Number(row.kinerja || 0).toFixed(2)) },
+//               {
+//                 kedisiplinan: parseFloat(
+//                   Number(row.kedisiplinan || 0).toFixed(2)
+//                 ),
+//               },
+//               { keaktifan: parseFloat(Number(row.keaktifan || 0).toFixed(2)) },
+//               {
+//                 percaya_diri: parseFloat(
+//                   Number(row.percaya_diri || 0).toFixed(2)
+//                 ),
+//               },
+//             ],
+//           },
+//           {
+//             summative: [
+//               { lisan: parseFloat(Number(row.oral || 0).toFixed(2)) },
+//               { tulis: parseFloat(Number(row.written || 0).toFixed(2)) },
+//               { proyek: parseFloat(Number(row.project || 0).toFixed(2)) },
+//               {
+//                 keterampilan: parseFloat(
+//                   Number(row.performance || 0).toFixed(2)
+//                 ),
+//               },
+//             ],
+//             formative: (row.formative_scores || []).map((val) =>
+//               parseFloat(Number(val).toFixed(2))
+//             ),
+//           },
+//         ],
+//       };
+
+//       if (!subjectsMap.has(row.subject_id)) {
+//         subjectsMap.set(row.subject_id, {
+//           name: row.subject_name,
+//           teacher: row.teacher_name,
+//           category_name: row.category_name,
+//           branch_name: row.branch_name,
+//           weight: Number(row.subject_weight || 0),
+//           chapters: [],
+//         });
+//       }
+//       subjectsMap.get(row.subject_id).chapters.push(chapterData);
+//     }
+
+//     const subjectsArray = Array.from(subjectsMap.values()).map((subj) => {
+//       const totalChapterScore = subj.chapters.reduce(
+//         (sum, chap) => sum + chap.score,
+//         0
+//       );
+//       const avgSubjectScore =
+//         subj.chapters.length > 0 ? totalChapterScore / subj.chapters.length : 0;
+//       return {
+//         ...subj,
+//         score: parseFloat(avgSubjectScore.toFixed(2)),
+//       };
+//     });
+
+//     const categoriesMap = new Map();
+//     for (const subjectData of subjectsArray) {
+//       const categoryName = subjectData.category_name || "Lainnya";
+//       if (!categoriesMap.has(categoryName)) {
+//         const isDiniyah = categoryName === "Diniyah";
+//         categoriesMap.set(categoryName, {
+//           name: categoryName,
+//           ...(isDiniyah ? { branch: [] } : { subjects: [] }),
+//         });
+//       }
+//       const category = categoriesMap.get(categoryName);
+//       if (categoryName === "Diniyah") {
+//         const branchName = subjectData.branch_name || "Tanpa Rumpun";
+//         let branch = category.branch.find((b) => b.name === branchName);
+//         if (!branch) {
+//           branch = { name: branchName, subjects: [] };
+//           category.branch.push(branch);
+//         }
+//         branch.subjects.push(subjectData);
+//       } else {
+//         category.subjects.push(subjectData);
+//       }
+//     }
+
+//     const categoryArray = Array.from(categoriesMap.values());
+
+//     // [PERBAIKAN 4] Ganti logika kalkulasi skor rumpun Diniyah
+//     const diniyahCat = categoryArray.find((c) => c.name === "Diniyah");
+//     if (diniyahCat) {
+//       diniyahCat.branch.forEach((b) => {
+//         // Logika baru: Jumlah (Nilai Mapel * Persentase Bobot)
+//         let totalPercentageScore = 0;
+
+//         b.subjects.forEach((sub) => {
+//           // sub.score = rata-rata nilai mapel (misal: 87.70)
+//           // sub.weight = bobot mapel (misal: 10)
+
+//           // 1. Ubah bobot menjadi persentase (misal: 10 -> 0.1)
+//           const percentageWeight = sub.weight / 100.0;
+
+//           // 2. Kalikan nilai mapel dengan persentase bobotnya
+//           //    (misal: 87.70 * 0.1 = 8.77)
+//           const calculatedScore = sub.score * percentageWeight;
+
+//           // 3. Jumlahkan hasilnya
+//           totalPercentageScore += calculatedScore;
+//         });
+
+//         // Skor rumpun adalah total penjumlahan di atas
+//         b.score = parseFloat(totalPercentageScore.toFixed(2));
+//       });
+//     }
+
+//     categoryArray.sort((a, b) => a.name.localeCompare(b.name));
+
+//     for (const category of categoryArray) {
+//       if (category.name === "Diniyah" && category.branch) {
+//         for (const branch of category.branch) {
+//           branch.subjects.sort((a, b) => a.name.localeCompare(b.name));
+//         }
+//         category.branch.sort((a, b) => a.name.localeCompare(b.name));
+//       } else if (category.subjects) {
+//         category.subjects.sort((a, b) => a.name.localeCompare(b.name));
+//       }
+//     }
+
+//     res.status(200).json({ ...studentInfo, category: categoryArray });
+//   } catch (error) {
+//     console.error("Error fetching monthly recap:", error);
+//     res.status(500).json({ message: "Internal Server Error" });
+//   } finally {
+//     client.release();
+//   }
+// });
+
 router.get("/monthly-recap", async (req, res) => {
   const client = await pool.connect();
   try {

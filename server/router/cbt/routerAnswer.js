@@ -109,7 +109,9 @@ router.get(
             LEFT JOIN cl_students cls ON us.id = cls.student
             LEFT JOIN a_class ac ON cls.classid = ac.id
             LEFT JOIN a_grade ag ON ac.grade = ag.id
+            JOIN a_periode ap ON cls.periode = ap.id -- Ditambahkan JOIN ke a_periode
             WHERE us.id = $1
+            AND ap.isactive = true -- Ditambahkan kondisi periode aktif
           ),
           answer_stats AS (
             SELECT 
@@ -165,10 +167,17 @@ router.get(
             answer_stats.pg_score, answer_stats.essay_score, ei.mc_score, ei.essay_score
         `;
         const result = await client.query(query, [student, exam]);
-        res.status(200).json(result.rows);
+        res.status(200).json(result.rows[0]);
       } else {
-        // For students, return a simplified version with just their answers
+        // Untuk siswa, validasi bahwa siswa tersebut ada di periode aktif
         const query = `
+          WITH active_student AS (
+            SELECT 1
+            FROM cl_students cls
+            JOIN a_periode ap ON cls.periode = ap.id
+            WHERE cls.student = $1 AND ap.isactive = true
+            LIMIT 1
+          )
           SELECT 
             ca.id as id,
             cq.id as question_id,
@@ -181,6 +190,7 @@ router.get(
             cq.poin as max_point
           FROM c_question cq
           LEFT JOIN c_answer ca ON ca.question = cq.id AND ca.student = $1 AND ca.exam = $2
+          CROSS JOIN active_student -- Ditambahkan CROSS JOIN
           WHERE cq.id IN (
             SELECT cq2.id 
             FROM c_question cq2
@@ -190,7 +200,12 @@ router.get(
           )
           ORDER BY cq.id
         `;
+        // Catatan: Asumsi $1 (student) adalah req.user.id untuk siswa
+        // Jika 'student' di req.query adalah ID siswa yang diminta,
+        // pastikan siswa yang login (req.user.id) hanya bisa melihat datanya sendiri.
+        // Kode ini mengasumsikan 'student' ($1) adalah ID siswa yang divalidasi.
         const result = await client.query(query, [student, exam]);
+
         res.status(200).json(result.rows);
       }
     } catch (error) {
