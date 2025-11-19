@@ -68,7 +68,7 @@ const Analysis = ({ examid, classid, tableRef, syncTrigger }) => {
     const answerColumns = {
       title: "Analisis Jawaban Siswa",
       align: "center",
-      children: data.questions.map((question, index) => ({
+      children: data?.questions?.map((question, index) => ({
         // Header dengan Tooltip untuk info Kunci Jawaban & Poin
         title: (
           <Tooltip title={`Kunci: ${question.qkey} | Poin: ${question.poin}`}>
@@ -89,7 +89,7 @@ const Analysis = ({ examid, classid, tableRef, syncTrigger }) => {
           const isCorrect = studentAnswer === question.qkey.toUpperCase();
 
           if (!studentAnswerObj) {
-            return <Typography.Text type='secondary'>-</Typography.Text>;
+            return <Typography.Text type="secondary">-</Typography.Text>;
           }
 
           return (
@@ -161,7 +161,7 @@ const Analysis = ({ examid, classid, tableRef, syncTrigger }) => {
       isLoading={isLoading}
       columns={columns}
       source={data?.students}
-      rowKey='id'
+      rowKey="id"
       page={page}
       limit={limit}
       totalData={data?.totalData}
