@@ -758,44 +758,108 @@ router.get("/get-subject-branches", authorize("admin"), async (req, res) => {
   try {
     const client = await pool.connect();
 
-    // Mengambil id branch dari query parameter
-    const { id } = req.query;
+    const homebase = req.user.homebase;
+    const branchid = req.query.id;
 
-    if (!id) {
-      return res.status(400).json({ message: "Branch ID (id) diperlukan" });
+    if (!homebase || !branchid) {
+      const missing = [];
+      if (!homebase) missing.push("Homebase ID (homebase)");
+      if (!branchid) missing.push("Branch ID (id)");
+
+      return res
+        .status(400)
+        .json({ message: `${missing.join(" dan ")} diperlukan.` });
     }
 
-    console.log(`Mencari mata pelajaran untuk branch ID: ${id}`);
-
-    // Query ini diubah untuk mengambil data dari a_subject
-    // dan menggabungkannya dengan a_category dan a_branch
-    const data = await client.query(
-      `
-      SELECT 
-        s.id AS subject_id,
-        s.name AS subject_name,
-        s.weight AS subject_weight,
-        s.cover,
-        c.name AS category_name,
-        b.name AS branch_name
-      FROM 
-        a_subject AS s
-      LEFT JOIN 
-        a_category AS c ON s.categoryid = c.id
-      LEFT JOIN 
-        a_branch AS b ON s.branchid = b.id
-      WHERE 
-        s.branchid = $1
-      `,
-      [id]
+    console.log(
+      `Mencari struktur pelajaran untuk Homebase ID: ${homebase} dengan Branch ID: ${branchid}`
     );
 
-    // Selalu baik untuk me-release client setelah selesai
+    // Query untuk mengambil Homebase, Grade, Class, dan Subject (tanpa Chapter dan Homebase Name)
+    const data = await client.query(
+      `
+      WITH SubjectsInBranches AS (
+          -- Langkah 1: Ambil Subject yang difilter oleh Homebase dan Branch
+          SELECT
+              s.id AS subject_id,
+              s.name AS subject_name,
+              s.cover,
+              c.name AS category_name,
+              b.name AS branch_name
+          FROM 
+              a_subject AS s
+          LEFT JOIN 
+              a_category AS c ON s.categoryid = c.id
+          LEFT JOIN 
+              a_branch AS b ON s.branchid = b.id
+          WHERE
+              s.homebase = $1 
+              AND s.branchid = $2 
+      ),
+      ClassesWithSubjects AS (
+          -- Langkah 2: Gabungkan Classes dengan SubjectsInBranches (Cross Join)
+          SELECT
+              ac.id AS class_id,
+              ac.name AS class_name,
+              ac.grade,
+              ac.major,
+              json_agg(sib) AS subjects
+          FROM
+              a_class AS ac
+          JOIN
+              a_grade AS ag ON ac.grade = ag.id
+          JOIN
+              SubjectsInBranches AS sib ON TRUE
+          WHERE
+              ag.homebase = $1 
+          GROUP BY
+              ac.id, ac.name, ac.grade, ac.major
+      ),
+      GradesWithClasses AS (
+          -- Langkah 3: Gabungkan Grades dengan ClassesWithSubjects
+          SELECT
+              ag.id AS grade_id,
+              ag.name AS grade_name,
+              json_agg(cws) AS classes
+          FROM
+              a_grade AS ag
+          JOIN
+              ClassesWithSubjects AS cws ON cws.grade = ag.id
+          WHERE
+              ag.homebase = $1
+          GROUP BY
+              ag.id, ag.name
+      )
+      -- Langkah 4: Ambil Homebase ID dan agregasi GradesWithClasses.
+      SELECT
+          ah.id AS homebase_id,
+          -- ah.name AS homebase_name, <-- KOLOM INI DIHAPUS
+          COALESCE(json_agg(gwc) FILTER (WHERE gwc IS NOT NULL), '[]'::json) AS grades
+      FROM
+          a_homebase AS ah
+      LEFT JOIN
+          GradesWithClasses AS gwc ON TRUE 
+      WHERE
+          ah.id = $1
+      GROUP BY
+          ah.id
+      `,
+      [homebase, branchid]
+    );
+
     client.release();
 
-    res.status(200).json(data.rows);
+    // Mengembalikan elemen pertama dari array.
+    // Catatan: Anda perlu memperbarui fallback/error object karena 'homebase_name' tidak lagi diambil
+    res.status(200).json(
+      data.rows[0] || {
+        homebase_id: homebase,
+        // homebase_name: "Not Found", <-- DIHAPUS DARI FALLBACK
+        grades: [],
+      }
+    );
   } catch (error) {
-    console.log(error);
+    console.error("Error fetching subject branches structure:", error);
     res.status(500).json({ message: error.message });
   }
 });

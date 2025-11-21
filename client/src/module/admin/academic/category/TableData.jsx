@@ -73,10 +73,10 @@ const TableData = ({ onEdit }) => {
   };
 
   const handleSetting = (record) => {
-    // setBranch(record);
-    // setOpenSetting(true);
+    setBranch(record);
+    setOpenSetting(true);
 
-    message.info("Dalam Pengembangan");
+    // message.info("Dalam Pengembangan");
   };
 
   const handleCloseSetting = () => {
@@ -271,7 +271,7 @@ const TableData = ({ onEdit }) => {
       />
 
       <SettingBranch
-        title={`Pengaturan rumpun ${branch.name}`}
+        title={`Pembobotan Rumpun ${branch.name}`}
         open={openSetting}
         onClose={handleCloseSetting}
         id={branch.id}

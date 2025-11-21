@@ -13,6 +13,7 @@ const AdminAcademic = () => {
     { label: "Guru", key: "3", children: <Teachers /> },
     // { label: "Laporan Bulanan", key: "4", children: <Report /> },
     { label: "Laporan Bulanan", key: "5", children: <NewReport /> },
+    { label: "Nilai Akhir", key: "6", children: <NewReport /> },
   ];
 
   return (

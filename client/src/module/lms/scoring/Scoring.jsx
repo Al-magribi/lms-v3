@@ -35,7 +35,7 @@ const Scoring = () => {
   };
 
   return (
-    <Flex vertical gap='middle'>
+    <Flex vertical gap="middle">
       <Typography.Title level={5}>
         Pilih Mata Pelajaran Untuk Penilaian
       </Typography.Title>
@@ -52,10 +52,10 @@ const Scoring = () => {
                 />
               }
               actions={[
-                <Tooltip title='Penilaian' key={"scoring"}>
+                <Tooltip title="Penilaian" key={"scoring"}>
                   <FileTextOutlined onClick={() => handleSelectScore(item)} />
                 </Tooltip>,
-                <Tooltip title='Pembobotan' key={"setting"}>
+                <Tooltip title="Pembobotan" key={"setting"}>
                   <SettingOutlined onClick={() => handleSelectWeight(item)} />
                 </Tooltip>,
               ]}
@@ -67,7 +67,7 @@ const Scoring = () => {
       </Row>
 
       <FormWeight
-        title={`Pembobotan Nilai ${subject?.name}`}
+        title={`Pembobotan Nilai ${subject?.name} Bulanan`}
         open={open}
         onClose={handleClose}
         subject={subject}

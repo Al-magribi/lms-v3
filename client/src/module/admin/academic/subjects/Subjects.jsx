@@ -24,10 +24,12 @@ import {
   TagOutlined,
   BranchesOutlined,
   TeamOutlined,
+  SettingOutlined,
 } from "@ant-design/icons";
 import Add from "../../../../components/buttons/Add";
 import FormSubject from "./FormSubject";
 import Teachers from "./Teachers";
+import FormWeight from "./FormWeight";
 
 const { Meta } = Card;
 const { confirm } = Modal;
@@ -46,6 +48,8 @@ const Subjects = () => {
   const [openTeacher, setOpenTeacher] = useState(false);
   const [teachers, setTeachers] = useState([]);
   const [subjectName, setSubjectName] = useState("");
+
+  const [openWeight, setOpenWeight] = useState(false);
 
   const { data, isLoading } = useGetSubjectQuery({
     page,
@@ -100,6 +104,11 @@ const Subjects = () => {
     setTeachers([]);
     setSubjectName("");
     setOpenTeacher(false);
+  };
+
+  const handleWeighting = (data) => {
+    setOpenWeight(true);
+    setSelectedSubject(data);
   };
 
   useEffect(() => {
@@ -158,6 +167,10 @@ const Subjects = () => {
                     />
                   }
                   actions={[
+                    <SettingOutlined
+                      key="weighting"
+                      onClick={() => handleWeighting(item)}
+                    />,
                     <UserOutlined
                       key="teachers"
                       onClick={() =>
@@ -235,6 +248,13 @@ const Subjects = () => {
         onClose={handleTeacherClose}
         teachers={teachers}
         title={subjectName}
+      />
+
+      <FormWeight
+        title={`Pembobotan Nilai Akhir ${selectedSubject?.name}`}
+        open={openWeight}
+        onClose={() => setOpenWeight(false)}
+        subject={selectedSubject}
       />
     </Flex>
   );
