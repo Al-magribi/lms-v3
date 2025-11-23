@@ -33,7 +33,28 @@ export const ApiRecap = createApi({
       providesTags: (result, error, arg) =>
         result ? [{ type: "recap", id: arg.studentId }] : ["recap"],
     }),
+    getFinalScore: builder.query({
+      query: ({ semester, classid, subjectid }) => ({
+        url: "/final-score",
+        method: "GET",
+        params: { semester, classid, subjectid },
+      }),
+      invalidatesTags: ["subjects"],
+    }),
+    getDailyRecap: builder.query({
+      query: ({ semester, classid, subjectid }) => ({
+        url: "/daily-recap",
+        method: "GET",
+        params: { semester, classid, subjectid },
+      }),
+      invalidatesTags: ["subjects"],
+    }),
   }),
 });
 
-export const { useGetChapterRecapQuery, useGetMonthlyRecapQuery } = ApiRecap;
+export const {
+  useGetChapterRecapQuery,
+  useGetMonthlyRecapQuery,
+  useGetFinalScoreQuery,
+  useGetDailyRecapQuery,
+} = ApiRecap;

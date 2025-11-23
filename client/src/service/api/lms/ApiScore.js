@@ -356,15 +356,6 @@ export const ApiScore = createApi({
       }),
     }),
 
-    // Teacher Completion Report
-    getCompletion: builder.query({
-      query: ({ month, page, limit, search, categoryId }) => ({
-        url: "/teacher-completion-status",
-        params: { month, page, limit, search, categoryId },
-        method: "GET",
-      }),
-    }),
-
     getNewCompletion: builder.query({
       query: ({ month, page, limit, search, categoryId }) => ({
         url: "/teacher-completion",
@@ -406,6 +397,5 @@ export const {
   useBulkSaveScoresMutation,
   useGetRecapQuery,
   useExportReportMutation,
-  useGetCompletionQuery,
   useGetNewCompletionQuery, // Baru
 } = ApiScore;

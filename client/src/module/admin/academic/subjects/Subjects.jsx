@@ -12,6 +12,7 @@ import {
   Modal,
   Pagination,
   Row,
+  Tooltip,
   Typography,
   message,
   Skeleton,
@@ -133,14 +134,14 @@ const Subjects = () => {
   );
 
   return (
-    <Flex vertical gap="large">
-      <Flex justify="space-between" align="center">
+    <Flex vertical gap='large'>
+      <Flex justify='space-between' align='center'>
         <Flex vertical gap={4}>
           <Typography.Title level={4} style={{ margin: 0 }}>
             Manajemen Pelajaran
           </Typography.Title>
           <Input.Search
-            placeholder="Cari pelajaran..."
+            placeholder='Cari pelajaran...'
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             allowClear
@@ -153,7 +154,7 @@ const Subjects = () => {
       {isLoading ? (
         renderSkeletons()
       ) : data?.subjects && data.subjects.length > 0 ? (
-        <Flex vertical gap="large">
+        <Flex vertical gap='large'>
           <Row gutter={[16, 24]}>
             {data.subjects.map((item) => (
               <Col key={item.id} xs={24} sm={12} md={8} lg={6}>
@@ -167,24 +168,33 @@ const Subjects = () => {
                     />
                   }
                   actions={[
-                    <SettingOutlined
-                      key="weighting"
-                      onClick={() => handleWeighting(item)}
-                    />,
-                    <UserOutlined
-                      key="teachers"
-                      onClick={() =>
-                        handleTeachersOpen(item.teachers, item.name)
-                      }
-                    />,
-                    <EditOutlined
-                      key="edit"
-                      onClick={() => handleEdit(item)}
-                    />,
-                    <DeleteOutlined
-                      key="delete"
-                      onClick={() => handleDelete(item.id)}
-                    />,
+                    <Tooltip title='Pembobotan Nilai'>
+                      <SettingOutlined
+                        key='weighting'
+                        onClick={() => handleWeighting(item)}
+                      />
+                    </Tooltip>,
+                    <Tooltip title='Detail Guru'>
+                      <UserOutlined
+                        key='teachers'
+                        onClick={() =>
+                          handleTeachersOpen(item.teachers, item.name)
+                        }
+                      />
+                    </Tooltip>,
+                    <Tooltip title='Edit Pelajaran'>
+                      <EditOutlined
+                        key='edit'
+                        onClick={() => handleEdit(item)}
+                      />
+                    </Tooltip>,
+
+                    <Tooltip title='Hapus Pelajaran'>
+                      <DeleteOutlined
+                        key='delete'
+                        onClick={() => handleDelete(item.id)}
+                      />
+                    </Tooltip>,
                   ]}
                 >
                   {/* --- BLOK META YANG DIPERBARUI --- */}
@@ -196,19 +206,19 @@ const Subjects = () => {
                     }
                     description={
                       <Flex vertical gap={8} style={{ marginTop: 8 }}>
-                        <Flex align="center" gap={6}>
+                        <Flex align='center' gap={6}>
                           <TagOutlined style={{ color: "#1890ff" }} />
-                          <Text type="secondary">Kategori:</Text>
+                          <Text type='secondary'>Kategori:</Text>
                           <Text strong>{item.category_name || "-"}</Text>
                         </Flex>
-                        <Flex align="center" gap={6}>
+                        <Flex align='center' gap={6}>
                           <BranchesOutlined style={{ color: "#52c41a" }} />
-                          <Text type="secondary">Rumpun:</Text>
+                          <Text type='secondary'>Rumpun:</Text>
                           <Text strong>{item.branch_name || "-"}</Text>
                         </Flex>
-                        <Flex align="center" gap={6}>
+                        <Flex align='center' gap={6}>
                           <TeamOutlined style={{ color: "#faad14" }} />
-                          <Text type="secondary">Pengajar:</Text>
+                          <Text type='secondary'>Pengajar:</Text>
                           <Text strong>{item.teachers?.length || 0} Guru</Text>
                         </Flex>
                       </Flex>
@@ -220,7 +230,7 @@ const Subjects = () => {
           </Row>
 
           <Pagination
-            align="center"
+            align='center'
             current={page}
             pageSize={limit}
             total={data?.totalData}
@@ -232,8 +242,8 @@ const Subjects = () => {
           />
         </Flex>
       ) : (
-        <Flex justify="center" style={{ padding: "50px 0" }}>
-          <Empty description="Tidak ada pelajaran yang ditemukan." />
+        <Flex justify='center' style={{ padding: "50px 0" }}>
+          <Empty description='Tidak ada pelajaran yang ditemukan.' />
         </Flex>
       )}
 

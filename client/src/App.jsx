@@ -100,52 +100,52 @@ const AppContent = () => {
   return (
     <Suspense fallback={<LoadingScreen />}>
       <Routes>
-        <Route path="*" element={<Login />} />
-        <Route path="/" element={<Login />} />
-        <Route path="/profile" element={<Profile />} />
+        <Route path='*' element={<Login />} />
+        <Route path='/' element={<Login />} />
+        <Route path='/profile' element={<Profile />} />
 
         {/* Center */}
-        <Route path="/center-dashboard" element={<CenterDash />} />
-        <Route path="/center-admin" element={<CenterAdmin />} />
-        <Route path="/center-satuan" element={<CenterHomebase />} />
-        <Route path="/center-market" element={<CenterAnalysis />} />
+        <Route path='/center-dashboard' element={<CenterDash />} />
+        <Route path='/center-admin' element={<CenterAdmin />} />
+        <Route path='/center-satuan' element={<CenterHomebase />} />
+        <Route path='/center-market' element={<CenterAnalysis />} />
 
         {/* Admin */}
-        <Route path="/admin-dashboard" element={<AdminDash />} />
-        <Route path="/admin-data-pokok" element={<AdminData />} />
-        <Route path="/admin-data-siswa" element={<AdminStudent />} />
-        <Route path="/admin-data-akademik" element={<AdminAcademic />} />
+        <Route path='/admin-dashboard' element={<AdminDash />} />
+        <Route path='/admin-data-pokok' element={<AdminData />} />
+        <Route path='/admin-data-siswa' element={<AdminStudent />} />
+        <Route path='/admin-data-akademik' element={<AdminAcademic />} />
 
         {/* Teacher */}
-        <Route path="/guru-dashboard" element={<TeacherDash />} />
+        <Route path='/guru-dashboard' element={<TeacherDash />} />
 
         {/* Parent */}
-        <Route path="/orangtua-dashboard" element={<ParentDash />} />
-        <Route path="/orangtua-database-siswa" element={<ParentDatabase />} />
-        <Route path="/orangtua-laporan-akademik" element={<ParentAcademic />} />
-        <Route path="/orangtua-laporan-tahfiz" element={<ParentTahfiz />} />
+        <Route path='/orangtua-dashboard' element={<ParentDash />} />
+        <Route path='/orangtua-database-siswa' element={<ParentDatabase />} />
+        <Route path='/orangtua-laporan-akademik' element={<ParentAcademic />} />
+        <Route path='/orangtua-laporan-tahfiz' element={<ParentTahfiz />} />
 
         {/* Student */}
-        <Route path="/siswa-dashboard" element={<StudentDash />} />
-        <Route path="/siswa-laporan-akademik" element={<StudentAcademic />} />
-        <Route path="/siswa-laporan-tahfiz" element={<StudentTahfiz />} />
-        <Route path="/siswa-cbt" element={<StudentExam />} />
-        <Route path="/siswa-lms" element={<StudentLms />} />
+        <Route path='/siswa-dashboard' element={<StudentDash />} />
+        <Route path='/siswa-laporan-akademik' element={<StudentAcademic />} />
+        <Route path='/siswa-laporan-tahfiz' element={<StudentTahfiz />} />
+        <Route path='/siswa-cbt' element={<StudentExam />} />
+        <Route path='/siswa-lms' element={<StudentLms />} />
 
         {/* CBT */}
-        <Route path="/computer-based-test" element={<CbtControl />} />
+        <Route path='/computer-based-test' element={<CbtControl />} />
 
         {/* LMS */}
-        <Route path="/learning-management-system" element={<LmsControl />} />
+        <Route path='/learning-management-system' element={<LmsControl />} />
 
         {/* Database */}
-        <Route path="/database" element={<Database />} />
+        <Route path='/database' element={<Database />} />
 
         {/* Tahfiz */}
-        <Route path="/tahfiz-dashboard" element={<TahfizDash />} />
-        <Route path="/tahfiz-alquran" element={<TahfizQuran />} />
-        <Route path="/tahfiz-penilaian" element={<TahfizScoring />} />
-        <Route path="/tahfiz-hafalan" element={<TahfizMemo />} />
+        <Route path='/tahfiz-dashboard' element={<TahfizDash />} />
+        <Route path='/tahfiz-alquran' element={<TahfizQuran />} />
+        <Route path='/tahfiz-penilaian' element={<TahfizScoring />} />
+        <Route path='/tahfiz-hafalan' element={<TahfizMemo />} />
       </Routes>
     </Suspense>
   );

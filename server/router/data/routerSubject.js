@@ -60,6 +60,7 @@ const upload = multer({
 });
 
 // ==================== GET ENDPOINTS ====================
+// ==================== MATA PELAJARAN ====================
 
 // Get mata pelajaran dengan paginasi dan pencarian
 router.get("/get-subjects", authorize("admin"), async (req, res) => {
@@ -133,6 +134,10 @@ router.get("/get-subjects", authorize("admin"), async (req, res) => {
 				s.id,
 				s.name,
 				s.cover,
+        s.presensi,
+        s.attitude,
+        s.daily,
+        s.final,
         c.name AS category_name,
         c.id AS category_id,
         b.name AS branch_name,
@@ -174,7 +179,10 @@ router.get("/get-subjects", authorize("admin"), async (req, res) => {
       LEFT JOIN a_category c ON c.id = s.categoryid
       LEFT JOIN a_branch b ON b.id = s.branchid
 			WHERE s.homebase = $1 AND s.name ILIKE $2
-			GROUP BY s.id, s.name, s.cover, c.name, c.id, b.name, b.id
+			GROUP BY s.id, s.name, s.cover, s.presensi,
+          s.attitude,
+          s.daily,
+          s.final, c.name, c.id, b.name, b.id
 			ORDER BY s.name ASC
 			LIMIT $3 OFFSET $4
 		`;
@@ -268,8 +276,6 @@ router.get("/get-subject-detail", authorize("admin"), async (req, res) => {
     client.release();
   }
 });
-
-// ==================== POST ENDPOINTS ====================
 
 // Tambah atau update mata pelajaran
 router.post(
@@ -454,8 +460,6 @@ router.post(
   }
 );
 
-// ==================== DELETE ENDPOINTS ====================
-
 // Hapus mata pelajaran
 router.delete("/delete-subject", authorize("admin"), async (req, res) => {
   const client = await pool.connect();
@@ -494,6 +498,45 @@ router.delete("/delete-subject", authorize("admin"), async (req, res) => {
     await client.query("ROLLBACK");
     console.error("Error deleting subject:", error);
     res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+// Simpan data bobot mata pelajaran
+router.put("/update-weights", authorize("admin"), async (req, res) => {
+  const { presensi, attitude, daily, final, id } = req.body;
+
+  if (!presensi || !attitude || !daily || !final) {
+    return res.status(400).json({ message: "Data bobot harus lengkap" });
+  }
+
+  const totalWeight =
+    Number(presensi) + Number(attitude) + Number(daily) + Number(final);
+
+  if (totalWeight !== 100) {
+    return res
+      .status(400)
+      .json({ message: `Total bobot harus 100. Saat ini: ${totalWeight}` });
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    await client.query(
+      `UPDATE a_subject SET presensi = $1, attitude = $2, daily = $3, final = $4 WHERE id = $5`,
+      [presensi, attitude, daily, final, id]
+    );
+
+    await client.query("COMMIT");
+
+    res.status(200).json({ message: "Pembobotan berhasil diperbarui." });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.log(error);
+    res.status(500).json({ message: `Server Error: ${error.message}` });
   } finally {
     client.release();
   }
@@ -678,80 +721,6 @@ router.delete("/delete-category", authorize("admin"), async (req, res) => {
 // const router = express.Router();
 // const pool = require('../db'); // atau lokasi pool Anda
 // const authorize = require('../middleware/authorize'); // atau lokasi middleware Anda
-
-router.put("/update-weights", authorize("admin"), async (req, res) => {
-  // 1. Ambil array 'subjects' dari body request
-  const { subjects } = req.body;
-
-  // 2. Validasi Sederhana di Server
-  if (!subjects || !Array.isArray(subjects) || subjects.length === 0) {
-    return res
-      .status(400)
-      .json({ message: "Data mata pelajaran (subjects) tidak valid." });
-  }
-
-  // 3. Validasi Total Bobot (SANGAT PENTING)
-  //    Jangan pernah percaya frontend. Selalu validasi ulang di backend.
-  const totalWeight = subjects.reduce(
-    (acc, s) => acc + (Number(s.weight) || 0),
-    0
-  );
-
-  if (totalWeight !== 100) {
-    return res
-      .status(400)
-      .json({ message: `Total bobot harus 100. Saat ini: ${totalWeight}` });
-  }
-
-  // 4. Dapatkan koneksi client dari pool
-  const client = await pool.connect();
-
-  try {
-    // 5. Mulai Transaksi
-    //    Ini memastikan SEMUA update berhasil, atau TIDAK SAMA SEKALI.
-    //    Jika satu query gagal, semua akan dibatalkan (rollback).
-    await client.query("BEGIN");
-
-    // 6. Buat array 'promises' untuk semua query update
-    const updatePromises = subjects.map((subject) => {
-      // Validasi tipe data sebelum mengirim ke DB
-      const weight = Number(subject.weight);
-      const id = Number(subject.subject_id);
-
-      if (isNaN(weight) || isNaN(id)) {
-        throw new Error("ID atau bobot mata pelajaran tidak valid.");
-      }
-
-      const query = `
-        UPDATE a_subject
-        SET weight = $1
-        WHERE id = $2
-      `;
-      // PENTING:
-      // constraint CHECK(0-100) di DB Anda akan bekerja di sini.
-      // Jika frontend mengirim 101, query ini akan error
-      // dan 'catch' block akan menangkapnya, lalu me-ROLLBACK.
-      return client.query(query, [weight, id]);
-    });
-
-    // 7. Eksekusi semua 'promises' update secara paralel
-    await Promise.all(updatePromises);
-
-    // 8. Jika semua berhasil, 'commit' transaksinya
-    await client.query("COMMIT");
-
-    res.status(200).json({ message: "Pembobotan berhasil diperbarui." });
-  } catch (error) {
-    // 9. Jika terjadi ERROR (data tidak valid, constraint gagal, dll)
-    //    'rollback' semua perubahan yang sudah terjadi.
-    await client.query("ROLLBACK");
-    console.log(error);
-    res.status(500).json({ message: `Server Error: ${error.message}` });
-  } finally {
-    // 10. SELALU lepaskan client kembali ke pool
-    client.release();
-  }
-});
 
 // Menampilkan daftar pelajaran sesuai dengan rumpun
 router.get("/get-subject-branches", authorize("admin"), async (req, res) => {

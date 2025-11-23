@@ -35,8 +35,6 @@ const FormWeight = ({ title, open, onClose, subject }) => {
     { skip: !subject.id }
   );
 
-  console.log(weightData);
-
   const [saveWeighting, { data, isLoading, isSuccess, error }] =
     useSaveWeightingMutation();
 
@@ -92,15 +90,15 @@ const FormWeight = ({ title, open, onClose, subject }) => {
       open={open}
       onCancel={onClose}
       destroyOnHidden
-      okText="Simpan"
-      cancelText="Tutup"
+      okText='Simpan'
+      cancelText='Tutup'
       onOk={() => form.submit()}
       okButtonProps={{ disabled: totalWeight !== 100 }}
       loading={isLoading || getLoading}
       confirmLoading={isLoading || getLoading}
     >
-      <Form form={form} layout="vertical" onFinish={handleSubmit}>
-        <Text type="secondary">
+      <Form form={form} layout='vertical' onFinish={handleSubmit}>
+        <Text type='secondary'>
           Pastikan total bobot dari semua komponen penilaian adalah 100%.
         </Text>
         <Divider style={{ marginTop: "12px" }} />
@@ -108,7 +106,7 @@ const FormWeight = ({ title, open, onClose, subject }) => {
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
-              name="presensi"
+              name='presensi'
               label={
                 <Space>
                   <PercentageOutlined />
@@ -121,14 +119,14 @@ const FormWeight = ({ title, open, onClose, subject }) => {
                 style={{ width: "100%" }}
                 min={0}
                 max={100}
-                addonAfter="%"
-                placeholder="e.g., 10"
+                addonAfter='%'
+                placeholder='e.g., 10'
               />
             </Form.Item>
           </Col>
           <Col span={12}>
             <Form.Item
-              name="attitude"
+              name='attitude'
               label={
                 <Space>
                   <SmileOutlined />
@@ -141,8 +139,8 @@ const FormWeight = ({ title, open, onClose, subject }) => {
                 style={{ width: "100%" }}
                 min={0}
                 max={100}
-                addonAfter="%"
-                placeholder="e.g., 20"
+                addonAfter='%'
+                placeholder='e.g., 20'
               />
             </Form.Item>
           </Col>
@@ -151,22 +149,22 @@ const FormWeight = ({ title, open, onClose, subject }) => {
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
-              name="daily"
+              name='daily'
               label={
                 <Space>
                   <BookOutlined />
                   Bobot Nilai Harian
                 </Space>
               }
-              tooltip="Nilai rerata dari sumatif dan formatif"
+              tooltip='Nilai rerata dari sumatif dan formatif'
               rules={[{ required: true, message: "Wajib diisi" }]}
             >
               <InputNumber
                 style={{ width: "100%" }}
                 min={0}
                 max={100}
-                addonAfter="%"
-                placeholder="e.g., 40"
+                addonAfter='%'
+                placeholder='e.g., 40'
               />
             </Form.Item>
           </Col>
@@ -177,15 +175,15 @@ const FormWeight = ({ title, open, onClose, subject }) => {
         {totalWeight === 100 ? (
           <Alert
             message={<Text strong>Total Bobot: {totalWeight}%</Text>}
-            description="Total bobot sudah sesuai."
-            type="success"
+            description='Total bobot sudah sesuai.'
+            type='success'
             showIcon
           />
         ) : (
           <Alert
             message={<Text strong>Total Bobot: {totalWeight}%</Text>}
-            description="Total bobot harus tepat 100% untuk dapat menyimpan."
-            type="warning"
+            description='Total bobot harus tepat 100% untuk dapat menyimpan.'
+            type='warning'
             showIcon
           />
         )}

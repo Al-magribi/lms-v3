@@ -22,42 +22,6 @@ const getMonthNumber = (monthName) => {
   return months[monthName.toLowerCase()];
 };
 
-// Filter
-router.get("/categories", async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const homebase = req.user.homebase;
-    const results = await client.query(
-      `SELECT * FROM a_category
-    WHERE homebase = $1`,
-      [homebase]
-    );
-
-    res.status(200).json(results.rows);
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: error.message });
-  }
-});
-
-router.get("/branches", async (req, res) => {
-  try {
-    const { categoryid } = req.query;
-    const homebase = req.user.homebase;
-
-    const results = await client.query(
-      `SELECT *
-    FORM a_branch WHERE categoryid = $1 AND homebase = $2`,
-      [categoryid, homebase]
-    );
-
-    res.status(200).json(results.rows);
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: error.message });
-  }
-});
-
 // Rekap nilai perchapter perbulan VIEW GURU
 router.get("/chapter-final-score", authorize("teacher"), async (req, res) => {
   const {
@@ -924,6 +888,317 @@ router.get("/monthly-recap", async (req, res) => {
   } catch (error) {
     console.error("Error fetching monthly recap:", error);
     res.status(500).json({ message: "Internal Server Error" });
+  } finally {
+    client.release();
+  }
+});
+
+// REKAPITULASI SEMESTER
+// Rekap Nilai Akhir Semester
+router.get("/final-score", authorize("admin"), async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { semester, classid, subjectid } = req.query;
+    const homebase = req.user.homebase;
+
+    // Validasi input
+    if (!semester || !classid || !subjectid) {
+      return res
+        .status(400)
+        .json({ message: "Semester, Class ID, and Subject ID are required" });
+    }
+
+    // 1. Ambil Periode Aktif
+    const periodeResult = await client.query(
+      `SELECT id FROM a_periode WHERE isactive = true AND homebase = $1`,
+      [homebase]
+    );
+    if (periodeResult.rows.length === 0)
+      return res.status(404).json({ message: "No active period found" });
+    const activePeriode = periodeResult.rows[0].id;
+
+    // 2. Ambil Bobot Nilai
+    const subjectResult = await client.query(
+      `SELECT presensi, attitude, daily, final FROM a_subject WHERE id = $1`,
+      [subjectid]
+    );
+    if (subjectResult.rows.length === 0)
+      return res.status(404).json({ message: "Subject not found" });
+
+    const weights = {
+      presensi: subjectResult.rows[0].presensi || 0,
+      attitude: subjectResult.rows[0].attitude || 0,
+      daily: subjectResult.rows[0].daily || 0,
+      final: subjectResult.rows[0].final || 0,
+    };
+
+    // 3. Query Utama dengan Logic Baru
+    const query = `
+      WITH 
+      -- A. Daftar Siswa
+      student_list AS (
+        SELECT s.id, s.name, s.nis
+        FROM u_students s
+        JOIN cl_students cl ON s.id = cl.student
+        WHERE cl.classid = $1 AND cl.periode = $2
+      ),
+      
+      -- B. Hitung Absensi (Logic 10 dari 16)
+      attendance_calc AS (
+        SELECT 
+            studentid,
+            (COUNT(*) FILTER (WHERE note = 'Hadir')::float / NULLIF(COUNT(*), 0) * 100) as score
+        FROM l_attendance
+        WHERE classid = $1 AND subjectid = $3 AND periode = $2
+          AND (
+            ($4 = 1 AND EXTRACT(MONTH FROM day_date) BETWEEN 7 AND 12) OR
+            ($4 = 2 AND EXTRACT(MONTH FROM day_date) BETWEEN 1 AND 6)
+          )
+        GROUP BY studentid
+      ),
+
+      -- C. Hitung Sikap (Abaikan NULL)
+      -- Kita ambil raw data kolom kinerja, kedisiplinan, dll. lalu di-UNNEST jadi baris
+      attitude_calc AS (
+        SELECT student_id, AVG(val) as score
+        FROM (
+            SELECT student_id, unnest(ARRAY[kinerja, kedisiplinan, keaktifan, percaya_diri]) as val
+            FROM l_attitude
+            WHERE class_id = $1 AND subject_id = $3 AND periode_id = $2 AND semester = $4
+        ) raw_att
+        WHERE val IS NOT NULL -- Pastikan yang kosong tidak ikut dibagi
+        GROUP BY student_id
+      ),
+
+      -- D. Hitung Harian (Gabungan Formatif & Sumatif secara flat)
+      daily_calc AS (
+        SELECT student_id, AVG(val) as score
+        FROM (
+            -- 1. Ambil pecahan Formatif (f_1 s/d f_8)
+            SELECT student_id, unnest(ARRAY[f_1, f_2, f_3, f_4, f_5, f_6, f_7, f_8]) as val 
+            FROM l_formative 
+            WHERE class_id = $1 AND subject_id = $3 AND periode_id = $2 AND semester = $4
+            
+            UNION ALL
+            
+            -- 2. Ambil pecahan Sumatif (oral, written, project, performance)
+            SELECT student_id, unnest(ARRAY[oral, written, project, performance]) as val 
+            FROM l_summative 
+            WHERE class_id = $1 AND subject_id = $3 AND periode_id = $2 AND semester = $4
+        ) combined_daily
+        WHERE val IS NOT NULL -- KUNCI: Filter NULL agar pembagi rata-rata sesuai jumlah data terisi
+        GROUP BY student_id
+      ),
+
+      -- E. Ujian Akhir
+      final_test_calc AS (
+        SELECT studentid, score
+        FROM l_finaltest
+        WHERE classid = $1 AND subjectid = $3 AND periode = $2 AND semester = $4
+      )
+
+      -- F. Gabungkan
+      SELECT 
+        s.id, s.nis, s.name,
+        COALESCE(attd.score, 0) AS nilai_kehadiran,
+        COALESCE(att.score, 0) AS nilai_sikap,
+        COALESCE(day.score, 0) AS nilai_harian,
+        COALESCE(fin.score, 0) AS nilai_ujian_akhir
+      FROM student_list s
+      LEFT JOIN attendance_calc attd ON s.id = attd.studentid
+      LEFT JOIN attitude_calc att ON s.id = att.student_id
+      LEFT JOIN daily_calc day ON s.id = day.student_id
+      LEFT JOIN final_test_calc fin ON s.id = fin.studentid
+      ORDER BY s.name ASC;
+    `;
+
+    const result = await client.query(query, [
+      classid,
+      activePeriode,
+      subjectid,
+      semester,
+    ]);
+
+    const finalData = result.rows.map((row, index) => {
+      const n_absen = parseFloat(row.nilai_kehadiran);
+      const n_sikap = parseFloat(row.nilai_sikap);
+      const n_harian = parseFloat(row.nilai_harian);
+      const n_uas = parseFloat(row.nilai_ujian_akhir);
+
+      const totalScore =
+        (n_absen * weights.presensi) / 100 +
+        (n_sikap * weights.attitude) / 100 +
+        (n_harian * weights.daily) / 100 +
+        (n_uas * weights.final) / 100;
+
+      return {
+        no: index + 1,
+        nis: row.nis,
+        nama_siswa: row.name,
+        kehadiran: n_absen.toFixed(2),
+        sikap: n_sikap.toFixed(2),
+        harian: n_harian.toFixed(2),
+        ujian_akhir: n_uas.toFixed(2),
+        nilai_akhir: totalScore.toFixed(2),
+      };
+    });
+
+    res.json({ weights, data: finalData });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+// Rekap Nilai Harian
+router.get("/daily-recap", authorize("admin"), async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { semester, classid, subjectid } = req.query;
+    const homebase = req.user.homebase;
+
+    console.log(req.query);
+
+    // 1. Validasi input
+    if (!semester || !classid || !subjectid) {
+      return res
+        .status(400)
+        .json({ message: "Semester, Class ID, and Subject ID are required" });
+    }
+
+    // 2. Ambil Periode Aktif
+    const periodeResult = await client.query(
+      `SELECT id FROM a_periode WHERE isactive = true AND homebase = $1`,
+      [homebase]
+    );
+    if (periodeResult.rows.length === 0) {
+      return res.status(404).json({ message: "No active period found" });
+    }
+    const activePeriode = periodeResult.rows[0].id;
+
+    // 3. Tentukan List Bulan berdasarkan Semester
+    // Pastikan ejaan sama persis dengan yang ada di database (CONSTRAINT check)
+    let targetMonths = [];
+    if (parseInt(semester) === 1) {
+      targetMonths = [
+        "Juli",
+        "Agustus",
+        "September",
+        "Oktober",
+        "November",
+        "Desember",
+      ];
+    } else {
+      targetMonths = ["Januari", "Februari", "Maret", "April", "Mei", "Juni"];
+    }
+
+    // 4. Jalankan Query secara Paralel (Siswa, Formatif, Sumatif)
+    const [studentsRes, formativeRes, summativeRes] = await Promise.all([
+      // A. Ambil Data Siswa di Kelas tersebut
+      client.query(
+        `SELECT s.id, s.nis, s.name 
+         FROM u_students s
+         JOIN cl_students cl ON s.id = cl.student
+         WHERE cl.classid = $1 AND cl.periode = $2
+         ORDER BY s.name ASC`,
+        [classid, activePeriode]
+      ),
+      // B. Ambil Nilai Formatif
+      client.query(
+        `SELECT student_id, month, f_1, f_2, f_3, f_4, f_5, f_6, f_7, f_8 
+         FROM l_formative 
+         WHERE class_id = $1 AND subject_id = $2 AND periode_id = $3 AND semester = $4`,
+        [classid, subjectid, activePeriode, semester]
+      ),
+      // C. Ambil Nilai Sumatif
+      client.query(
+        `SELECT student_id, month, oral, written, project, performance 
+         FROM l_summative 
+         WHERE class_id = $1 AND subject_id = $2 AND periode_id = $3 AND semester = $4`,
+        [classid, subjectid, activePeriode, semester]
+      ),
+    ]);
+
+    // 5. Helper Function untuk grouping data agar mudah diakses
+    // Buat Map: key = "studentId_NamaBulan", value = row data
+    const formativeMap = {};
+    formativeRes.rows.forEach((row) => {
+      formativeMap[`${row.student_id}_${row.month}`] = row;
+    });
+
+    const summativeMap = {};
+    summativeRes.rows.forEach((row) => {
+      summativeMap[`${row.student_id}_${row.month}`] = row;
+    });
+
+    // 6. Susun Data Akhir
+    const finalData = studentsRes.rows.map((student, index) => {
+      let totalScore = 0;
+      let scoreCount = 0;
+      const scoresByMonth = {};
+
+      // Loop setiap bulan untuk mengisi kolom-kolom bulan
+      targetMonths.forEach((month) => {
+        const key = `${student.id}_${month}`;
+
+        // Ambil data jika ada, jika tidak ada object kosong
+        const fData = formativeMap[key] || {};
+        const sData = summativeMap[key] || {};
+
+        // Kumpulkan semua nilai mentah untuk bulan ini
+        // Digunakan untuk frontend menampilkan angka di kolom masing-masing
+        const monthScores = {
+          f_1: fData.f_1 || null,
+          f_2: fData.f_2 || null,
+          f_3: fData.f_3 || null,
+          f_4: fData.f_4 || null,
+          f_5: fData.f_5 || null,
+          f_6: fData.f_6 || null,
+          f_7: fData.f_7 || null,
+          f_8: fData.f_8 || null,
+          oral: sData.oral || null, // Lisan
+          written: sData.written || null, // Tulis
+          project: sData.project || null, // Projek
+          performance: sData.performance || null, // Keterampilan/Praktik
+        };
+
+        // Logic Hitung Rata-Rata Total (Gabungan Formatif & Sumatif semua bulan)
+        // Kita iterasi value di monthScores, jika tidak null, tambahkan ke total
+        Object.values(monthScores).forEach((val) => {
+          if (val !== null && val !== undefined) {
+            totalScore += parseInt(val);
+            scoreCount++;
+          }
+        });
+
+        // Masukkan data bulan ini ke object student
+        scoresByMonth[month] = monthScores;
+      });
+
+      // Hitung Rata-rata Akhir
+      const finalAverage =
+        scoreCount > 0 ? (totalScore / scoreCount).toFixed(2) : 0;
+
+      return {
+        no: index + 1,
+        nis: student.nis,
+        nama_siswa: student.name,
+        scores: scoresByMonth, // Object berisi data per bulan (Juli, Agustus, dst)
+        rata_rata: finalAverage,
+      };
+    });
+
+    // 7. Kirim Response
+    // Kita kirim juga 'months' agar frontend tahu urutan kolom header tabelnya
+    res.json({
+      months: targetMonths,
+      data: finalData,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
   } finally {
     client.release();
   }
