@@ -1,4 +1,9 @@
-import { FileTextOutlined, SettingOutlined } from "@ant-design/icons";
+import {
+  AimOutlined,
+  FileTextOutlined,
+  ScheduleOutlined,
+  SettingOutlined,
+} from "@ant-design/icons";
 import { Card, Col, Flex, Row, Tooltip, Typography } from "antd";
 import { useState } from "react";
 import { useSelector } from "react-redux";
@@ -15,6 +20,14 @@ const Scoring = () => {
   const { user } = useSelector((state) => state.auth);
 
   const subjectsData = user?.subjects;
+
+  const handleSelectFinalScore = (item) => {
+    setSearchParams({
+      mode: "finalscore",
+      name: item.name?.replace(/\s+/g, "-"),
+      subjectid: item.id,
+    });
+  };
 
   const handleSelectScore = (item) => {
     setSearchParams({
@@ -52,8 +65,11 @@ const Scoring = () => {
                 />
               }
               actions={[
-                <Tooltip title="Penilaian" key={"scoring"}>
-                  <FileTextOutlined onClick={() => handleSelectScore(item)} />
+                <Tooltip title="Penilaian Akhir Semester" key={"scoring"}>
+                  <AimOutlined onClick={() => handleSelectFinalScore(item)} />
+                </Tooltip>,
+                <Tooltip title="Penilaian Bulanan" key={"scoring"}>
+                  <ScheduleOutlined onClick={() => handleSelectScore(item)} />
                 </Tooltip>,
                 <Tooltip title="Pembobotan" key={"setting"}>
                   <SettingOutlined onClick={() => handleSelectWeight(item)} />

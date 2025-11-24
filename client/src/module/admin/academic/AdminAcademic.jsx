@@ -4,16 +4,20 @@ import Subjects from "./subjects/Subjects";
 import Teachers from "./teachers/Teachers";
 import Category from "./category/Category";
 import NewReport from "./report/NewReport";
-import Final from "./final/Final";
-import Daily from "./daily/Daily";
+import Final from "../../lms/recap/Final";
+import Daily from "../../lms/recap/Daily";
 import {
   AimOutlined,
   ApartmentOutlined,
   AuditOutlined,
   CalendarOutlined,
+  CarryOutOutlined,
   ContactsOutlined,
+  FileDoneOutlined,
   IdcardOutlined,
 } from "@ant-design/icons";
+import Presensi from "../../lms/recap/Presensi";
+import Attitude from "../../lms/recap/Attitude";
 
 const AdminAcademic = () => {
   const items = [
@@ -42,14 +46,26 @@ const AdminAcademic = () => {
       icon: <CalendarOutlined />,
     },
     {
-      label: "Nilai Harian",
+      label: "Rekap Kehadiran",
       key: "6",
+      children: <Presensi />,
+      icon: <CarryOutOutlined />,
+    },
+    {
+      label: "Nilai Sikap",
+      key: "7",
+      children: <Attitude />,
+      icon: <FileDoneOutlined />,
+    },
+    {
+      label: "Nilai Harian",
+      key: "8",
       children: <Daily />,
       icon: <AuditOutlined />,
     },
     {
       label: "Nilai Akhir",
-      key: "7",
+      key: "9",
       children: <Final />,
       icon: <AimOutlined />,
     },
@@ -58,7 +74,7 @@ const AdminAcademic = () => {
   return (
     <MainLayout title={"Management Akademik"} levels={["admin"]}>
       <Flex vertical gap={"middle"}>
-        <Tabs defaultActiveKey='1' items={items} />
+        <Tabs defaultActiveKey="1" items={items} />
       </Flex>
     </MainLayout>
   );

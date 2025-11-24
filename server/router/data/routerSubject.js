@@ -63,7 +63,7 @@ const upload = multer({
 // ==================== MATA PELAJARAN ====================
 
 // Get mata pelajaran dengan paginasi dan pencarian
-router.get("/get-subjects", authorize("admin"), async (req, res) => {
+router.get("/get-subjects", authorize("admin", "teacher"), async (req, res) => {
   const client = await pool.connect();
   try {
     const { page, limit, search } = req.query;

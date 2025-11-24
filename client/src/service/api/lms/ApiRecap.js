@@ -6,7 +6,7 @@ export const ApiRecap = createApi({
     baseUrl: "/api/recap",
     credentials: "include",
   }),
-  tagTypes: ["recap"],
+  tagTypes: ["Recap", "Subjects", "Presensi"],
   endpoints: (builder) => ({
     getChapterRecap: builder.query({
       query: ({
@@ -22,7 +22,7 @@ export const ApiRecap = createApi({
         method: "GET",
         params: { classid, subjectid, chapterid, month, search, page, limit },
       }),
-      providesTags: ["recap"],
+      providesTags: ["Recap"],
     }),
     getMonthlyRecap: builder.query({
       query: ({ studentId, month, periode }) => ({
@@ -31,23 +31,42 @@ export const ApiRecap = createApi({
         params: { studentId, month, periode },
       }),
       providesTags: (result, error, arg) =>
-        result ? [{ type: "recap", id: arg.studentId }] : ["recap"],
+        result ? [{ type: "Recap", id: arg.studentId }] : ["Recap"],
     }),
-    getFinalScore: builder.query({
+    getPresensi: builder.query({
       query: ({ semester, classid, subjectid }) => ({
-        url: "/final-score",
+        url: "/attendance-recap",
         method: "GET",
         params: { semester, classid, subjectid },
       }),
-      invalidatesTags: ["subjects"],
+      providesTags: ["Presensi"],
     }),
+
+    getAttitude: builder.query({
+      query: ({ semester, classid, subjectid }) => ({
+        url: "/attitude-recap",
+        method: "GET",
+        params: { semester, classid, subjectid },
+      }),
+      invalidatesTags: ["Subjects"],
+    }),
+
     getDailyRecap: builder.query({
       query: ({ semester, classid, subjectid }) => ({
         url: "/daily-recap",
         method: "GET",
         params: { semester, classid, subjectid },
       }),
-      invalidatesTags: ["subjects"],
+      invalidatesTags: ["Subjects"],
+    }),
+
+    getFinalScore: builder.query({
+      query: ({ semester, classid, subjectid }) => ({
+        url: "/final-score",
+        method: "GET",
+        params: { semester, classid, subjectid },
+      }),
+      invalidatesTags: ["Subjects"],
     }),
   }),
 });
@@ -55,6 +74,8 @@ export const ApiRecap = createApi({
 export const {
   useGetChapterRecapQuery,
   useGetMonthlyRecapQuery,
-  useGetFinalScoreQuery,
+  useGetPresensiQuery,
+  useGetAttitudeQuery,
   useGetDailyRecapQuery,
+  useGetFinalScoreQuery,
 } = ApiRecap;

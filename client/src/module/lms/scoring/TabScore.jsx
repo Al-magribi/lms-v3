@@ -11,7 +11,13 @@ import {
   Input,
 } from "antd";
 import MainLayout from "../../../components/layout/MainLayout";
-import { ArrowLeftOutlined } from "@ant-design/icons";
+import {
+  ArrowLeftOutlined,
+  AuditOutlined,
+  CarryOutOutlined,
+  FileDoneOutlined,
+  HistoryOutlined,
+} from "@ant-design/icons";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMemo, useState } from "react";
 import { useGetChaptersQuery } from "../../../service/api/lms/ApiChapter";
@@ -130,6 +136,7 @@ const TabScore = ({ name, id }) => {
       label: "Kehadiran",
       key: "1",
       children: <History classid={classParam} subjectid={subjectIdParam} />,
+      icon: <CarryOutOutlined />,
     },
     {
       label: "Sikap",
@@ -147,6 +154,7 @@ const TabScore = ({ name, id }) => {
           isLoading={isLoading}
         />
       ),
+      icon: <FileDoneOutlined />,
     },
     {
       label: "Formatif",
@@ -164,6 +172,7 @@ const TabScore = ({ name, id }) => {
           isLoading={isLoading}
         />
       ),
+      icon: <AuditOutlined />,
     },
     {
       label: "Sumatif",
@@ -181,11 +190,13 @@ const TabScore = ({ name, id }) => {
           isLoading={isLoading}
         />
       ),
+      icon: <AuditOutlined />,
     },
     {
       label: "Rekap",
       key: "5",
       children: <ChapterRecap />,
+      icon: <HistoryOutlined />,
     },
   ];
 
@@ -200,7 +211,7 @@ const TabScore = ({ name, id }) => {
       <Flex vertical gap={"middle"}>
         <Space>
           <Button
-            shape='circle'
+            shape="circle"
             icon={<ArrowLeftOutlined />}
             onClick={handleBack}
           />
@@ -213,7 +224,7 @@ const TabScore = ({ name, id }) => {
           <Col sm={24} md={6}>
             <Select
               style={{ width: "100%" }}
-              placeholder='Pilih Semester'
+              placeholder="Pilih Semester"
               options={semesterOptions}
               allowClear
               value={semesterParam ? Number(semesterParam) : null}
@@ -229,7 +240,7 @@ const TabScore = ({ name, id }) => {
           <Col sm={24} md={6}>
             <Select
               style={{ width: "100%" }}
-              placeholder='Pilih Bulan'
+              placeholder="Pilih Bulan"
               options={monthOptions}
               allowClear
               value={monthParam}
@@ -245,7 +256,7 @@ const TabScore = ({ name, id }) => {
           <Col sm={24} md={6}>
             <Select
               style={{ width: "100%" }}
-              placeholder='Pilih Chapter'
+              placeholder="Pilih Chapter"
               options={chapterOptions}
               allowClear
               loading={isChapterLoading}
@@ -262,7 +273,7 @@ const TabScore = ({ name, id }) => {
           <Col sm={24} md={6}>
             <Select
               style={{ width: "100%" }}
-              placeholder='Pilih Kelas'
+              placeholder="Pilih Kelas"
               options={classOptions}
               allowClear
               disabled={!chapterParam}
@@ -281,15 +292,15 @@ const TabScore = ({ name, id }) => {
         {isAllFilterSelected ? (
           <>
             <Search
-              placeholder='Cari nama siswa...'
+              placeholder="Cari nama siswa..."
               onSearch={onSearch}
               enterButton
               allowClear
             />
-            <Tabs centered items={items} />
+            <Tabs items={items} />
           </>
         ) : (
-          <Empty description='Pilih Semester, bulan, chapter dan kelas terlebih dahulu' />
+          <Empty description="Pilih Semester, bulan, chapter dan kelas terlebih dahulu" />
         )}
       </Flex>
     </MainLayout>

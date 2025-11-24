@@ -5,6 +5,7 @@ import Bank from "../bank/Bank";
 import Questions from "../bank/Questions";
 import Exams from "../exams/Exams";
 import Report from "../report/Report";
+import { FolderOutlined, ScheduleOutlined } from "@ant-design/icons";
 
 const CbtControl = () => {
   const [searchParams] = useSearchParams();
@@ -16,8 +17,18 @@ const CbtControl = () => {
   const token = searchParams.get("token");
 
   const items = [
-    { label: "Bank Soal", key: "1", children: <Bank /> },
-    { label: "Jadwal Ujian", key: "2", children: <Exams /> },
+    {
+      label: "Bank Soal",
+      key: "1",
+      children: <Bank />,
+      icon: <FolderOutlined />,
+    },
+    {
+      label: "Jadwal Ujian",
+      key: "2",
+      children: <Exams />,
+      icon: <ScheduleOutlined />,
+    },
   ];
 
   if (bankid) {
@@ -49,7 +60,7 @@ const CbtControl = () => {
       title={"Mangement Computer Based Test"}
       levels={["admin", "teacher"]}
     >
-      <Tabs centered items={items} />
+      <Tabs items={items} />
     </MainLayout>
   );
 };

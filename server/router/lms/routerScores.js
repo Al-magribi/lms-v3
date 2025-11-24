@@ -1006,6 +1006,144 @@ router.post(
   }
 );
 
+// Bulk upload final score from Excel File
+router.get("/get-final-score", authorize("teacher"), async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { semester, subjectid, classid } = req.query;
+    const homebase = req.user.homebase;
+
+    // Validasi input
+    if (!semester || !subjectid || !classid) {
+      return res.status(400).json({
+        message: "Parameter semester, subjectid, dan classid diperlukan",
+      });
+    }
+
+    const periode_id = await getActivePeriode(client, homebase);
+    if (!periode_id) {
+      return res
+        .status(400)
+        .json({ message: "Tidak ada periode aktif ditemukan" });
+    }
+
+    // UPDATE: Menggunakan cl_students sebagai tabel utama (Left Table)
+    // agar semua siswa di kelas tersebut muncul.
+    const query = `
+      SELECT 
+        s.id AS studentid,
+        s.nis,
+        s.name AS student_name,
+        l.score
+      FROM cl_students cs
+      JOIN u_students s ON cs.student = s.id
+      LEFT JOIN l_finalscore l ON 
+        l.studentid = s.id AND 
+        l.periode = $1 AND 
+        l.semester = $2 AND 
+        l.subjectid = $3
+      WHERE 
+        cs.periode = $1 AND 
+        cs.classid = $4
+      ORDER BY s.name ASC
+    `;
+
+    const { rows } = await client.query(query, [
+      periode_id, // $1
+      semester, // $2
+      subjectid, // $3
+      classid, // $4
+    ]);
+
+    res.status(200).json(rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Terjadi kesalahan server internal" });
+  } finally {
+    client.release();
+  }
+});
+
+router.post("/final-score", authorize("teacher"), async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { semester, subjectid, classid } = req.query;
+    const data = req.body; // Expecting array of objects: [{ studentid: 1, score: 80 }, ...]
+    const homebase = req.user.homebase;
+    const teacher_id = req.user.id;
+
+    if (!data || !Array.isArray(data)) {
+      return res
+        .status(400)
+        .json({ message: "Data harus berupa array nilai siswa" });
+    }
+
+    const periode_id = await getActivePeriode(client, homebase);
+    if (!periode_id) {
+      return res
+        .status(400)
+        .json({ message: "Tidak ada periode aktif ditemukan" });
+    }
+
+    await client.query("BEGIN");
+
+    for (const item of data) {
+      const { studentid, score } = item;
+
+      // Skip jika data tidak lengkap
+      if (!studentid || score === undefined || score === null || score === "")
+        continue;
+
+      // 1. Cek apakah data sudah ada
+      const checkSql = `
+        SELECT id FROM l_finalscore 
+        WHERE periode = $1 AND semester = $2 AND subjectid = $3 AND classid = $4 AND studentid = $5
+      `;
+      const checkRes = await client.query(checkSql, [
+        periode_id,
+        semester,
+        subjectid,
+        classid,
+        studentid,
+      ]);
+
+      if (checkRes.rows.length > 0) {
+        // 2. Jika ada, UPDATE
+        const updateSql = `
+          UPDATE l_finalscore 
+          SET score = $1, teacherid = $2 
+          WHERE id = $3
+        `;
+        await client.query(updateSql, [score, teacher_id, checkRes.rows[0].id]);
+      } else {
+        // 3. Jika tidak ada, INSERT
+        const insertSql = `
+          INSERT INTO l_finalscore (periode, semester, teacherid, subjectid, classid, studentid, score)
+          VALUES ($1, $2, $3, $4, $5, $6, $7)
+        `;
+        await client.query(insertSql, [
+          periode_id,
+          semester,
+          teacher_id,
+          subjectid,
+          classid,
+          studentid,
+          score,
+        ]);
+      }
+    }
+
+    await client.query("COMMIT");
+    res.status(200).json({ message: "Data nilai akhir berhasil disimpan" });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error(error);
+    res.status(500).json({ message: error.message || "Gagal menyimpan data" });
+  } finally {
+    client.release();
+  }
+});
+
 // ==========================
 // Recap Data
 // ==========================
@@ -1029,134 +1167,6 @@ const getMonthNumber = (monthName) => {
 
   return monthMap[monthName.toLowerCase()] || 1; // Default to January if not found
 };
-
-// Get comprehensive recap data for all students in a class
-router.get("/recap", authorize("teacher", "admin"), async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const { classid, subjectid, chapterid, month, semester } = req.query;
-
-    if (!classid || !subjectid || !chapterid || !month || !semester) {
-      return res.status(400).json({ message: "Missing required parameters" });
-    }
-
-    const homebase = req.user.homebase;
-    const periodeid = await getActivePeriode(client, homebase);
-    if (!periodeid) {
-      return res.status(400).json({ message: "No active periode found" });
-    }
-
-    // Convert Indonesian month name to month number
-    const currentMonth = getMonthNumber(month);
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
-
-    const query = `
-      WITH student_data AS (
-        SELECT 
-          us.id as student_id,
-          us.name as student_name,
-          us.nis,
-          cs.classid
-        FROM cl_students cs
-        JOIN u_students us ON cs.student = us.id
-        WHERE cs.classid = $1 AND cs.periode = $2
-      ),
-      attendance_data AS (
-        SELECT 
-          la.studentid,
-          COUNT(CASE WHEN la.note = 'Hadir' THEN 1 END) as hadir_count,
-          COUNT(la.id) as total_days,
-          CASE 
-            WHEN COUNT(la.id) > 0 THEN 
-              ROUND((COUNT(CASE WHEN la.note = 'Hadir' THEN 1 END)::DECIMAL / COUNT(la.id)::DECIMAL) * 100, 2)
-            ELSE 0 
-          END as attendance_percentage
-        FROM l_attendance la
-        WHERE la.classid = $1 
-          AND la.subjectid = $3
-          AND EXTRACT(MONTH FROM la.day_date) = $4
-          AND EXTRACT(YEAR FROM la.day_date) = $5
-          AND la.periode = $2
-        GROUP BY la.studentid
-      ),
-      attitude_data AS (
-        SELECT 
-          lat.student_id,
-          lat.rata_rata as attitude_average,
-          lat.catatan_guru
-        FROM l_attitude lat
-        WHERE lat.class_id = $1 
-          AND lat.subject_id = $3
-          AND lat.chapter_id = $6
-          AND lat.month = $7
-          AND lat.semester = $8
-          AND lat.periode_id = $2
-      ),
-      formative_data AS (
-        SELECT 
-          lf.student_id,
-          lf.rata_rata as formative_average
-        FROM l_formative lf
-        WHERE lf.class_id = $1 
-          AND lf.subject_id = $3
-          AND lf.chapter_id = $6
-          AND lf.month = $7
-          AND lf.semester = $8
-          AND lf.periode_id = $2
-      ),
-      summative_data AS (
-        SELECT 
-          ls.student_id,
-          ls.rata_rata as summative_average
-        FROM l_summative ls
-        WHERE ls.class_id = $1 
-          AND ls.subject_id = $3
-          AND ls.chapter_id = $6
-          AND ls.month = $7
-          AND ls.semester = $8
-          AND ls.periode_id = $2
-      )
-      SELECT 
-        sd.student_id,
-        sd.student_name,
-        sd.nis,
-        COALESCE(ad.attendance_percentage, 0) as kehadiran,
-        COALESCE(atd.attitude_average, 0) as sikap,
-        COALESCE(fd.formative_average, 0) as formatif,
-        COALESCE(smd.summative_average, 0) as sumatif,
-        atd.catatan_guru as catatan,
-        ROUND(
-          (COALESCE(ad.attendance_percentage, 0) + COALESCE(atd.attitude_average, 0) + 
-           COALESCE(fd.formative_average, 0) + COALESCE(smd.summative_average, 0)) / 4.0, 2
-        ) as rata_rata
-      FROM student_data sd
-      LEFT JOIN attendance_data ad ON sd.student_id = ad.studentid
-      LEFT JOIN attitude_data atd ON sd.student_id = atd.student_id
-      LEFT JOIN formative_data fd ON sd.student_id = fd.student_id
-      LEFT JOIN summative_data smd ON sd.student_id = smd.student_id
-      ORDER BY sd.student_name
-    `;
-
-    const result = await client.query(query, [
-      classid,
-      periodeid,
-      subjectid,
-      currentMonth,
-      currentYear,
-      chapterid,
-      month, // Use original month name for attitude/formative/summative tables
-      semester,
-    ]);
-
-    res.status(200).json(result.rows);
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: error.message });
-  } finally {
-    client.release();
-  }
-});
 
 // ==========================
 // Teacher Completion Report

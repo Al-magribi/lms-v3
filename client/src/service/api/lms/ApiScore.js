@@ -11,6 +11,7 @@ export const ApiScore = createApi({
     "attitude",
     "formative",
     "summative",
+    "finalScore",
     "attendance",
     "grades",
     "weighting",
@@ -172,188 +173,25 @@ export const ApiScore = createApi({
       }),
       invalidatesTags: ["summative"],
     }),
-    // Get reports with enhanced data
-    getReports: builder.query({
-      query: ({ classid, subjectid, month, chapterid }) => ({
-        url: "/reports",
-        params: { classid, subjectid, month, chapterid },
+
+    // Final Socres
+    getFinalScore: builder.query({
+      query: ({ semester, classid, subjectid }) => ({
+        url: "/get-final-score",
+        method: "GET",
+        params: { semester, classid, subjectid },
       }),
-      providesTags: ["reports"],
+      providesTags: ["finalScore"],
     }),
 
-    // Create report
-    createReport: builder.mutation({
-      query: (body) => ({
-        url: "/add-report",
+    UpSertFinalScore: builder.mutation({
+      query: ({ semester, classid, subjectid, data }) => ({
+        url: "/final-score",
         method: "POST",
-        body,
+        body: data,
+        params: { semester, classid, subjectid },
       }),
-      invalidatesTags: ["reports"],
-    }),
-
-    // Update report
-    updateReport: builder.mutation({
-      query: ({ id, body }) => ({
-        url: `/update-report/${id}`,
-        method: "PUT",
-        body,
-      }),
-      invalidatesTags: ["reports"],
-    }),
-
-    // Attitude scores
-    getAttitudeScores: builder.query({
-      query: ({ classid, subjectid, month }) => ({
-        url: "/attitude-scores",
-        params: { classid, subjectid, month },
-      }),
-      providesTags: ["attitude"],
-    }),
-
-    createAttitudeScore: builder.mutation({
-      query: (body) => ({
-        url: "/add-attitude-score",
-        method: "POST",
-        body,
-      }),
-      invalidatesTags: ["attitude"],
-    }),
-
-    updateAttitudeScore: builder.mutation({
-      query: ({ id, body }) => ({
-        url: `/update-attitude-score/${id}`,
-        method: "PUT",
-        body,
-      }),
-      invalidatesTags: ["attitude"],
-    }),
-
-    // Academic scores
-    getAcademicScores: builder.query({
-      query: ({ classid, subjectid, chapterid }) => ({
-        url: "/academic-scores",
-        params: { classid, subjectid, chapterid },
-      }),
-      providesTags: ["academic"],
-    }),
-
-    createAcademicScore: builder.mutation({
-      query: (body) => ({
-        url: "/add-academic-score",
-        method: "POST",
-        body,
-      }),
-      invalidatesTags: ["academic"],
-    }),
-
-    updateAcademicScore: builder.mutation({
-      query: ({ id, body }) => ({
-        url: `/update-academic-score/${id}`,
-        method: "PUT",
-        body,
-      }),
-      invalidatesTags: ["academic"],
-    }),
-
-    // Attendance records
-    getAttendanceRecords: builder.query({
-      query: ({ classid, subjectid, month }) => ({
-        url: "/attendance-records",
-        params: { classid, subjectid, month },
-      }),
-      providesTags: ["attendance"],
-    }),
-
-    createAttendanceRecord: builder.mutation({
-      query: (body) => ({
-        url: "/add-attendance-record",
-        method: "POST",
-        body,
-      }),
-      invalidatesTags: ["attendance"],
-    }),
-
-    updateAttendanceRecord: builder.mutation({
-      query: ({ id, body }) => ({
-        url: `/update-attendance-record/${id}`,
-        method: "PUT",
-        body,
-      }),
-      invalidatesTags: ["attendance"],
-    }),
-
-    // Daily summative scores
-    getDailySummative: builder.query({
-      query: ({ classid, subjectid, chapterid }) => ({
-        url: "/daily-summative",
-        params: { classid, subjectid, chapterid },
-      }),
-      providesTags: ["academic"],
-    }),
-
-    createDailySummative: builder.mutation({
-      query: (body) => ({
-        url: "/add-daily-summative",
-        method: "POST",
-        body,
-      }),
-      invalidatesTags: ["academic"],
-    }),
-
-    // Final grades calculation
-    getFinalGrades: builder.query({
-      query: ({ classid, subjectid }) => ({
-        url: "/final-grades",
-        params: { classid, subjectid },
-      }),
-      providesTags: ["grades"],
-    }),
-
-    // Comprehensive student report
-    getStudentReport: builder.query({
-      query: ({ studentid, subjectid, month }) => ({
-        url: "/student-report",
-        params: { studentid, subjectid, month },
-      }),
-      providesTags: ["reports", "attitude", "academic", "attendance", "grades"],
-    }),
-
-    // Bulk operations
-    bulkSaveScores: builder.mutation({
-      query: (body) => ({
-        url: "/bulk-save-scores",
-        method: "POST",
-        body,
-      }),
-      invalidatesTags: ["reports", "attitude", "academic"],
-    }),
-
-    // Get comprehensive recap data
-    getRecap: builder.query({
-      query: ({ classid, subjectid, chapterid, month, semester }) => ({
-        url: "/recap",
-        params: { classid, subjectid, chapterid, month, semester },
-      }),
-      providesTags: (
-        result,
-        error,
-        { classid, subjectid, chapterid, month, semester }
-      ) => [
-        {
-          type: "reports",
-          id: `recap-${classid}-${subjectid}-${chapterid}-${month}-${semester}`,
-        },
-      ],
-    }),
-
-    // Export reports
-    exportReport: builder.mutation({
-      query: (body) => ({
-        url: "/export-report",
-        method: "POST",
-        body,
-        responseHandler: (response) => response.blob(),
-      }),
+      invalidatesTags: ["finalScores"],
     }),
 
     getNewCompletion: builder.query({
@@ -367,35 +205,29 @@ export const ApiScore = createApi({
 });
 
 export const {
+  // Pembobotan
   useGetWeightingQuery,
   useSaveWeightingMutation,
+
+  // Nilai Sikap
   useGetAttitudeQuery,
   useUpsertAttitudeMutation,
   useBulkUpsertAttitudeMutation,
+
+  // Nilai Formatif
   useGetFormativeQuery,
   useUpsertFormativeMutation,
   useBulkUpsertFormativeMutation,
+
+  // Nilai Sumatif
   useGetSummativeQuery,
   useUpsertSummativeMutation,
   useBulkUpsertSummativeMutation,
-  useGetReportsQuery,
-  useCreateReportMutation,
-  useUpdateReportMutation,
-  useGetAttitudeScoresQuery,
-  useCreateAttitudeScoreMutation,
-  useUpdateAttitudeScoreMutation,
-  useGetAcademicScoresQuery,
-  useCreateAcademicScoreMutation,
-  useUpdateAcademicScoreMutation,
-  useGetAttendanceRecordsQuery,
-  useCreateAttendanceRecordMutation,
-  useUpdateAttendanceRecordMutation,
-  useGetDailySummativeQuery,
-  useCreateDailySummativeMutation,
-  useGetFinalGradesQuery,
-  useGetStudentReportQuery,
-  useBulkSaveScoresMutation,
-  useGetRecapQuery,
-  useExportReportMutation,
+
+  // Nilai Akhir Se,ester
+  useGetFinalScoreQuery,
+  useUpSertFinalScoreMutation,
+
+  //Laporan Bulanan guru
   useGetNewCompletionQuery, // Baru
 } = ApiScore;

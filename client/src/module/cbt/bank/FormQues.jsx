@@ -81,8 +81,8 @@ const FormQues = ({ open, onClose, title, ques, bankid }) => {
       onCancel={onClose}
       width={900}
       destroyOnHidden
-      okText='Simpan'
-      cancelText='Tutup'
+      okText="Simpan"
+      cancelText="Tutup"
       confirmLoading={isLoading}
       loading={isLoading}
       onOk={() => form.submit()}
@@ -90,27 +90,28 @@ const FormQues = ({ open, onClose, title, ques, bankid }) => {
     >
       <Form
         form={form}
-        layout='vertical'
+        layout="vertical"
         onFinish={handleSubmit}
         initialValues={{ type: 1, poin: 0 }}
         style={{
           height: 600,
           overflowY: "auto",
           overflowX: "hidden",
-          scrollbarWidth: "none",
+          scrollbarWidth: "thin",
+          padding: "16px",
         }}
       >
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
-              name='type'
-              label='Tipe Pertanyaan'
+              name="type"
+              label="Tipe Pertanyaan"
               rules={[
                 { required: true, message: "Silakan pilih tipe pertanyaan!" },
               ]}
             >
               <Select
-                placeholder='Pilih Tipe Pertanyaan'
+                placeholder="Pilih Tipe Pertanyaan"
                 onChange={(value) => setType(value)}
                 options={[
                   { label: "Pilihan Ganda", value: 1 },
@@ -123,14 +124,14 @@ const FormQues = ({ open, onClose, title, ques, bankid }) => {
 
           <Col span={12}>
             <Form.Item
-              name='poin'
-              label='Poin'
+              name="poin"
+              label="Poin"
               rules={[{ required: true, message: "Silakan masukkan poin!" }]}
             >
               <InputNumber
                 style={{ width: "100%" }}
                 min={0}
-                placeholder='Masukkan Poin'
+                placeholder="Masukkan Poin"
               />
             </Form.Item>
           </Col>
@@ -138,14 +139,14 @@ const FormQues = ({ open, onClose, title, ques, bankid }) => {
 
         {type === 1 && (
           <Form.Item
-            name='qkey'
-            label='Kunci Jawaban'
+            name="qkey"
+            label="Kunci Jawaban"
             rules={[
               { required: true, message: "Silakan pilih kunci jawaban!" },
             ]}
           >
             <Select
-              placeholder='Pilih Kunci Jawaban'
+              placeholder="Pilih Kunci Jawaban"
               options={[
                 { label: "A", value: "A" },
                 { label: "B", value: "B" },
@@ -165,13 +166,13 @@ const FormQues = ({ open, onClose, title, ques, bankid }) => {
         )}
 
         <Form.Item
-          name='question'
-          label='Pertanyaan'
+          name="question"
+          label="Pertanyaan"
           rules={[
             { required: true, message: "Pertanyaan tidak boleh kosong!" },
           ]}
         >
-          <Editor placeholder='Ketikan pertanyaan di sini ...' height={200} />
+          <Editor placeholder="Ketikan pertanyaan di sini ..." height={200} />
         </Form.Item>
 
         {type === 1 &&
