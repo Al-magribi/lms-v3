@@ -64,7 +64,7 @@ const LmsControl = () => {
       icon: <FileDoneOutlined />,
     },
     {
-      label: "Nilai Harian",
+      label: "Nilai Sumatif",
       key: "6",
       children: <Daily />,
       icon: <AuditOutlined />,

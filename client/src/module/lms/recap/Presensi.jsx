@@ -18,6 +18,7 @@ import { DownloadOutlined } from "@ant-design/icons";
 import { useGetPresensiQuery } from "../../../service/api/lms/ApiRecap";
 import * as XLSX from "xlsx";
 import moment from "moment";
+import { useSelector } from "react-redux";
 
 const { Title, Text } = Typography;
 
@@ -25,6 +26,8 @@ const Presensi = () => {
   const page = "";
   const limit = "";
   const search = "";
+
+  const user = useSelector((state) => state.auth.user);
 
   const [selectedSemester, setSemester] = useState(null);
   const [classid, setClassid] = useState(null);
@@ -50,8 +53,20 @@ const Presensi = () => {
     { label: "Semester 1", value: 1 },
     { label: "Semester 2", value: 2 },
   ];
+
   const clsOpt = clsData?.map((c) => ({ label: c.name, value: c.id }));
-  const subjectOpt = subjectData?.map((s) => ({ label: s.name, value: s.id }));
+
+  const subjectAdmin = subjectData?.map((s) => ({
+    label: s.name,
+    value: s.id,
+  }));
+
+  const subjectTeacher = user?.subjects?.map((s) => ({
+    label: s.name,
+    value: s.id,
+  }));
+
+  const subjectOpt = user?.level === "admin" ? subjectAdmin : subjectTeacher;
 
   const filterOption = (input, option) =>
     (option?.label ?? "").toLowerCase().includes(input.toLowerCase());

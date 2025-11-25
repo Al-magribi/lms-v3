@@ -17,6 +17,7 @@ import { useGetSubjectQuery } from "../../../service/api/main/ApiSubject";
 import { DownloadOutlined } from "@ant-design/icons";
 import { useGetFinalScoreQuery } from "../../../service/api/lms/ApiRecap";
 import * as XLSX from "xlsx"; // 1. Import library xlsx
+import { useSelector } from "react-redux";
 
 const { Title, Text } = Typography;
 
@@ -24,6 +25,8 @@ const Final = () => {
   const page = "";
   const limit = "";
   const search = "";
+
+  const user = useSelector((state) => state.auth.user);
 
   const [selectedSemester, setSemester] = useState(null);
   const [classid, setClassid] = useState(null);
@@ -50,7 +53,18 @@ const Final = () => {
     { label: "Semester 2", value: 2 },
   ];
   const clsOpt = clsData?.map((c) => ({ label: c.name, value: c.id }));
-  const subjectOpt = subjectData?.map((s) => ({ label: s.name, value: s.id }));
+
+  const subjectAdmin = subjectData?.map((s) => ({
+    label: s.name,
+    value: s.id,
+  }));
+
+  const subjectTeacher = user?.subjects?.map((s) => ({
+    label: s.name,
+    value: s.id,
+  }));
+
+  const subjectOpt = user?.level === "admin" ? subjectAdmin : subjectTeacher;
 
   const filterOption = (input, option) =>
     (option?.label ?? "").toLowerCase().includes(input.toLowerCase());
@@ -195,7 +209,7 @@ const Final = () => {
     {
       title: (
         <div style={{ textAlign: "center" }}>
-          Harian <br />
+          Sumatif <br />
           <Text type="secondary" style={{ fontSize: "0.8em" }}>
             {scoreData?.weights?.daily || 0}%
           </Text>

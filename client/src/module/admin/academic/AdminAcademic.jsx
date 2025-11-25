@@ -58,7 +58,7 @@ const AdminAcademic = () => {
       icon: <FileDoneOutlined />,
     },
     {
-      label: "Nilai Harian",
+      label: "Nilai Sumatif",
       key: "8",
       children: <Daily />,
       icon: <AuditOutlined />,
