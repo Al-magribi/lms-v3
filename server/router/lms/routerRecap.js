@@ -552,7 +552,173 @@ router.get("/monthly-recap", async (req, res) => {
 
 // REKAPITULASI SEMESTER
 // Rekap Nilai Akhir Semester
-// Rekap Nilai Akhir Semester
+
+// router.get("/final-score", authorize("admin", "teacher"), async (req, res) => {
+//   const client = await pool.connect();
+//   try {
+//     const { semester, classid, subjectid } = req.query;
+//     const homebase = req.user.homebase;
+
+//     // Validasi input
+//     if (!semester || !classid || !subjectid) {
+//       return res
+//         .status(400)
+//         .json({ message: "Semester, Class ID, and Subject ID are required" });
+//     }
+
+//     // 1. Ambil Periode Aktif
+//     const periodeResult = await client.query(
+//       `SELECT id FROM a_periode WHERE isactive = true AND homebase = $1`,
+//       [homebase]
+//     );
+//     if (periodeResult.rows.length === 0)
+//       return res.status(404).json({ message: "No active period found" });
+//     const activePeriode = periodeResult.rows[0].id;
+
+//     // 2. Ambil Bobot Nilai
+//     const subjectResult = await client.query(
+//       `SELECT presensi, attitude, daily, final FROM a_subject WHERE id = $1`,
+//       [subjectid]
+//     );
+//     if (subjectResult.rows.length === 0)
+//       return res.status(404).json({ message: "Subject not found" });
+
+//     const weights = {
+//       presensi: subjectResult.rows[0].presensi || 0,
+//       attitude: subjectResult.rows[0].attitude || 0,
+//       daily: subjectResult.rows[0].daily || 0,
+//       final: subjectResult.rows[0].final || 0,
+//     };
+
+//     // 3. Query Utama dengan Logic Baru (Global Denominator untuk Absensi)
+//     const query = `
+//       WITH
+//       -- A. Daftar Siswa
+//       student_list AS (
+//         SELECT s.id, s.name, s.nis
+//         FROM u_students s
+//         JOIN cl_students cl ON s.id = cl.student
+//         WHERE cl.classid = $1 AND cl.periode = $2
+//       ),
+
+//       -- B1. [BARU] Hitung Total Hari Pertemuan (Global Denominator)
+//       -- Ini setara dengan logic .flat().length di frontend: Menghitung total hari unik pertemuan kelas
+//       total_days_calc AS (
+//         SELECT COUNT(DISTINCT day_date)::float as total_days
+//         FROM l_attendance
+//         WHERE classid = $1 AND subjectid = $3 AND periode = $2
+//         AND (
+//             ($4 = 1 AND EXTRACT(MONTH FROM day_date) BETWEEN 7 AND 12) OR
+//             ($4 = 2 AND EXTRACT(MONTH FROM day_date) BETWEEN 1 AND 6)
+//         )
+//       ),
+
+//       -- B2. [UPDATE] Hitung Jumlah Kehadiran 'Hadir' per Siswa
+//       attendance_raw AS (
+//         SELECT
+//             studentid,
+//             COUNT(*) FILTER (WHERE note = 'Hadir') as total_hadir
+//         FROM l_attendance
+//         WHERE classid = $1 AND subjectid = $3 AND periode = $2
+//           AND (
+//             ($4 = 1 AND EXTRACT(MONTH FROM day_date) BETWEEN 7 AND 12) OR
+//             ($4 = 2 AND EXTRACT(MONTH FROM day_date) BETWEEN 1 AND 6)
+//           )
+//         GROUP BY studentid
+//       ),
+
+//       -- C. Hitung Sikap
+//       attitude_calc AS (
+//         SELECT student_id, AVG(val) as score
+//         FROM (
+//             SELECT student_id, unnest(ARRAY[kinerja, kedisiplinan, keaktifan, percaya_diri]) as val
+//             FROM l_attitude
+//             WHERE class_id = $1 AND subject_id = $3 AND periode_id = $2 AND semester = $4
+//         ) raw_att
+//         WHERE val IS NOT NULL
+//         GROUP BY student_id
+//       ),
+
+//       -- D. Hitung Harian
+//       daily_calc AS (
+//         SELECT student_id, AVG(val) as score
+//         FROM (
+//             SELECT student_id, unnest(ARRAY[f_1, f_2, f_3, f_4, f_5, f_6, f_7, f_8]) as val
+//             FROM l_formative
+//             WHERE class_id = $1 AND subject_id = $3 AND periode_id = $2 AND semester = $4
+//             UNION ALL
+//             SELECT student_id, unnest(ARRAY[oral, written, project, performance]) as val
+//             FROM l_summative
+//             WHERE class_id = $1 AND subject_id = $3 AND periode_id = $2 AND semester = $4
+//         ) combined_daily
+//         WHERE val IS NOT NULL
+//         GROUP BY student_id
+//       ),
+
+//       -- E. Ujian Akhir
+//       final_test_calc AS (
+//         SELECT studentid, score
+//         FROM l_finalscore
+//         WHERE classid = $1 AND subjectid = $3 AND periode = $2 AND semester = $4
+//       )
+
+//       -- F. Gabungkan
+//       SELECT
+//         s.id, s.nis, s.name,
+//         -- Rumus Absensi: (Total Hadir Siswa / Total Hari Global) * 100
+//         -- Menggunakan NULLIF untuk mencegah error division by zero jika total_days = 0
+//         (COALESCE(attd.total_hadir, 0)::float / NULLIF((SELECT total_days FROM total_days_calc), 0) * 100) AS nilai_kehadiran,
+//         COALESCE(att.score, 0) AS nilai_sikap,
+//         COALESCE(day.score, 0) AS nilai_harian,
+//         COALESCE(fin.score, 0) AS nilai_ujian_akhir
+//       FROM student_list s
+//       LEFT JOIN attendance_raw attd ON s.id = attd.studentid
+//       LEFT JOIN attitude_calc att ON s.id = att.student_id
+//       LEFT JOIN daily_calc day ON s.id = day.student_id
+//       LEFT JOIN final_test_calc fin ON s.id = fin.studentid
+//       ORDER BY s.name ASC;
+//     `;
+
+//     const result = await client.query(query, [
+//       classid,
+//       activePeriode,
+//       subjectid,
+//       semester,
+//     ]);
+
+//     const finalData = result.rows.map((row, index) => {
+//       const n_absen = parseFloat(row.nilai_kehadiran || 0);
+//       const n_sikap = parseFloat(row.nilai_sikap);
+//       const n_harian = parseFloat(row.nilai_harian);
+//       const n_uas = parseFloat(row.nilai_ujian_akhir);
+
+//       const totalScore =
+//         (n_absen * weights.presensi) / 100 +
+//         (n_sikap * weights.attitude) / 100 +
+//         (n_harian * weights.daily) / 100 +
+//         (n_uas * weights.final) / 100;
+
+//       return {
+//         no: index + 1,
+//         nis: row.nis,
+//         nama_siswa: row.name,
+//         kehadiran: n_absen.toFixed(0),
+//         sikap: n_sikap.toFixed(0),
+//         harian: n_harian.toFixed(0),
+//         ujian_akhir: n_uas.toFixed(0),
+//         nilai_akhir: totalScore.toFixed(0),
+//       };
+//     });
+
+//     res.json({ weights, data: finalData });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: error.message });
+//   } finally {
+//     client.release();
+//   }
+// });
+
 router.get("/final-score", authorize("admin", "teacher"), async (req, res) => {
   const client = await pool.connect();
   try {
@@ -575,9 +741,9 @@ router.get("/final-score", authorize("admin", "teacher"), async (req, res) => {
       return res.status(404).json({ message: "No active period found" });
     const activePeriode = periodeResult.rows[0].id;
 
-    // 2. Ambil Bobot Nilai
+    // 2. Ambil Bobot Nilai (HAPUS bobot daily, hanya pakai presensi, attitude, final)
     const subjectResult = await client.query(
-      `SELECT presensi, attitude, daily, final FROM a_subject WHERE id = $1`,
+      `SELECT presensi, attitude, final FROM a_subject WHERE id = $1`,
       [subjectid]
     );
     if (subjectResult.rows.length === 0)
@@ -586,11 +752,10 @@ router.get("/final-score", authorize("admin", "teacher"), async (req, res) => {
     const weights = {
       presensi: subjectResult.rows[0].presensi || 0,
       attitude: subjectResult.rows[0].attitude || 0,
-      daily: subjectResult.rows[0].daily || 0,
-      final: subjectResult.rows[0].final || 0,
+      final: subjectResult.rows[0].final || 0, // Ini akan menjadi bobot gabungan (Sumatif + UAS)
     };
 
-    // 3. Query Utama dengan Logic Baru (Global Denominator untuk Absensi)
+    // 3. Query Utama
     const query = `
       WITH 
       -- A. Daftar Siswa
@@ -601,8 +766,7 @@ router.get("/final-score", authorize("admin", "teacher"), async (req, res) => {
         WHERE cl.classid = $1 AND cl.periode = $2
       ),
       
-      -- B1. [BARU] Hitung Total Hari Pertemuan (Global Denominator)
-      -- Ini setara dengan logic .flat().length di frontend: Menghitung total hari unik pertemuan kelas
+      -- B. Hitung Absensi (Global Denominator)
       total_days_calc AS (
         SELECT COUNT(DISTINCT day_date)::float as total_days
         FROM l_attendance
@@ -612,8 +776,6 @@ router.get("/final-score", authorize("admin", "teacher"), async (req, res) => {
             ($4 = 2 AND EXTRACT(MONTH FROM day_date) BETWEEN 1 AND 6)
         )
       ),
-
-      -- B2. [UPDATE] Hitung Jumlah Kehadiran 'Hadir' per Siswa
       attendance_raw AS (
         SELECT 
             studentid,
@@ -639,23 +801,20 @@ router.get("/final-score", authorize("admin", "teacher"), async (req, res) => {
         GROUP BY student_id
       ),
 
-      -- D. Hitung Harian 
-      daily_calc AS (
+      -- D. Hitung Sumatif (PENGGANTI HARIAN)
+      -- Hanya mengambil dari l_summative sesuai instruksi
+      summative_calc AS (
         SELECT student_id, AVG(val) as score
         FROM (
-            SELECT student_id, unnest(ARRAY[f_1, f_2, f_3, f_4, f_5, f_6, f_7, f_8]) as val 
-            FROM l_formative 
-            WHERE class_id = $1 AND subject_id = $3 AND periode_id = $2 AND semester = $4
-            UNION ALL
             SELECT student_id, unnest(ARRAY[oral, written, project, performance]) as val 
             FROM l_summative 
             WHERE class_id = $1 AND subject_id = $3 AND periode_id = $2 AND semester = $4
-        ) combined_daily
+        ) raw_sum
         WHERE val IS NOT NULL 
         GROUP BY student_id
       ),
 
-      -- E. Ujian Akhir
+      -- E. Ujian Akhir (UAS)
       final_test_calc AS (
         SELECT studentid, score
         FROM l_finalscore
@@ -665,16 +824,14 @@ router.get("/final-score", authorize("admin", "teacher"), async (req, res) => {
       -- F. Gabungkan
       SELECT 
         s.id, s.nis, s.name,
-        -- Rumus Absensi: (Total Hadir Siswa / Total Hari Global) * 100
-        -- Menggunakan NULLIF untuk mencegah error division by zero jika total_days = 0
         (COALESCE(attd.total_hadir, 0)::float / NULLIF((SELECT total_days FROM total_days_calc), 0) * 100) AS nilai_kehadiran,
         COALESCE(att.score, 0) AS nilai_sikap,
-        COALESCE(day.score, 0) AS nilai_harian,
+        COALESCE(sum_calc.score, 0) AS nilai_sumatif, -- Ini sekarang murni rata-rata sumatif
         COALESCE(fin.score, 0) AS nilai_ujian_akhir
       FROM student_list s
       LEFT JOIN attendance_raw attd ON s.id = attd.studentid
       LEFT JOIN attitude_calc att ON s.id = att.student_id
-      LEFT JOIN daily_calc day ON s.id = day.student_id
+      LEFT JOIN summative_calc sum_calc ON s.id = sum_calc.student_id
       LEFT JOIN final_test_calc fin ON s.id = fin.studentid
       ORDER BY s.name ASC;
     `;
@@ -688,15 +845,21 @@ router.get("/final-score", authorize("admin", "teacher"), async (req, res) => {
 
     const finalData = result.rows.map((row, index) => {
       const n_absen = parseFloat(row.nilai_kehadiran || 0);
-      const n_sikap = parseFloat(row.nilai_sikap);
-      const n_harian = parseFloat(row.nilai_harian);
-      const n_uas = parseFloat(row.nilai_ujian_akhir);
+      const n_sikap = parseFloat(row.nilai_sikap || 0);
+      const n_sumatif = parseFloat(row.nilai_sumatif || 0); // Kolom C di Excel
+      const n_uas = parseFloat(row.nilai_ujian_akhir || 0); // Kolom D di Excel
 
+      // LOGIC BARU SESUAI GAMBAR EXCEL:
+      // 1. Hitung Rerata Sumatif & Ujian Akhir (Kolom E di Excel)
+      //    Rumus: (Sumatif + UAS) / 2
+      const rerata_akademik = (n_sumatif + n_uas) / 2;
+
+      // 2. Hitung Nilai Akhir (Kolom F di Excel)
+      //    Rumus: (Absen * Bobot_Absen) + (Sikap * Bobot_Sikap) + (Rerata_Akademik * Bobot_Final)
       const totalScore =
         (n_absen * weights.presensi) / 100 +
         (n_sikap * weights.attitude) / 100 +
-        (n_harian * weights.daily) / 100 +
-        (n_uas * weights.final) / 100;
+        (rerata_akademik * weights.final) / 100;
 
       return {
         no: index + 1,
@@ -704,8 +867,9 @@ router.get("/final-score", authorize("admin", "teacher"), async (req, res) => {
         nama_siswa: row.name,
         kehadiran: n_absen.toFixed(0),
         sikap: n_sikap.toFixed(0),
-        harian: n_harian.toFixed(0),
-        ujian_akhir: n_uas.toFixed(0),
+        sumatif: n_sumatif.toFixed(0), // Ditampilkan sebagai info
+        ujian_akhir: n_uas.toFixed(0), // Ditampilkan sebagai info
+        rerata_gabungan: rerata_akademik.toFixed(0), // Debugging: nilai tengah (Kolom E)
         nilai_akhir: totalScore.toFixed(0),
       };
     });

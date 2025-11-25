@@ -29,8 +29,8 @@ const FormWeight = ({ title, open, onClose, subject }) => {
     useUpdateWeightsMutation();
 
   const totalWeight = useMemo(() => {
-    const { presensi = 0, attitude = 0, daily = 0, final = 0 } = values || {};
-    return presensi + attitude + daily + final;
+    const { presensi = 0, attitude = 0, final = 0 } = values || {};
+    return presensi + attitude + final;
   }, [values]);
 
   const handleSubmit = (formValues) => {
@@ -64,7 +64,6 @@ const FormWeight = ({ title, open, onClose, subject }) => {
       form.setFieldsValue({
         presensi: subject.presensi,
         attitude: subject.attitude,
-        daily: subject.daily,
         final: subject.final,
       });
     }
@@ -132,28 +131,6 @@ const FormWeight = ({ title, open, onClose, subject }) => {
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
-              name="daily"
-              label={
-                <Space>
-                  <BookOutlined />
-                  Bobot Nilai Sumatif
-                </Space>
-              }
-              tooltip="Nilai rerata dari sumatif dan formatif"
-              rules={[{ required: true, message: "Wajib diisi" }]}
-            >
-              <InputNumber
-                style={{ width: "100%" }}
-                min={0}
-                max={100}
-                addonAfter="%"
-                placeholder="e.g., 30"
-              />
-            </Form.Item>
-          </Col>
-
-          <Col span={12}>
-            <Form.Item
               name="final"
               label={
                 <Space>
@@ -161,7 +138,7 @@ const FormWeight = ({ title, open, onClose, subject }) => {
                   Bobot Nilai Akhir
                 </Space>
               }
-              tooltip="Nilai rerata dari sumatif dan formatif"
+              tooltip="Bobot Nilai Sumatif dan Nilai Akhir"
               rules={[{ required: true, message: "Wajib diisi" }]}
             >
               <InputNumber

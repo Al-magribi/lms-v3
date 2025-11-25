@@ -136,7 +136,6 @@ router.get("/get-subjects", authorize("admin", "teacher"), async (req, res) => {
 				s.cover,
         s.presensi,
         s.attitude,
-        s.daily,
         s.final,
         c.name AS category_name,
         c.id AS category_id,
@@ -181,7 +180,6 @@ router.get("/get-subjects", authorize("admin", "teacher"), async (req, res) => {
 			WHERE s.homebase = $1 AND s.name ILIKE $2
 			GROUP BY s.id, s.name, s.cover, s.presensi,
           s.attitude,
-          s.daily,
           s.final, c.name, c.id, b.name, b.id
 			ORDER BY s.name ASC
 			LIMIT $3 OFFSET $4
@@ -505,14 +503,13 @@ router.delete("/delete-subject", authorize("admin"), async (req, res) => {
 
 // Simpan data bobot mata pelajaran
 router.put("/update-weights", authorize("admin"), async (req, res) => {
-  const { presensi, attitude, daily, final, id } = req.body;
+  const { presensi, attitude, final, id } = req.body;
 
-  if (!presensi || !attitude || !daily || !final) {
+  if (!presensi || !attitude || !final) {
     return res.status(400).json({ message: "Data bobot harus lengkap" });
   }
 
-  const totalWeight =
-    Number(presensi) + Number(attitude) + Number(daily) + Number(final);
+  const totalWeight = Number(presensi) + Number(attitude) + Number(final);
 
   if (totalWeight !== 100) {
     return res
@@ -526,8 +523,8 @@ router.put("/update-weights", authorize("admin"), async (req, res) => {
     await client.query("BEGIN");
 
     await client.query(
-      `UPDATE a_subject SET presensi = $1, attitude = $2, daily = $3, final = $4 WHERE id = $5`,
-      [presensi, attitude, daily, final, id]
+      `UPDATE a_subject SET presensi = $1, attitude = $2,  final = $3 WHERE id = $4`,
+      [presensi, attitude, final, id]
     );
 
     await client.query("COMMIT");

@@ -16,7 +16,7 @@ import { useGetClassQuery } from "../../../service/api/main/ApiClass";
 import { useGetSubjectQuery } from "../../../service/api/main/ApiSubject";
 import { DownloadOutlined } from "@ant-design/icons";
 import { useGetFinalScoreQuery } from "../../../service/api/lms/ApiRecap";
-import * as XLSX from "xlsx"; // 1. Import library xlsx
+import * as XLSX from "xlsx";
 import { useSelector } from "react-redux";
 
 const { Title, Text } = Typography;
@@ -74,7 +74,7 @@ const Final = () => {
   const getSubjectName = () =>
     subjectData?.find((s) => s.id === subjectid)?.name || "-";
 
-  // 2. Fungsi Handle Download Excel
+  // --- 1. Update Logic Download Excel ---
   const handleDownload = () => {
     if (!scoreData || !scoreData.data || scoreData.data.length === 0) {
       message.warning("Tidak ada data untuk diunduh");
@@ -84,13 +84,12 @@ const Final = () => {
     const weights = scoreData.weights || {
       presensi: 0,
       attitude: 0,
-      daily: 0,
       final: 0,
     };
     const className = getClassName();
     const subjectName = getSubjectName();
 
-    // A. Susun Header Info (Baris 1)
+    // A. Susun Header Info
     const headerInfo = [
       [
         "Semester",
@@ -100,56 +99,54 @@ const Final = () => {
         "Pelajaran",
         subjectName,
       ],
-      [], // Baris kosong untuk pemisah
+      [],
     ];
 
-    // B. Susun Judul Kolom dengan Bobot (Baris 3)
+    // B. Susun Header Tabel (Sesuai Gambar Excel)
     const tableHeaders = [
       "No",
       "NIS",
       "Nama Siswa",
       `Kehadiran (${weights.presensi}%)`,
       `Sikap (${weights.attitude}%)`,
-      `Harian (${weights.daily}%)`,
-      `Ujian Akhir (${weights.final}%)`,
+      "Sumatif",
+      "Ujian Akhir",
+      `Rerata Gabungan (${weights.final}%)`, // Kolom E
       "Nilai Akhir",
     ];
 
-    // C. Mapping Data Siswa ke Array
+    // C. Mapping Data
     const tableData = scoreData.data.map((row) => [
       row.no,
       row.nis,
       row.nama_siswa,
-      parseFloat(row.kehadiran), // Convert ke number agar Excel membacanya sebagai angka
+      parseFloat(row.kehadiran),
       parseFloat(row.sikap),
-      parseFloat(row.harian),
-      parseFloat(row.ujian_akhir),
+      parseFloat(row.sumatif), // Data Sumatif Murni
+      parseFloat(row.ujian_akhir), // Data UAS Murni
+      parseFloat(row.rerata_gabungan), // Data (Sumatif+UAS)/2
       parseFloat(row.nilai_akhir),
     ]);
 
-    // D. Gabungkan Semua
     const finalSheetData = [...headerInfo, tableHeaders, ...tableData];
-
-    // E. Buat Worksheet
     const ws = XLSX.utils.aoa_to_sheet(finalSheetData);
 
-    // F. Atur Lebar Kolom (Opsional, agar rapi saat dibuka)
+    // D. Lebar Kolom
     ws["!cols"] = [
-      { wch: 5 }, // No
-      { wch: 15 }, // NIS
-      { wch: 30 }, // Nama
-      { wch: 15 }, // Kehadiran
-      { wch: 15 }, // Sikap
-      { wch: 15 }, // Harian
-      { wch: 15 }, // Ujian
-      { wch: 15 }, // Akhir
+      { wch: 5 },
+      { wch: 15 },
+      { wch: 30 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 10 },
+      { wch: 10 },
+      { wch: 20 },
+      { wch: 15 },
     ];
 
-    // G. Buat Workbook & Download
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Nilai Akhir");
 
-    // Nama file dinamis
     const fileName =
       `Nilai_Akhir_${className}_${subjectName}_Semester_${selectedSemester}.xlsx`.replace(
         /\s+/g,
@@ -159,6 +156,7 @@ const Final = () => {
     XLSX.writeFile(wb, fileName);
   };
 
+  // --- 2. Update Struktur Columns Table ---
   const columns = [
     {
       title: "No",
@@ -166,17 +164,21 @@ const Final = () => {
       key: "no",
       width: 50,
       align: "center",
+      fixed: "left",
     },
     {
       title: "NIS",
       dataIndex: "nis",
       key: "nis",
       width: 100,
+      fixed: "left",
     },
     {
       title: "Nama Siswa",
       dataIndex: "nama_siswa",
       key: "nama_siswa",
+      width: 200,
+      fixed: "left",
     },
     {
       title: (
@@ -206,33 +208,37 @@ const Final = () => {
       align: "center",
       width: 100,
     },
+    // Kolom C: Sumatif (Tanpa bobot di judul, karena bobot ada di rerata)
     {
-      title: (
-        <div style={{ textAlign: "center" }}>
-          Sumatif <br />
-          <Text type="secondary" style={{ fontSize: "0.8em" }}>
-            {scoreData?.weights?.daily || 0}%
-          </Text>
-        </div>
-      ),
-      dataIndex: "harian",
-      key: "harian",
+      title: "Sumatif",
+      dataIndex: "sumatif",
+      key: "sumatif",
       align: "center",
       width: 100,
     },
+    // Kolom D: Ujian Akhir
+    {
+      title: "Ujian Akhir",
+      dataIndex: "ujian_akhir",
+      key: "ujian_akhir",
+      align: "center",
+      width: 100,
+    },
+    // Kolom E: Rerata Gabungan (Disini Bobot Final diletakkan)
     {
       title: (
         <div style={{ textAlign: "center" }}>
-          Ujian Akhir <br />
+          Rerata (S+U) <br />
           <Text type="secondary" style={{ fontSize: "0.8em" }}>
             {scoreData?.weights?.final || 0}%
           </Text>
         </div>
       ),
-      dataIndex: "ujian_akhir",
-      key: "ujian_akhir",
+      dataIndex: "rerata_gabungan",
+      key: "rerata_gabungan",
       align: "center",
-      width: 100,
+      width: 120,
+      render: (text) => <Text strong>{text}</Text>, // Optional: tebalkan agar terlihat beda
     },
     {
       title: "Nilai Akhir",
@@ -241,7 +247,20 @@ const Final = () => {
       align: "center",
       fixed: "right",
       width: 100,
-      render: (text) => <strong>{text}</strong>,
+      render: (text) => (
+        <div
+          style={{
+            backgroundColor: "#f6ffed",
+            border: "1px solid #b7eb8f",
+            padding: "4px",
+            borderRadius: "4px",
+            fontWeight: "bold",
+            color: "#389e0d",
+          }}
+        >
+          {text}
+        </div>
+      ),
     },
   ];
 
@@ -284,11 +303,10 @@ const Final = () => {
             virtual={false}
           />
 
-          {/* 3. Pasang Handler di Button */}
           <Button
             icon={<DownloadOutlined />}
             onClick={handleDownload}
-            disabled={!scoreData || isLoading || isFetching} // Disable jika data belum siap
+            disabled={!scoreData || isLoading || isFetching}
           >
             Download
           </Button>
@@ -336,7 +354,7 @@ const Final = () => {
             pagination={false}
             bordered
             size="middle"
-            scroll={{ x: 800 }}
+            scroll={{ x: 1000 }} // Sedikit diperlebar karena ada kolom baru
           />
         </Card>
       )}
