@@ -8,10 +8,11 @@ const router = express.Router();
 // Admin Dashboard
 // ======================================
 router.get("/admin-stats", authorize("admin"), async (req, res) => {
+  const client = await pool.connect();
   try {
     const homebaseId = req.user.homebase;
 
-    const periode = await pool.query(
+    const periode = await client.query(
       `SELECT * FROM a_periode WHERE homebase = $1 AND isactive = true`,
       [homebaseId]
     );
@@ -19,7 +20,7 @@ router.get("/admin-stats", authorize("admin"), async (req, res) => {
     const activePeriode = periode.rows[0].id;
 
     // Basic counts
-    const basicStats = await pool.query(
+    const basicStats = await client.query(
       `
             SELECT 
                 (SELECT COUNT(DISTINCT us.id) 
@@ -38,7 +39,7 @@ router.get("/admin-stats", authorize("admin"), async (req, res) => {
     );
 
     // Students per grade with gender composition
-    const studentsPerGrade = await pool.query(
+    const studentsPerGrade = await client.query(
       `
             SELECT 
                 g.name as grade_name,
@@ -57,7 +58,7 @@ router.get("/admin-stats", authorize("admin"), async (req, res) => {
     );
 
     // Students per class with gender composition
-    const studentsPerClass = await pool.query(
+    const studentsPerClass = await client.query(
       `
             SELECT 
                 c.name as class_name,
@@ -77,7 +78,7 @@ router.get("/admin-stats", authorize("admin"), async (req, res) => {
     );
 
     // Teacher composition by gender and homeroom status
-    const teacherComposition = await pool.query(
+    const teacherComposition = await client.query(
       `
             SELECT 
                 COUNT(*) as total_teachers,
@@ -91,7 +92,7 @@ router.get("/admin-stats", authorize("admin"), async (req, res) => {
     );
 
     // Activity logs
-    const activityLogs = await pool.query(
+    const activityLogs = await client.query(
       `
             SELECT 
                 l.id,
@@ -125,7 +126,7 @@ router.get("/admin-stats", authorize("admin"), async (req, res) => {
     );
 
     // Recent activities (last 7 days)
-    const recentActivities = await pool.query(
+    const recentActivities = await client.query(
       `
             SELECT 
                 'exam' as type,
@@ -162,7 +163,7 @@ router.get("/admin-stats", authorize("admin"), async (req, res) => {
     );
 
     // Exam statistics
-    const examStats = await pool.query(
+    const examStats = await client.query(
       `
             SELECT 
                 COUNT(*) as total_exams,
@@ -180,7 +181,7 @@ router.get("/admin-stats", authorize("admin"), async (req, res) => {
     );
 
     // Learning material statistics
-    const learningStats = await pool.query(
+    const learningStats = await client.query(
       `
             SELECT 
                 COUNT(DISTINCT ch.id) as total_chapters,
@@ -201,7 +202,7 @@ router.get("/admin-stats", authorize("admin"), async (req, res) => {
     );
 
     // Student demographic data untuk admin (filter by homebaseid, ignore null birth_date)
-    const studentDemographics = await pool.query(
+    const studentDemographics = await client.query(
       `
       WITH valid_students AS (
         SELECT
@@ -273,7 +274,7 @@ router.get("/admin-stats", authorize("admin"), async (req, res) => {
     );
 
     // Geographical distribution of students
-    const geographicalDistribution = await pool.query(
+    const geographicalDistribution = await client.query(
       `
       WITH province_stats AS (
         SELECT 
@@ -347,7 +348,7 @@ router.get("/admin-stats", authorize("admin"), async (req, res) => {
     );
 
     // Student data completeness by grade
-    const studentCompleteness = await pool.query(
+    const studentCompleteness = await client.query(
       `
       WITH student_data AS (
         SELECT 
@@ -393,7 +394,7 @@ router.get("/admin-stats", authorize("admin"), async (req, res) => {
     );
 
     // Student entry statistics
-    const entryStats = await pool.query(
+    const entryStats = await client.query(
       `
       SELECT 
         e.name as entry_name,
@@ -424,6 +425,8 @@ router.get("/admin-stats", authorize("admin"), async (req, res) => {
   } catch (error) {
     console.error("Error fetching dashboard stats:", error);
     res.status(500).json({ message: "Internal server error" });
+  } finally {
+    client.release();
   }
 });
 
@@ -433,12 +436,13 @@ router.get("/admin-stats", authorize("admin"), async (req, res) => {
 
 // Teacher Dashboard Stats
 router.get("/teacher-stats", authorize("teacher"), async (req, res) => {
+  const client = await pool.connect();
   try {
     const teacherId = req.user.id;
     const homebaseId = req.user.homebase;
 
     // Get teacher's subjects and classes
-    const teachingStats = await pool.query(
+    const teachingStats = await client.query(
       `
       SELECT 
         (SELECT COUNT(DISTINCT subject) FROM at_subject WHERE teacher = $1) as total_subjects,
@@ -458,7 +462,7 @@ router.get("/teacher-stats", authorize("teacher"), async (req, res) => {
     );
 
     // Get recent exams
-    const recentExams = await pool.query(
+    const recentExams = await client.query(
       `
       SELECT id, name, duration, isactive, createdat
       FROM c_exam
@@ -470,7 +474,7 @@ router.get("/teacher-stats", authorize("teacher"), async (req, res) => {
     );
 
     // Get recent learning materials
-    const recentMaterials = await pool.query(
+    const recentMaterials = await client.query(
       `
       SELECT id, title, createdat
       FROM l_chapter
@@ -489,6 +493,8 @@ router.get("/teacher-stats", authorize("teacher"), async (req, res) => {
   } catch (error) {
     console.error("Error fetching teacher dashboard stats:", error);
     res.status(500).json({ message: "Internal server error" });
+  } finally {
+    client.release();
   }
 });
 
@@ -496,16 +502,17 @@ router.get("/teacher-stats", authorize("teacher"), async (req, res) => {
 // Student Dashboard
 // ======================================
 router.get("/student-stats", authorize("student"), async (req, res) => {
+  const client = await pool.connect();
   try {
     const studentId = req.user.id;
     const homebaseId = req.user.homebase;
-    const periode = await pool.query(
+    const periode = await client.query(
       `SELECT * FROM a_periode WHERE isactive = true`
     );
     const activePeriode = periode.rows[0];
 
     // Get student's class and subjects (Fixed Query)
-    const studentInfo = await pool.query(
+    const studentInfo = await client.query(
       `
       SELECT 
         c.name as class_name,
@@ -526,7 +533,7 @@ router.get("/student-stats", authorize("student"), async (req, res) => {
     );
 
     // Get upcoming exams (No changes needed)
-    const upcomingExams = await pool.query(
+    const upcomingExams = await client.query(
       `
       SELECT 
         e.id,
@@ -552,7 +559,7 @@ router.get("/student-stats", authorize("student"), async (req, res) => {
     );
 
     // Get recent learning materials (No changes needed)
-    const recentMaterials = await pool.query(
+    const recentMaterials = await client.query(
       `
       SELECT 
         ch.id,
@@ -573,7 +580,7 @@ router.get("/student-stats", authorize("student"), async (req, res) => {
     );
 
     // Get Quran learning progress (No changes needed)
-    const quranProgress = await pool.query(
+    const quranProgress = await client.query(
       `
       SELECT 
         COUNT(DISTINCT p.juz_id) as completed_juz,
@@ -594,6 +601,8 @@ router.get("/student-stats", authorize("student"), async (req, res) => {
   } catch (error) {
     console.error("Error fetching student dashboard stats:", error);
     res.status(500).json({ message: "Internal server error" });
+  } finally {
+    client.release();
   }
 });
 
@@ -601,12 +610,13 @@ router.get("/student-stats", authorize("student"), async (req, res) => {
 // Parent Dashboard
 // ======================================
 router.get("/parent-stats", authorize("parent"), async (req, res) => {
+  const client = await pool.connect();
   try {
     const parentId = req.user.id;
     const homebaseId = req.user.homebase;
 
     // First, get the student ID linked to this parent account
-    const parentStudentQuery = await pool.query(
+    const parentStudentQuery = await client.query(
       `SELECT studentid FROM u_parents WHERE id = $1`,
       [parentId]
     );
@@ -620,7 +630,7 @@ router.get("/parent-stats", authorize("parent"), async (req, res) => {
     const studentId = parentStudentQuery.rows[0].studentid;
 
     // Get Quran learning progress for the child
-    const quranProgress = await pool.query(
+    const quranProgress = await client.query(
       `
       SELECT 
         st.id as student_id,
@@ -647,6 +657,8 @@ router.get("/parent-stats", authorize("parent"), async (req, res) => {
   } catch (error) {
     console.error("Error fetching parent dashboard stats:", error);
     res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
   }
 });
 
@@ -654,9 +666,10 @@ router.get("/parent-stats", authorize("parent"), async (req, res) => {
 // Center Dashboard (Admin Pusat)
 // ======================================
 router.get("/center-stats", authorize("center"), async (req, res) => {
+  const client = await pool.connect();
   try {
     // Combine multiple basic stats into a single query
-    const basicStats = await pool.query(`
+    const basicStats = await client.query(`
       SELECT 
         (SELECT COUNT(*) FROM u_students) as total_students,
         (SELECT COUNT(*) FROM u_teachers) as total_teachers,
@@ -669,7 +682,7 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
     `);
 
     // Combine students per grade and teacher composition in one query
-    const gradeAndTeacherStats = await pool.query(`
+    const gradeAndTeacherStats = await client.query(`
       WITH grade_stats AS (
         SELECT 
           g.name as grade_name,
@@ -707,7 +720,7 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
     `);
 
     // Combine exam and learning stats
-    const examAndLearningStats = await pool.query(`
+    const examAndLearningStats = await client.query(`
       WITH exam_stats AS (
         SELECT 
           COUNT(*) as total_exams,
@@ -746,7 +759,7 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
     `);
 
     // Optimized recent activities query
-    const recentActivities = await pool.query(`
+    const recentActivities = await client.query(`
       SELECT 
         'exam' as type,
         e.name as title,
@@ -779,7 +792,7 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
     `);
 
     // Optimized homebase statistics
-    const homebaseStats = await pool.query(`
+    const homebaseStats = await client.query(`
       SELECT 
         h.name as homebase_name,
         COUNT(DISTINCT s.id) as total_students,
@@ -796,7 +809,7 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
     `);
 
     // Optimized activity logs with LIMIT
-    const activityLogs = await pool.query(`
+    const activityLogs = await client.query(`
       SELECT 
         l.id,
         l.action,
@@ -824,7 +837,7 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
     `);
 
     // Simplified student demographics query
-    const studentDemographics = await pool.query(`
+    const studentDemographics = await client.query(`
       WITH age_data AS (
         SELECT
           gender,
@@ -872,7 +885,7 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
     `);
 
     // Optimized geographical distribution
-    const geographicalDistribution = await pool.query(`
+    const geographicalDistribution = await client.query(`
       WITH province_stats AS (
         SELECT 
           p.name as province_name,
@@ -935,7 +948,7 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
     `);
 
     // Simplified student completeness query
-    const studentCompleteness = await pool.query(`
+    const studentCompleteness = await client.query(`
       SELECT 
         g.name as grade_name,
         COUNT(DISTINCT s.id) as total_students,
@@ -953,7 +966,7 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
     `);
 
     // Student entry statistics
-    const entryStats = await pool.query(`
+    const entryStats = await client.query(`
       SELECT 
         e.name as entry_name,
         COUNT(*) as student_count
@@ -984,12 +997,15 @@ router.get("/center-stats", authorize("center"), async (req, res) => {
   } catch (error) {
     console.error("Error fetching center dashboard stats:", error);
     res.status(500).json({ message: "Internal server error" });
+  } finally {
+    client.release();
   }
 });
 
 router.get("/center-basic-stats", authorize("center"), async (req, res) => {
+  const client = await pool.connect();
   try {
-    const result = await pool.query(`
+    const result = await client.query(`
       SELECT 
         (SELECT COUNT(*) FROM u_students) as total_students,
         (SELECT COUNT(*) FROM u_teachers) as total_teachers,
@@ -1000,14 +1016,17 @@ router.get("/center-basic-stats", authorize("center"), async (req, res) => {
   } catch (error) {
     console.error("Error fetching basic stats:", error);
     res.status(500).json({ message: "Internal server error" });
+  } finally {
+    client.release();
   }
 });
 
 router.get("/center-homebase-stats", authorize("center"), async (req, res) => {
+  const client = await pool.connect();
   try {
     const { homebaseId } = req.query;
 
-    const result = await pool.query(
+    const result = await client.query(
       `
       WITH active_periode AS (
         SELECT id, homebase
@@ -1119,6 +1138,8 @@ router.get("/center-homebase-stats", authorize("center"), async (req, res) => {
   } catch (error) {
     console.error("Error fetching grades-teachers-homebase stats:", error);
     res.status(500).json({ message: "Internal server error" });
+  } finally {
+    client.release();
   }
 });
 
@@ -1126,10 +1147,11 @@ router.get(
   "/homebase-stats",
   authorize("center", "admin"),
   async (req, res) => {
+    const client = await pool.connect();
     try {
       const homebase = req.user.homebase;
 
-      const result = await pool.query(
+      const result = await client.query(
         `
       WITH active_periode AS (
         SELECT id, homebase
@@ -1241,6 +1263,8 @@ router.get(
     } catch (error) {
       console.error("Error fetching grades-teachers-homebase stats:", error);
       res.status(500).json({ message: "Internal server error" });
+    } finally {
+      client.release();
     }
   }
 );

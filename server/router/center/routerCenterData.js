@@ -160,17 +160,3 @@ router.get("/get-family-data", authorize("center"), async (req, res) => {
 // ... existing code ...
 
 export default router;
-
-const result = [
-  {
-    student_id: "Id siswa dari u_students",
-    student_name: "Nama siswa dari u_students",
-    family_id: "Id keluarga dari db_family",
-    family_name: "Nama keluarga dari db_family",
-    family_age: "Umur keluarga dari db_family",
-    father_phone: "No HP Ayah dari db_student",
-    mother_phone: "No HP Ibu dari db_student",
-    father_name: "Nama Ayah dari db_student",
-    mother_name: "Nama Ibu dari db_student",
-  },
-];

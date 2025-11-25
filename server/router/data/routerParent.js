@@ -109,6 +109,8 @@ router.post("/add-parent", authorize("admin"), async (req, res) => {
 
   const client = await pool.connect();
   try {
+    await client.query("BEGIN");
+
     // --- SKENARIO 2: UPDATE DATA JIKA ADA ID ---
     if (id) {
       // Cek konflik email (pastikan email baru tidak dipakai oleh user lain)
@@ -192,8 +194,11 @@ router.post("/add-parent", authorize("admin"), async (req, res) => {
       [studentid, email, name, hashedPassword]
     );
 
+    await client.query("COMMIT");
+
     res.status(201).json({ message: create });
   } catch (error) {
+    await client.query("ROLLBACK");
     console.error(error);
     res.status(500).json({ message: error.message });
   } finally {

@@ -317,11 +317,13 @@ router.post(
   "/upload-question",
   authorize("admin", "teacher"),
   async (req, res) => {
+    const client = await pool.connect();
     try {
       const { bankid } = req.query;
       const questions = req.body;
 
-      const client = await pool.connect();
+      await client.query("BEGIN");
+
       const data = await client.query(
         `SELECT btype FROM c_bank WHERE id = $1`,
         [bankid]
@@ -417,13 +419,18 @@ router.post(
           })
         );
 
+        await client.query("COMMIT");
+
         res
           .status(200)
           .json({ message: `${validQuestions.length} soal berhasil diupload` });
       }
     } catch (error) {
+      await client.query("ROLLBACK");
       console.log(error);
       res.status(500).json({ message: error.message });
+    } finally {
+      client.release();
     }
   }
 );
@@ -433,11 +440,13 @@ router.get(
   "/get-questions",
   authorize("admin", "teacher"),
   async (req, res) => {
+    const client = await pool.connect();
     try {
       const { page = 1, limit = 10, search = "", bankid } = req.query;
       const offset = (page - 1) * limit;
 
-      const client = await pool.connect();
+      await client.query("BEGIN");
+
       const count = await client.query(
         `SELECT COUNT(*) FROM c_question 
 				WHERE bank = $1
@@ -457,24 +466,29 @@ router.get(
       const totalData = parseInt(count.rows[0].count);
       const totalPages = Math.ceil(totalData / limit);
 
+      await client.query("COMMIT");
+
       res.status(200).json({
         totalData,
         totalPages,
         questions: data.rows,
       });
     } catch (error) {
+      await client.query("ROLLBACK");
       console.log(error);
       res.status(500).json({ message: error.message });
+    } finally {
+      client.release();
     }
   }
 );
 
 // Mengambil data soal detail
 router.get("/get-question", authorize("admin", "teacher"), async (req, res) => {
+  const client = await pool.connect();
   try {
     const { id } = req.query;
 
-    const client = await pool.connect();
     const data = await client.query(`SELECT * FROM c_question WHERE id = $1`, [
       id,
     ]);
@@ -483,6 +497,8 @@ router.get("/get-question", authorize("admin", "teacher"), async (req, res) => {
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
   }
 });
 
@@ -491,16 +507,18 @@ router.delete(
   "/delete-question",
   authorize("admin", "teacher"),
   async (req, res) => {
+    const client = await pool.connect();
     try {
       const { id } = req.query;
 
-      const client = await pool.connect();
       await client.query(`DELETE FROM c_question WHERE id = $1`, [id]);
 
       res.status(200).json({ message: remove });
     } catch (error) {
       console.log(error);
       res.status(500).json({ message: error.message });
+    } finally {
+      client.release();
     }
   }
 );
@@ -510,16 +528,18 @@ router.delete(
   "/clear-bank",
   authorize("admin", "teacher"),
   async (req, res) => {
+    const client = await pool.connect();
     try {
       const { bankid } = req.query;
 
-      const client = await pool.connect();
       await client.query(`DELETE FROM c_question WHERE bank = $1`, [bankid]);
 
       res.status(200).json({ message: remove });
     } catch (error) {
       console.log(error);
       res.status(500).json({ message: error.message });
+    } finally {
+      client.release();
     }
   }
 );

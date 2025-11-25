@@ -721,9 +721,8 @@ router.delete("/delete-category", authorize("admin"), async (req, res) => {
 
 // Menampilkan daftar pelajaran sesuai dengan rumpun
 router.get("/get-subject-branches", authorize("admin"), async (req, res) => {
+  const client = await pool.connect();
   try {
-    const client = await pool.connect();
-
     const homebase = req.user.homebase;
     const branchid = req.query.id;
 
@@ -827,6 +826,8 @@ router.get("/get-subject-branches", authorize("admin"), async (req, res) => {
   } catch (error) {
     console.error("Error fetching subject branches structure:", error);
     res.status(500).json({ message: error.message });
+  } finally {
+    client.release();
   }
 });
 

@@ -16,6 +16,7 @@ const ERROR_TYPES = {
   "55P03": "Lock Timeout - Timeout saat menunggu lock",
   57014: "Query Canceled - Query dibatalkan",
   57000: "Statement Timeout - Query melebihi batas waktu",
+  53300: "Too Many Connections - Batas koneksi database tercapai", // Tambahan
 };
 
 const config = {
@@ -24,9 +25,11 @@ const config = {
   host: process.env.P_HOST,
   port: process.env.P_PORT,
   database: process.env.P_DATABASE,
-  max: 2000,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000,
+  // PENTING: Jangan 2000. Sesuaikan dengan limit server (biasanya 100).
+  // Diset 90 untuk menyisakan ruang bagi superuser/maintenance.
+  max: 90,
+  idleTimeoutMillis: 10000, // Kurangi jadi 10 detik agar koneksi nganggur cepat mati
+  connectionTimeoutMillis: 5000, // Percepat timeout
   maxUses: 7500,
   application_name: "LMS-V3",
   statement_timeout: 120000,
@@ -34,8 +37,8 @@ const config = {
   prepare: true,
   keepalive: true,
   keepaliveInitialDelayMillis: 10000,
-  maxWaitingClients: 5000,
-  idleInTransactionSessionTimeout: 60000,
+  maxWaitingClients: 50, // Jangan biarkan antrian terlalu panjang
+  idleInTransactionSessionTimeout: 30000, // Matikan transaksi macet > 30 detik
 };
 
 const pool = new Pool(config);
@@ -58,13 +61,30 @@ Context: ${context}
 Message: ${error.message}
 Stack: ${error.stack}
   `);
+};
 
-  // Simpan error ke file log jika diperlukan
-  // fs.appendFileSync('database-errors.log', errorLog);
+// --- LOGIC RESET POOL ---
+const forceResetConnection = async (reason) => {
+  console.error(`\n[${getIndonesianTime()}] [CRITICAL] ${reason}`);
+  console.error("!!! MEMULAI PROSEDUR RESET KONEKSI !!!");
+  console.error("Mengakhiri semua koneksi pool...");
+
+  try {
+    // Mencoba menutup pool dengan sopan
+    await pool.end();
+    console.log("Pool berhasil ditutup.");
+  } catch (e) {
+    console.error("Gagal menutup pool secara normal, memaksa keluar...");
+  }
+
+  console.log("Merestart service untuk membersihkan koneksi menjadi 0...");
+  // Exit code 1 akan memicu Nodemon/PM2 untuk restart otomatis
+  // Ini adalah cara paling bersih untuk "Koneksi menjadi 0"
+  process.exit(1);
 };
 
 // Enhanced pool monitoring
-const monitorPool = () => {
+const monitorPool = async () => {
   const stats = {
     total: pool.totalCount,
     idle: pool.idleCount,
@@ -72,67 +92,44 @@ const monitorPool = () => {
     timestamp: getIndonesianTime(),
   };
 
-  // Log warning if pool is getting full
-  if (stats.total > config.max * 0.8) {
-    console.warn(
-      `[${stats.timestamp}] WARNING: Pool usage high (${stats.total}/${config.max})`
-    );
-  }
-
-  // Log warning if many clients are waiting
-  if (stats.waiting > 50) {
-    console.warn(
-      `[${stats.timestamp}] WARNING: High number of waiting clients (${stats.waiting})`
-    );
-  }
-
   console.log(`
 [${stats.timestamp}] Status Pool:
-Total Koneksi: ${stats.total}
+Total Koneksi: ${stats.total}/${config.max}
 Koneksi Idle: ${stats.idle}
 Request Menunggu: ${stats.waiting}
   `);
+
+  // LOGIC UTAMA: Jika penuh atau macet, lakukan Reset
+  if (stats.total >= config.max) {
+    await forceResetConnection("POOL PENUH (MAX CAPACITY REACHED)");
+  }
+
+  // Jika banyak yang antri tapi tidak ada yang idle (kemungkinan deadlock)
+  if (stats.waiting > 20 && stats.idle === 0) {
+    await forceResetConnection("REQUEST MACET (HIGH WAITING, NO IDLE)");
+  }
 };
 
-// Monitor pool every 30 seconds
-setInterval(monitorPool, 30000);
+// Monitor pool lebih cepat (setiap 10 detik) untuk respons cepat
+setInterval(monitorPool, 10000);
 
 // Enhanced error handling for pool
 pool.on("error", (err, client) => {
   logError(err, "Pool Error");
 
-  if (err.code === "57P01" || err.code === "08006") {
-    console.log("Mencoba menghubungkan ulang ke database...");
-    setTimeout(() => {
-      connectToDatabase();
-    }, 5000);
+  // Jika error karena koneksi penuh, langsung reset
+  if (err.code === "53300" || err.code === "57P01") {
+    forceResetConnection("DATABASE MENOLAK KONEKSI (TOO MANY CLIENTS)");
   }
-
-  console.error("Unexpected error on idle client", err);
-  process.exit(-1);
 });
 
 pool.on("connect", (client) => {
-  console.log(`[${getIndonesianTime()}] Koneksi baru ke database berhasil`);
+  // Optional: Uncomment jika ingin log setiap koneksi (bisa spam log)
+  // console.log(`[${getIndonesianTime()}] Koneksi baru dibuat. Total: ${pool.totalCount}`);
 });
 
-// Add connection release monitoring with enhanced logging
 pool.on("remove", (client) => {
-  const stats = {
-    total: pool.totalCount,
-    idle: pool.idleCount,
-    waiting: pool.waitingCount,
-    timestamp: getIndonesianTime(),
-  };
-
-  console.log(`[${stats.timestamp}] Client dihapus dari pool. Status:`, stats);
-
-  // Log warning if pool is getting exhausted
-  if (stats.total < config.max) {
-    console.warn(
-      `[${stats.timestamp}] WARNING: Pool size below minimum (${stats.total}/${config.max})`
-    );
-  }
+  // Client removed
 });
 
 const connectToDatabase = async () => {
@@ -156,18 +153,21 @@ const connectToDatabase = async () => {
     } catch (err) {
       logError(err, `Percobaan koneksi ke-${6 - retries}/5`);
       retries--;
+
+      // Jika error karena penuh saat startup, langsung paksa reset
+      if (err.code === "53300" || err.code === "57P01") {
+        process.exit(1);
+      }
+
       if (retries === 0) {
-        console.error(
-          "[KRITIS] Gagal terhubung ke database setelah 5 percobaan"
-        );
-        return;
+        console.error("[KRITIS] Gagal terhubung ke database. Restarting...");
+        process.exit(1);
       }
       await new Promise((resolve) => setTimeout(resolve, retryDelay));
     }
   }
 };
 
-// Enhanced getClient function with better error handling and connection management
 const getClient = async () => {
   const maxRetries = 3;
   let retryCount = 0;
@@ -175,29 +175,27 @@ const getClient = async () => {
   while (retryCount < maxRetries) {
     try {
       const client = await pool.connect();
-
-      // Set statement timeout for this client
       await client.query("SET statement_timeout = $1", [
         config.statement_timeout,
       ]);
-
       return client;
     } catch (err) {
       retryCount++;
-      const waitTime = Math.min(1000 * Math.pow(2, retryCount), 10000);
+      const waitTime = 1000;
 
-      if (err.code === "57P01") {
-        logError(err, `Pool Exhausted - Percobaan ${retryCount}/${maxRetries}`);
-        console.error(`Menunggu ${waitTime}ms sebelum mencoba lagi...`);
-        await new Promise((resolve) => setTimeout(resolve, waitTime));
-        continue;
+      // Jika error koneksi penuh, jangan retry, biarkan monitorPool mereset
+      if (err.code === "53300" || err.code === "57P01") {
+        throw new Error("Server Database Penuh - Tunggu Reset Otomatis");
       }
 
-      logError(err, "Error saat mendapatkan client");
-      throw err;
+      if (retryCount >= maxRetries) {
+        logError(err, "Gagal mendapatkan client");
+        throw err;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, waitTime));
     }
   }
-  throw new Error("Gagal mendapatkan client setelah maksimum percobaan");
 };
 
 const checkPoolHealth = async () => {
@@ -210,7 +208,6 @@ const checkPoolHealth = async () => {
       client.release();
     }
   } catch (err) {
-    logError(err, "Health Check Failed");
     return false;
   }
 };
