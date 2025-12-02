@@ -17,7 +17,7 @@ const Logs = ({ examid, classid, tableRef, syncTrigger }) => {
   const [search, setSearch] = useState("");
 
   const [autoRefetchEnabled, setAutoRefetchEnabled] = useState(false);
-  const [refetchInterval, setRefetchInterval] = useState(300000); // Default 5 menit (dalam ms)
+  const [refetchInterval, setRefetchInterval] = useState(60000); // Default 5 menit (dalam ms)
 
   const [open, setOpen] = useState(false);
   const [detail, setDetail] = useState("");
@@ -263,6 +263,7 @@ const Logs = ({ examid, classid, tableRef, syncTrigger }) => {
             disabled={!autoRefetchEnabled}
             style={{ width: 150 }}
           >
+            <Select.Option value={60000}>Setiap 1 Menit</Select.Option>
             <Select.Option value={300000}>Setiap 5 Menit</Select.Option>
             <Select.Option value={600000}>Setiap 10 Menit</Select.Option>
           </Select>

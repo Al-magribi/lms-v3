@@ -379,6 +379,7 @@ const Room = () => {
           }}
         >
           <Question
+            isShuffle={exam?.isshuffle}
             currentQuestion={currentQuestion}
             currentPage={currentPage}
             totalQuestions={questionsData.length}

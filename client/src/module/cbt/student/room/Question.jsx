@@ -21,6 +21,7 @@ const createMarkup = (html) => {
 };
 
 const Question = ({
+  isShuffle,
   currentQuestion,
   currentPage,
   totalQuestions,
@@ -37,7 +38,7 @@ const Question = ({
   if (!currentQuestion) {
     return (
       <Card style={{ margin: "16px" }}>
-        <Spin tip='Memuat soal...' />
+        <Spin tip="Memuat soal..." />
       </Card>
     );
   }
@@ -97,14 +98,14 @@ const Question = ({
         dangerouslySetInnerHTML={createMarkup(currentQuestion.question)}
       />
 
-      <Divider orientation='left'>Opsi Jawaban</Divider>
+      <Divider orientation="left">Opsi Jawaban</Divider>
 
       {isLoadingAnswer ? (
         <Spin />
       ) : currentQuestion.qtype === 2 ? (
         <TextArea
           rows={4}
-          placeholder='Ketikkan jawabanmu disini...'
+          placeholder="Ketikkan jawabanmu disini..."
           value={essay}
           onChange={(e) => setEssay(e.target.value)}
           onBlur={() => handleSubmit()}
@@ -118,8 +119,8 @@ const Question = ({
               choice.text.trim() !== "" && (
                 <Col key={choice.key} xs={24} sm={24} md={12}>
                   <Flex
-                    align='start'
-                    gap='small'
+                    align="start"
+                    gap="small"
                     style={{
                       padding: "12px",
                       borderRadius: "8px",
@@ -134,6 +135,7 @@ const Question = ({
                     }}
                     onClick={() => handleChoiceClick(choice.key)}
                   >
+                    {!isShuffle && <p>{choice.key.toUpperCase()}.</p>}
                     <div
                       style={{ flex: 1 }}
                       dangerouslySetInnerHTML={createMarkup(choice.text)}
@@ -170,7 +172,7 @@ const Question = ({
         <Col xs={24} md={8}>
           <Button
             style={{ width: "100%" }}
-            type='primary'
+            type="primary"
             danger
             onClick={onFinish}
             disabled={!isAllAnswered()}
@@ -186,7 +188,7 @@ const Question = ({
         <Col xs={24} md={8}>
           <Button
             style={{ width: "100%" }}
-            type='primary'
+            type="primary"
             onClick={onNext}
             disabled={currentPage === totalQuestions}
           >
