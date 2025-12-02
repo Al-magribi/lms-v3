@@ -86,7 +86,7 @@ const Analysis = ({ examid, classid, tableRef, syncTrigger }) => {
           const studentAnswer = studentAnswerObj
             ? studentAnswerObj.mc.toUpperCase()
             : "-";
-          const isCorrect = studentAnswer === question.qkey.toUpperCase();
+          const isCorrect = studentAnswer === question?.qkey?.toUpperCase();
 
           if (!studentAnswerObj) {
             return <Typography.Text type="secondary">-</Typography.Text>;
