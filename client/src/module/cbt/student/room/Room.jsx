@@ -60,7 +60,7 @@ const Room = () => {
   const [timeLeft, setTimeLeft] = useState(null);
   const [isExamStarted, setIsExamStarted] = useState(false);
   const [drawerVisible, setDrawerVisible] = useState(false);
-  const [isFinishingExam, setIsFinishingExam] = useState(false); // <-- TAMBAHKAN STATE INI
+  const [isFinishingExam, setIsFinishingExam] = useState(false);
 
   // --- Effects ---
 
@@ -68,6 +68,8 @@ const Room = () => {
   const [penalty] = usePenaltyMutation();
   const layoutRef = useRef(null);
   const [isInFullScreen, setIsInFullScreen] = useState(false);
+  // Ref untuk mencegah pinalti dipanggil berkali-kali (race condition)
+  const penaltyExecutedRef = useRef(false);
 
   const requestFullScreen = async () => {
     const element = layoutRef.current;
@@ -91,37 +93,53 @@ const Room = () => {
     }
   };
 
+  // --- FUNGSI REUSABLE UNTUK PINALTI (Digunakan oleh Fullscreen & Tab Checker) ---
+  const handlePenalty = useCallback(
+    (reason) => {
+      // Cek apakah sedang finishing exam atau pinalti sudah pernah dieksekusi
+      if (isFinishingExam || penaltyExecutedRef.current) return;
+
+      penaltyExecutedRef.current = true; // Set flag agar tidak double post
+      message.loading({ content: "Menerapkan penalti...", key: "penalty" });
+
+      penalty({ student: user?.id, exam: examid })
+        .unwrap()
+        .then(() => {
+          message.success({
+            content: `Pelanggaran terdeteksi (${reason})! Ujian dihentikan otomatis.`,
+            key: "penalty",
+            duration: 5,
+          });
+          navigate(`/siswa-cbt`);
+        })
+        .catch((err) => {
+          console.error("Gagal menerapkan penalti:", err);
+          penaltyExecutedRef.current = false; // Reset jika gagal agar bisa retry (opsional)
+          message.error({
+            content: "Gagal menerapkan penalti.",
+            key: "penalty",
+          });
+        });
+    },
+    [isFinishingExam, penalty, user?.id, examid, navigate]
+  );
+
+  // --- 1. DETEKSI FULLSCREEN ---
   useEffect(() => {
     const handleFullScreenChange = () => {
       const isFullScreen = document.fullscreenElement != null;
       setIsInFullScreen(isFullScreen);
-      // <-- UBAH LOGIKA KONDISI DI BAWAH INI
+
       if (!isFullScreen && isExamStarted && !isFinishingExam) {
-        message.loading({ content: "Menerapkan penalti...", key: "penalty" });
-        penalty({ student: user?.id, exam: examid })
-          .unwrap()
-          .then(() => {
-            message.success({
-              content:
-                "Pelanggaran terdeteksi! Ujian Anda telah dihentikan karena keluar dari mode layar penuh.",
-              key: "penalty",
-              duration: 5,
-            });
-            navigate(`/siswa-cbt`);
-          })
-          .catch((err) => {
-            console.error("Gagal menerapkan penalti:", err);
-            message.error({
-              content: "Gagal menerapkan penalti.",
-              key: "penalty",
-            });
-          });
+        handlePenalty("Keluar Mode Layar Penuh");
       }
     };
+
     document.addEventListener("fullscreenchange", handleFullScreenChange);
     document.addEventListener("webkitfullscreenchange", handleFullScreenChange);
     document.addEventListener("mozfullscreenchange", handleFullScreenChange);
     document.addEventListener("MSFullscreenChange", handleFullScreenChange);
+
     return () => {
       document.removeEventListener("fullscreenchange", handleFullScreenChange);
       document.removeEventListener(
@@ -137,8 +155,25 @@ const Room = () => {
         handleFullScreenChange
       );
     };
-    // <-- TAMBAHKAN isFinishingExam DI DEPENDENCY ARRAY
-  }, [isExamStarted, penalty, user?.id, examid, navigate, isFinishingExam]);
+  }, [isExamStarted, isFinishingExam, handlePenalty]);
+
+  // --- 2. DETEKSI PINDAH TAB / AKTIVITAS BROWSER (Visibility API) ---
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      // Jika dokumen tersembunyi (tab tidak aktif/minimize)
+      if (document.hidden && isExamStarted && !isFinishingExam) {
+        handlePenalty("Pindah Tab/Aplikasi");
+      }
+    };
+
+    // Kita juga bisa menggunakan window.onblur sebagai backup,
+    // tapi visibilitychange lebih akurat untuk tab switching.
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [isExamStarted, isFinishingExam, handlePenalty]);
 
   useEffect(() => {
     if (questions && Array.isArray(questions)) {
@@ -198,7 +233,7 @@ const Room = () => {
   const handleQuestionNumberClick = (questionNumber) => {
     setCurrentPage(questionNumber);
     if (drawerVisible) {
-      setDrawerVisible(false); // Tutup drawer setelah nomor soal diklik
+      setDrawerVisible(false);
     }
   };
 
@@ -281,7 +316,7 @@ const Room = () => {
       okType: "danger",
       cancelText: "Batal",
       onOk() {
-        setIsFinishingExam(true); // <-- TAMBAHKAN BARIS INI
+        setIsFinishingExam(true);
         handleFinishExam();
       },
       getContainer: () => layoutRef.current,
@@ -304,12 +339,12 @@ const Room = () => {
   return (
     <Layout ref={layoutRef} style={{ minHeight: "100vh" }}>
       <Modal
-        title="Mode Ujian Layar Penuh"
+        title='Mode Ujian Layar Penuh'
         open={isExamStarted && !isInFullScreen}
         closable={false}
         maskClosable={false}
         footer={[
-          <Button key="enter" type="primary" onClick={requestFullScreen}>
+          <Button key='enter' type='primary' onClick={requestFullScreen}>
             Masuk Layar Penuh & Mulai Ujian
           </Button>,
         ]}
@@ -319,9 +354,10 @@ const Room = () => {
           penuh (fullscreen) selama mengerjakan soal.
         </Text>
         <br />
-        <Text type="danger">
-          Keluar dari mode layar penuh akan dianggap sebagai pelanggaran dan
-          ujian Anda akan dihentikan secara otomatis.
+        <Text type='danger'>
+          Keluar dari mode layar penuh atau <strong>berpindah tab</strong> akan
+          dianggap sebagai pelanggaran dan ujian Anda akan dihentikan secara
+          otomatis.
         </Text>
       </Modal>
 
@@ -347,8 +383,8 @@ const Room = () => {
       <Layout>
         <Sider
           width={280}
-          breakpoint="lg"
-          collapsedWidth="0"
+          breakpoint='lg'
+          collapsedWidth='0'
           trigger={null}
           style={{
             overflow: "auto",
@@ -362,8 +398,8 @@ const Room = () => {
         </Sider>
 
         <Drawer
-          title="Navigasi Soal"
-          placement="left"
+          title='Navigasi Soal'
+          placement='left'
           onClose={() => setDrawerVisible(false)}
           open={drawerVisible}
           getContainer={false}
