@@ -500,19 +500,25 @@ router.get(
     const client = await pool.connect();
     try {
       const { exam, classid, page = 1, limit = 10, search = "" } = req.query;
-
       const offset = (page - 1) * limit;
-
       const homebase = req.user.homebase;
 
+      // 1. Dapatkan Periode Aktif
       const period = await client.query(
-        `SELECT * FROM a_periode WHERE homebase = $1 AND isactive = true`,
+        `SELECT id FROM a_periode WHERE homebase = $1 AND isactive = true LIMIT 1`,
         [homebase]
       );
 
-      const activePeriod = period.rows[0].id;
+      if (period.rows.length === 0) {
+        return res
+          .status(404)
+          .json({ message: "Periode aktif tidak ditemukan." });
+      }
 
-      // Get exam details and questions
+      const activePeriod = period.rows[0].id;
+      const searchPattern = `%${search}%`;
+
+      // 2. Query Utama dengan perhitungan poin yang presisi
       const examQuery = `
         WITH exam_details AS (
           SELECT 
@@ -525,6 +531,7 @@ router.get(
           WHERE ce.id = $1
         ),
         exam_questions AS (
+          -- Mengambil daftar soal pilihan ganda (qtype = 1) untuk ujian ini
           SELECT 
             cq.id,
             cq.poin,
@@ -536,12 +543,18 @@ router.get(
           ORDER BY cq.id ASC
         ),
         student_answers AS (
+          -- Langkah 1: Mencocokkan jawaban anak (ca.mc) dengan kunci jawaban (cq.qkey)
+          -- Langkah 2: Menarik kolom cq.poin sebagai bobot nilai
           SELECT 
             ca.student,
             ca.question,
-            ca.mc,
-            ca.point
+            ca.mc as student_answer,
+            cq.qkey as correct_key,
+            cq.poin as question_points,
+            -- Flag apakah jawaban benar (case-insensitive comparison)
+            CASE WHEN LOWER(ca.mc) = LOWER(cq.qkey) THEN 1 ELSE 0 END as is_correct
           FROM c_answer ca
+          JOIN c_question cq ON ca.question = cq.id
           WHERE ca.exam = $1 AND ca.essay IS NULL
         ),
         filtered_students AS (
@@ -567,19 +580,21 @@ router.get(
         student_data AS (
           SELECT 
             fs.*,
-            COUNT(CASE WHEN sa.point > 0 THEN 1 END) as correct,
-            COUNT(CASE WHEN sa.point = 0 THEN 1 END) as incorrect,
-            SUM(CASE WHEN sa.mc IS NOT NULL AND sa.point > 0 THEN sa.point ELSE 0 END) as mc_score,
+            COUNT(CASE WHEN sa.is_correct = 1 THEN 1 END) as correct,
+            COUNT(CASE WHEN sa.is_correct = 0 AND sa.student_answer IS NOT NULL THEN 1 END) as incorrect,
+            -- mc_score = jumlah c_question.poin dari question id yang dijawab benar
+            COALESCE(SUM(CASE WHEN sa.is_correct = 1 THEN sa.question_points ELSE 0 END), 0) as mc_score,
             (
               SELECT json_agg(
                 json_build_object(
-                  'id', sa.question,
-                  'mc', sa.mc
+                  'id', ans.question,
+                  'mc', ans.student_answer,
+                  'is_correct', CASE WHEN ans.is_correct = 1 THEN true ELSE false END
                 )
-                ORDER BY sa.question ASC
+                ORDER BY ans.question ASC
               )
-              FROM student_answers sa
-              WHERE sa.student = fs.id
+              FROM student_answers ans
+              WHERE ans.student = fs.id
             ) as answers
           FROM filtered_students fs
           LEFT JOIN student_answers sa ON fs.id = sa.student
@@ -599,7 +614,6 @@ router.get(
         FROM exam_details ed
       `;
 
-      const searchPattern = `%${search}%`;
       const result = await client.query(examQuery, [
         exam,
         classid || null,
@@ -609,13 +623,25 @@ router.get(
         offset,
       ]);
 
+      if (result.rows.length === 0) {
+        return res.status(200).json({
+          message: "Data tidak ditemukan",
+          questions: [],
+          students: [],
+          totalData: 0,
+        });
+      }
+
+      const row = result.rows[0];
+      const totalData = parseInt(row.total_count || 0);
+
       res.status(200).json({
-        ...result.rows[0],
-        totalData: parseInt(result.rows[0].total_count),
-        totalPages: Math.ceil(parseInt(result.rows[0].total_count) / limit),
+        ...row,
+        totalData: totalData,
+        totalPages: Math.ceil(totalData / limit),
       });
     } catch (error) {
-      console.log(error);
+      console.error("Analysis Error:", error);
       res.status(500).json({ message: error.message });
     } finally {
       client.release();

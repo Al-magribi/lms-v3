@@ -10,7 +10,7 @@ import {
   Upload,
   message,
 } from "antd";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
 import { useUploadStudentsMutation } from "../../../../service/api/main/ApiClass";
 import {
@@ -58,8 +58,8 @@ const UploadStudents = ({ open, onClose }) => {
             .map((row) => row.slice(0, 5))
             .filter((row) =>
               row.some(
-                (cell) => cell !== null && cell !== undefined && cell !== ""
-              )
+                (cell) => cell !== null && cell !== undefined && cell !== "",
+              ),
             );
 
           if (filteredData.length === 0) {
@@ -72,7 +72,7 @@ const UploadStudents = ({ open, onClose }) => {
           message.success(`Jumlah data terbaca ${filteredData.length} siswa.`);
         } catch (error) {
           message.error(
-            "Gagal memproses data. Pastikan template yang digunakan benar"
+            "Gagal memproses data. Pastikan template yang digunakan benar",
           );
           console.error("Error parsing Excel file:", error);
         }

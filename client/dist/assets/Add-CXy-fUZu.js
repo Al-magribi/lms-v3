@@ -1,0 +1,1 @@
+import{j as i,G as s,cx as a}from"./index-DXhGeWd5.js";import"./vendor-DnNJsrFE.js";const e=({onClick:e,disabled:o})=>i.jsx(s,{type:"primary",size:"medium",icon:i.jsx(a,{}),onClick:e,disabled:o,children:"Tambah"});export{e as A};

@@ -1,7 +1,11 @@
 import { useState } from "react";
-import { useGetFamilyDataQuery } from "../../../../service/api/center/ApiCenterData";
+import {
+  useDownloadMarketAnalysisMutation,
+  useGetFamilyDataQuery,
+} from "../../../../service/api/center/ApiCenterData";
 import TableLayout from "../../../../components/table/TableLayout";
-import { Space, Typography } from "antd";
+import Download from "../../../../components/buttons/Download";
+import { Flex, Space, Typography, message } from "antd";
 
 const { Text, Link } = Typography;
 
@@ -11,6 +15,7 @@ const Market = () => {
   const [search, setSearch] = useState("");
   const [ageFilter, setAgeFilter] = useState("");
   const [genderFilter, setGenderFilter] = useState("");
+  const [downloadMarketAnalysis] = useDownloadMarketAnalysisMutation();
 
   const { data, isLoading } = useGetFamilyDataQuery({
     page,
@@ -30,6 +35,19 @@ const Market = () => {
   const handleTableChange = (pagination) => {
     setPage(pagination.current);
     setLimit(pagination.pageSize);
+  };
+
+  const handleDownload = async () => {
+    try {
+      await downloadMarketAnalysis({
+        search,
+        family_age: ageFilter,
+        family_gender: genderFilter,
+      }).unwrap();
+      message.success("Berhasil download file analisis market");
+    } catch (error) {
+      message.error(error?.data?.message || "Gagal download file");
+    }
   };
 
   const columns = [
@@ -108,17 +126,23 @@ const Market = () => {
   ];
 
   return (
-    <TableLayout
-      onSearch={handleSearch}
-      isLoading={isLoading}
-      columns={columns}
-      source={results}
-      rowKey="family_id"
-      page={page}
-      limit={limit}
-      totalData={totalData}
-      onChange={handleTableChange}
-    />
+    <Flex vertical gap="middle">
+      <Flex justify="end">
+        <Download onClick={handleDownload} />
+      </Flex>
+
+      <TableLayout
+        onSearch={handleSearch}
+        isLoading={isLoading}
+        columns={columns}
+        source={results}
+        rowKey="family_id"
+        page={page}
+        limit={limit}
+        totalData={totalData}
+        onChange={handleTableChange}
+      />
+    </Flex>
   );
 };
 

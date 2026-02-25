@@ -21,6 +21,8 @@ const Analysis = ({ examid, classid, tableRef, syncTrigger }) => {
     classid,
   });
 
+  console.log(data);
+
   const isInitialMount = useRef(true); // Untuk mencegah refetch pada render pertama
 
   // 3. Gunakan useEffect untuk memanggil refetch saat syncTrigger berubah
