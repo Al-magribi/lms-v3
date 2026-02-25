@@ -12,6 +12,7 @@ import LoadingScreen from "./components/loaders/LoadingScreen";
 import { useLoadUserQuery } from "./service/api/auth/ApiAuth";
 import Profile from "./components/profile/Profile";
 import Room from "./module/cbt/student/room/Room";
+import MainLayout from "./components/layout/MainLayout";
 
 // Center
 const CenterDash = lazy(() => import("./module/center/Dashboard/CenterDash"));
@@ -100,52 +101,54 @@ const AppContent = () => {
   return (
     <Suspense fallback={<LoadingScreen />}>
       <Routes>
-        <Route path='*' element={<Login />} />
         <Route path='/' element={<Login />} />
-        <Route path='/profile' element={<Profile />} />
+        <Route element={<MainLayout root />}>
+          <Route path='/profile' element={<Profile />} />
 
-        {/* Center */}
-        <Route path='/center-dashboard' element={<CenterDash />} />
-        <Route path='/center-admin' element={<CenterAdmin />} />
-        <Route path='/center-satuan' element={<CenterHomebase />} />
-        <Route path='/center-market' element={<CenterAnalysis />} />
+          {/* Center */}
+          <Route path='/center-dashboard' element={<CenterDash />} />
+          <Route path='/center-admin' element={<CenterAdmin />} />
+          <Route path='/center-satuan' element={<CenterHomebase />} />
+          <Route path='/center-market' element={<CenterAnalysis />} />
 
-        {/* Admin */}
-        <Route path='/admin-dashboard' element={<AdminDash />} />
-        <Route path='/admin-data-pokok' element={<AdminData />} />
-        <Route path='/admin-data-siswa' element={<AdminStudent />} />
-        <Route path='/admin-data-akademik' element={<AdminAcademic />} />
+          {/* Admin */}
+          <Route path='/admin-dashboard' element={<AdminDash />} />
+          <Route path='/admin-data-pokok' element={<AdminData />} />
+          <Route path='/admin-data-siswa' element={<AdminStudent />} />
+          <Route path='/admin-data-akademik' element={<AdminAcademic />} />
 
-        {/* Teacher */}
-        <Route path='/guru-dashboard' element={<TeacherDash />} />
+          {/* Teacher */}
+          <Route path='/guru-dashboard' element={<TeacherDash />} />
 
-        {/* Parent */}
-        <Route path='/orangtua-dashboard' element={<ParentDash />} />
-        <Route path='/orangtua-database-siswa' element={<ParentDatabase />} />
-        <Route path='/orangtua-laporan-akademik' element={<ParentAcademic />} />
-        <Route path='/orangtua-laporan-tahfiz' element={<ParentTahfiz />} />
+          {/* Parent */}
+          <Route path='/orangtua-dashboard' element={<ParentDash />} />
+          <Route path='/orangtua-database-siswa' element={<ParentDatabase />} />
+          <Route path='/orangtua-laporan-akademik' element={<ParentAcademic />} />
+          <Route path='/orangtua-laporan-tahfiz' element={<ParentTahfiz />} />
 
-        {/* Student */}
-        <Route path='/siswa-dashboard' element={<StudentDash />} />
-        <Route path='/siswa-laporan-akademik' element={<StudentAcademic />} />
-        <Route path='/siswa-laporan-tahfiz' element={<StudentTahfiz />} />
-        <Route path='/siswa-cbt' element={<StudentExam />} />
-        <Route path='/siswa-lms' element={<StudentLms />} />
+          {/* Student */}
+          <Route path='/siswa-dashboard' element={<StudentDash />} />
+          <Route path='/siswa-laporan-akademik' element={<StudentAcademic />} />
+          <Route path='/siswa-laporan-tahfiz' element={<StudentTahfiz />} />
+          <Route path='/siswa-cbt' element={<StudentExam />} />
+          <Route path='/siswa-lms' element={<StudentLms />} />
 
-        {/* CBT */}
-        <Route path='/computer-based-test' element={<CbtControl />} />
+          {/* CBT */}
+          <Route path='/computer-based-test' element={<CbtControl />} />
 
-        {/* LMS */}
-        <Route path='/learning-management-system' element={<LmsControl />} />
+          {/* LMS */}
+          <Route path='/learning-management-system' element={<LmsControl />} />
 
-        {/* Database */}
-        <Route path='/database' element={<Database />} />
+          {/* Database */}
+          <Route path='/database' element={<Database />} />
 
-        {/* Tahfiz */}
-        <Route path='/tahfiz-dashboard' element={<TahfizDash />} />
-        <Route path='/tahfiz-alquran' element={<TahfizQuran />} />
-        <Route path='/tahfiz-penilaian' element={<TahfizScoring />} />
-        <Route path='/tahfiz-hafalan' element={<TahfizMemo />} />
+          {/* Tahfiz */}
+          <Route path='/tahfiz-dashboard' element={<TahfizDash />} />
+          <Route path='/tahfiz-alquran' element={<TahfizQuran />} />
+          <Route path='/tahfiz-penilaian' element={<TahfizScoring />} />
+          <Route path='/tahfiz-hafalan' element={<TahfizMemo />} />
+        </Route>
+        <Route path='*' element={<Login />} />
       </Routes>
     </Suspense>
   );

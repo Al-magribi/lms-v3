@@ -172,3 +172,49 @@ export const TahfizMenus = [
   { label: "Profile", key: "/profile", icon: <UserOutlined /> },
   { label: "Logout", key: "logout", icon: <LogoutOutlined />, danger: true },
 ];
+
+export const getMenusByLevel = (user) => {
+  switch (user?.level) {
+    case "center":
+      return {
+        mainMenuItems: CenterMenus.slice(0, 4),
+        secondaryMenuItems: CenterMenus.slice(4),
+      };
+    case "admin":
+      return {
+        mainMenuItems: AdminMenus.slice(0, 6),
+        secondaryMenuItems: AdminMenus.slice(6),
+      };
+    case "teacher":
+      if (user?.homeroom) {
+        return {
+          mainMenuItems: TeacherMenus.slice(0, 4),
+          secondaryMenuItems: TeacherMenus.slice(4),
+        };
+      }
+      return {
+        mainMenuItems: TeacherMenus.slice(0, 3),
+        secondaryMenuItems: TeacherMenus.slice(4),
+      };
+    case "student":
+      return {
+        mainMenuItems: StudentMenus.slice(0, 5),
+        secondaryMenuItems: StudentMenus.slice(5),
+      };
+    case "parent":
+      return {
+        mainMenuItems: ParentMenus.slice(0, 4),
+        secondaryMenuItems: ParentMenus.slice(4),
+      };
+    case "tahfiz":
+      return {
+        mainMenuItems: TahfizMenus.slice(0, 4),
+        secondaryMenuItems: TahfizMenus.slice(4),
+      };
+    default:
+      return {
+        mainMenuItems: [],
+        secondaryMenuItems: [],
+      };
+  }
+};
